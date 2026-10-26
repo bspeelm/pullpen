@@ -78,7 +78,14 @@ fn every_relative_doc_link_resolves() {
             if file.is_empty() || target.contains("://") || target.starts_with("mailto:") {
                 continue;
             }
-            if !md.parent().unwrap().join(file).exists() {
+            // A wiki page links to another as `Page-name`, with no extension.
+            let in_wiki = md.parent().is_some_and(|d| d.ends_with("wiki"));
+            let target_path = if in_wiki && !file.contains('.') && !file.contains('/') {
+                md.parent().unwrap().join(format!("{file}.md"))
+            } else {
+                md.parent().unwrap().join(file)
+            };
+            if !target_path.exists() {
                 broken.push(format!("{}: {target}", md.strip_prefix(root()).unwrap().display()));
             }
         }
@@ -128,4 +135,41 @@ fn no_test_module_is_inline() {
         walk(&c.path().join("src"), &mut bad);
     }
     assert!(bad.is_empty(), "inline test modules; move them to a sibling tests.rs:\n{}", bad.join("\n"));
+}
+
+fn wiki_pages() -> Vec<String> {
+    let mut v: Vec<String> = fs::read_dir(root().join("wiki"))
+        .unwrap()
+        .flatten()
+        .filter_map(|e| e.file_name().to_str()?.strip_suffix(".md").map(String::from))
+        .collect();
+    v.sort();
+    v
+}
+
+/// The wiki's Home is its index: a page nobody links to is a page nobody
+/// finds.
+#[test]
+fn home_indexes_every_wiki_page() {
+    let home = read("wiki/Home.md");
+    for page in wiki_pages().into_iter().filter(|p| p != "Home") {
+        assert!(home.contains(&format!("]({page})")), "wiki/Home.md does not link to {page}");
+    }
+}
+
+/// The README links into the wiki by URL, which the relative-link check
+/// cannot follow; each must name a page that exists.
+#[test]
+fn every_wiki_url_in_the_readme_names_a_page() {
+    let readme = read("README.md");
+    let pages = wiki_pages();
+    let mut rest = readme.as_str();
+    let mut seen = 0;
+    while let Some(i) = rest.find("github.com/bspeelm/pullpen/wiki/") {
+        rest = &rest[i + "github.com/bspeelm/pullpen/wiki/".len()..];
+        let page: String = rest.chars().take_while(|c| c.is_alphanumeric() || *c == '-').collect();
+        assert!(pages.contains(&page), "README links to wiki page {page}, which wiki/ does not have");
+        seen += 1;
+    }
+    assert!(seen > 5, "found only {seen} wiki links in the README");
 }

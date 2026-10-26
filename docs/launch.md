@@ -72,8 +72,8 @@ indexes every page, every wiki URL in the README names a page that exists.
 2. Push the M0 commit as `main`. It is the only commit that lands without a
    pull request, because there is no base for one yet.
 3. Push every branch, then open the PRs stacked in order, each based on the
-   one before: M1 on `main`, M2 on M1, through M7, then `process`, then
-   `setup`. Each PR body is its milestone's exit criteria as a checklist,
+   one before: M1 on `main`, M2 on M1, through M7, then `setup`, then
+   `process`. Each PR body is its milestone's exit criteria as a checklist,
    with the commands and results that showed each one met.
 4. Apply the ruleset through the API from `.github/rulesets/main.json`.
 5. Turn on CodeQL default setup. Rust is supported; if the API refuses, say

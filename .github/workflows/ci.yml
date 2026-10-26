@@ -5,8 +5,8 @@ on:
     branches: [main]
   pull_request:
 
-# Nothing in CI writes to the repository, and the default token is far broader
-# than any of this needs.
+# Read-only for every job here. Nothing in CI writes to the repository; the
+# release and wiki workflows are the only ones that need contents: write.
 permissions:
   contents: read
 
@@ -16,7 +16,8 @@ jobs:
   # would go blind on exactly those changes.
   #
   # Jobs are skipped with `if:` rather than the workflow being filtered: a
-  # required check whose workflow never runs leaves the PR pending forever.
+  # required check whose workflow never runs leaves the PR pending forever,
+  # while a skipped job reports and satisfies it.
   scope:
     runs-on: ubuntu-latest
     outputs:
@@ -43,14 +44,10 @@ jobs:
             echo "code=false" >> "$GITHUB_OUTPUT"
           fi
 
-  # Linux and macOS run natively; this is the only place macOS is proven
-  # (ADR-001).
+  # Formatting, clippy with warnings denied, every test, and the budgets
+  # (ADR-004). Never skipped.
   check:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -58,6 +55,20 @@ jobs:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
       - run: make check
+
+  # The only place macOS is proven (ADR-001). The whole suite, not only a
+  # build: a test that assumes Linux paths is green on the runner above and
+  # red on every Mac a contributor uses.
+  macos:
+    needs: scope
+    if: needs.scope.outputs.code == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace --locked
+      - run: cargo build --release --locked && ./target/release/pullpen --version
 
   # The goldens are generated from design/tui.js (ADR-002). A design change
   # committed without regenerating them would leave the tests proving the old
@@ -77,3 +88,51 @@ jobs:
           git add -N tests/golden
           git diff --exit-code --stat tests/golden || {
             echo "::error::tests/golden is stale; run 'make golden' and commit the result"; exit 1; }
+
+  # ADR-003 as a named gate: the only colour values in the repository are
+  # the built-in palette's. Not skipped for prose, which can carry a colour.
+  # `cargo test` exits 0 when its filter matches nothing, so the test is
+  # asserted to have run.
+  one-palette:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: |
+          set -o pipefail
+          cargo test -p pullpen-ui --test palette only_the_built_in_palette_is_shipped -- --exact | tee palette.log
+          grep -q "test only_the_built_in_palette_is_shipped ... ok" palette.log || {
+            echo "::error::the palette test did not run; the filter has drifted"; exit 1; }
+
+  # ADR-006 and ADR-012 as a named gate: a token pullpen was given reaches no
+  # file it writes. Asserted to have run, for the same reason.
+  token:
+    needs: scope
+    if: needs.scope.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: |
+          set -o pipefail
+          cargo test -p pullpen a_token_never_reaches_a_file | tee token.log
+          grep -q "a_token_never_reaches_a_file ... ok" token.log || {
+            echo "::error::the token test did not run; the filter has drifted"; exit 1; }
+
+  # The release profile, built the way the release workflow builds it, so
+  # the first release is not the first time it is tried.
+  release-build:
+    needs: scope
+    if: needs.scope.outputs.code == 'true'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: |
+          set -euo pipefail
+          cargo build --release --locked
+          ./target/release/pullpen --version
+          ./target/release/pullpen --help >/dev/null
