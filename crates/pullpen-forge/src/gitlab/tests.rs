@@ -226,3 +226,15 @@ async fn a_conflict_status_without_the_conflicts_flag_is_not_a_conflict() {
     assert_eq!(page.prs[0].mergeable, Mergeable::Clean, "the status lagged; the flag was right");
     assert_eq!(page.prs[1].mergeable, Mergeable::Conflict);
 }
+
+#[tokio::test]
+async fn update_rebases_through_the_rebase_endpoint() {
+    let server = MockServer::start().await;
+    Mock::given(method("PUT"))
+        .and(path("/api/v4/projects/platform%2Frunner/merge_requests/812/rebase"))
+        .respond_with(ResponseTemplate::new(202).set_body_json(json!({ "rebase_in_progress": true })))
+        .expect(1)
+        .mount(&server)
+        .await;
+    gl(&server, &[]).update(&id()).await.unwrap();
+}

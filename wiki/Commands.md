@@ -30,6 +30,7 @@ names; `↑` `↓` walk history, filtered by what you have typed.
 | `:open [#n]` | open in the browser |
 | `:diff [#n]` | open the diff |
 | `:close [#n]` | close without merging, after confirming |
+| `:update [#n]` | bring the branch up to date with its base: GitHub merges the base in, GitLab rebases |
 | `:refresh [all]` | fetch this section, or all |
 | `:section <name>` | switch section |
 | `:messages` | the last 200 results and errors |

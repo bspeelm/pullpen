@@ -287,9 +287,9 @@ Translation splits each query in two. Terms a forge's search understands go to t
 
 **Normal, everywhere:** `:` command line · `?` help · `q` back (quits from list) · `Esc` clear filter/marks/message · `h l` prev/next section (list) or pane focus (detail) · `Tab S-Tab` next/prev section · `1–9` section by position · `r R` refresh section/all · `^l` redraw.
 
-**List:** `j k` · `gg G` · `^d ^u` · `/` filter, `n N` next/prev match · `Space` mark, `V` mark range · `Enter` detail · `p` toggle preview · `M` merge (confirm) · `x` close (confirm) · `A` arm/disarm · `a` approve · `c` comment · `d` diff · `o` browser.
+**List:** `j k` · `gg G` · `^d ^u` · `/` filter, `n N` next/prev match · `Space` mark, `V` mark range · `Enter` detail · `p` toggle preview · `M` merge (confirm) · `x` close (confirm) · `u` update branch (ADR-015) · `A` arm/disarm · `a` approve · `c` comment · `d` diff · `o` browser.
 
-**Detail:** `j k ^d ^u gg G` scroll focused pane · `h l` focus overview/diff · `n b` next/prev file (`]f [f` too), `F` the file list (ADR-014) · `]c [c` next/prev hunk · `zo zc` expand/fold · `d` zoom diff · `M A a c o x` as in list · `q Esc` back, cursor kept.
+**Detail:** `j k ^d ^u gg G` scroll focused pane · `h l` focus overview/diff · `n b` next/prev file (`]f [f` too), `F` the file list (ADR-014) · `]c [c` next/prev hunk · `zo zc` expand/fold · `d` zoom diff · `M A a c o x u` as in list · `q Esc` back, cursor kept.
 
 **Command & confirm:** `Tab S-Tab` complete/cycle · `↑ ↓` history (prefix-filtered) · `^r #` insert selected PR ref · `^w ^u` delete word/line · `Enter Esc` run/cancel · confirm: `y Enter` yes, `n Esc` no, `s m r` yes-with-method, **any other key cancels and is discarded**.
 
@@ -307,6 +307,7 @@ Translation splits each query in two. Terms a forge's search understands go to t
 | `:open [target]` | Browser. |
 | `:diff [target] [--external]` | Detail with diff zoomed, or pipe to `diff.pager` (delta, difftastic). |
 | `:close [target]` | Confirms. |
+| `:update [target]` | Bring the branch up to date with its base: GitHub merges the base in, GitLab rebases. No confirm; asks once for several. `M` on a PR that is only behind refuses and names `u` (ADR-015). |
 | `:refresh [all]` | |
 | `:section <name>` | Completes names and short names. |
 | `:messages` | Last 200 results/errors. |

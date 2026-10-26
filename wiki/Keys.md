@@ -14,6 +14,7 @@ The ones to know first:
 | `/` then `n` `N` | filter, next and previous match |
 | `Space` `V` | mark a row, mark a range |
 | `M` `A` `a` `c` `x` | merge, arm, approve, comment, close |
+| `u` | update the branch from its base |
 | `o` `d` | browser, diff |
 | `:` `?` `q` | command line, help, back |
 

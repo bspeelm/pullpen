@@ -14,6 +14,9 @@ pub enum Action {
     Approve,
     Comment(String),
     Close,
+    /// Bring the branch up to date with its base: GitHub merges the base in,
+    /// GitLab rebases onto it, as their own buttons do.
+    Update,
     /// Fetch the PR's head and switch to it as `branch` in the local clone.
     Checkout {
         branch: String,
@@ -33,6 +36,7 @@ impl Action {
             Action::Approve => "approve",
             Action::Comment(_) => "comment",
             Action::Close => "close",
+            Action::Update => "update",
             Action::Checkout { .. } => "checkout",
             Action::Open => "open",
             Action::Refresh { .. } => "refresh",

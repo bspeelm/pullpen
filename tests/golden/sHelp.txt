@@ -14,8 +14,8 @@
   gh ✓   #48   n N        next / prev match  d          open diff          :          command line                      
   gl ✗    #1   Esc        clear, cancel      o          open in browser    ?          this help                         
   gh ○    #3   Space      mark row           x          close…             q          back / quit           r v2        
-  gh ✓ ◆ #11   V          mark range         r          refresh                                             uns as an   
-  gl ○    #8   Enter      open detail                                                                       0 with a    
+  gh ✓ ◆ #11   V          mark range         u          update branch                                       uns as an   
+  gl ○    #8   Enter      open detail        r          refresh                                             0 with a    
   gh ○   #22                                                                                                anly after  
   gh ✓ ◆ #48   detail view                   command line                  confirm prompt                               
   gl ○     #   h l        focus pane         Tab S-Tab  complete           y Enter    confirm                           

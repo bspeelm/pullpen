@@ -146,3 +146,31 @@ fn a_prompt_about_a_pr_that_merged_meanwhile_goes_away() {
     }
     assert!(matches!(a.input, Input::Normal));
 }
+
+#[test]
+fn u_updates_the_branch_and_says_how() {
+    let mut a = app();
+    a.section_mut().sel = 1;
+    let fx = press(&mut a, &[Key::Char('u')]);
+    let job = fx.iter().find_map(|e| if let Effect::Run(j) = e { Some(j.clone()) } else { None }).unwrap();
+    assert_eq!(job.action, pullpen_core::Action::Update);
+    a.job_done(pullpen_core::JobResult { job, outcome: pullpen_core::Outcome::Done, note: None });
+    let line: String = a.message.as_ref().unwrap().line.iter().map(|s| s.text.as_str()).collect();
+    assert_eq!(line, "✓ Updated #812   rebased onto main", "#812 is on GitLab, which rebases");
+}
+
+#[test]
+fn m_on_a_pr_that_is_only_behind_names_the_key_that_updates_it() {
+    let mut a = app();
+    let id = a.section().prs[1].id.clone();
+    a.caps.insert(
+        format!("{}/{}", id.host, id.repo),
+        pullpen_core::Capabilities { requires_up_to_date: true, ..Default::default() },
+    );
+    a.section_mut().prs[1].mergeable = pullpen_core::Mergeable::Behind;
+    a.section_mut().sel = 1;
+    press(&mut a, &[Key::Char('M')]);
+    let line: String = a.message.as_ref().unwrap().line.iter().map(|s| s.text.as_str()).collect();
+    assert!(line.starts_with("E  #812 is behind main") && line.ends_with("u updates the branch"), "{line}");
+    assert!(matches!(a.input, Input::Normal), "no arm-instead prompt: arming would wait forever");
+}

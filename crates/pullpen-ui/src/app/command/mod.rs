@@ -15,6 +15,7 @@ pub enum Cmd {
     Close,
     Refresh,
     Section,
+    Update,
     Messages,
     Clear,
     Quit,
@@ -48,6 +49,7 @@ pub const COMMANDS: &[CmdInfo] = &[
     c("qa", Cmd::QuitAll, "quit from anywhere"),
     c("refresh", Cmd::Refresh, "refetch the section, or all"),
     c("section", Cmd::Section, "switch section"),
+    c("update", Cmd::Update, "bring the branch up to date with its base"),
 ];
 
 pub const ALIASES: &[(&str, Cmd)] = &[("am", Cmd::Automerge)];

@@ -573,6 +573,11 @@ impl ForgeTrait for GitHub {
         send(&self.host, self.req(reqwest::Method::PATCH, &path).json(&json!({ "state": "closed" }))).await.map(|_| ())
     }
 
+    async fn update(&self, id: &PrId) -> Result<()> {
+        let path = format!("/repos/{}/pulls/{}/update-branch", id.repo, id.number);
+        send(&self.host, self.req(reqwest::Method::PUT, &path).json(&json!({}))).await.map(|_| ())
+    }
+
     async fn detail(&self, id: &PrId) -> Result<PrDetail> {
         let (owner, name) = id.repo.split_once('/').ok_or_else(|| Error::Decode(format!("repo {}", id.repo)))?;
         let d = self.gql(DETAIL, json!({ "o": owner, "n": name, "num": id.number })).await?;

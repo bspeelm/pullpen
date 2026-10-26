@@ -63,6 +63,9 @@ fn capital(s: &str) -> String {
 pub fn verdict_short(pr: &Pr, v: &Verdict) -> String {
     match v {
         Verdict::Ready => format!("M merges with {}", method(pr)),
+        Verdict::Waiting(w) if w.iter().all(|x| matches!(x, Wait::Behind { .. })) => {
+            format!("behind {}: u updates it", pr.base)
+        }
         Verdict::Waiting(w) if pr.armed() => {
             format!("{}-merges {}", method(pr), armed_condition(w))
         }
@@ -84,6 +87,9 @@ fn block_clause(b: &Block) -> String {
 pub fn verdict_long(pr: &Pr, v: &Verdict) -> String {
     match v {
         Verdict::Ready => format!("Nothing blocking. M merges with {}.", method(pr)),
+        Verdict::Waiting(w) if w.iter().all(|x| matches!(x, Wait::Behind { .. })) => {
+            format!("Behind {}. u updates the branch.", pr.base)
+        }
         Verdict::Waiting(w) if pr.armed() => {
             format!("{}-merges automatically {}. Nothing else is blocking.", capital(method(pr)), armed_condition(w))
         }

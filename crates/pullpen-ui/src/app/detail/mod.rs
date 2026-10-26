@@ -159,6 +159,7 @@ impl App {
             Key::Char('A') => self.request_arm(ids, None, Origin::Key, None),
             Key::Char('a') => self.request_simple(ids, Action::Approve, Origin::Key, None),
             Key::Char('x') => self.request_simple(ids, Action::Close, Origin::Key, None),
+            Key::Char('u') => self.request_simple(ids, Action::Update, Origin::Key, None),
             Key::Char('c') => vec![Effect::Edit { targets: ids }],
             Key::Char('o') => self.urls(&ids).into_iter().map(Effect::Open).collect(),
             _ => {

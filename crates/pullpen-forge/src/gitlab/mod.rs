@@ -417,6 +417,10 @@ impl ForgeTrait for GitLab {
             .map(|_| ())
     }
 
+    async fn update(&self, id: &PrId) -> Result<()> {
+        send(&self.host, self.rest(reqwest::Method::PUT, id, "/rebase")).await.map(|_| ())
+    }
+
     async fn detail(&self, id: &PrId) -> Result<PrDetail> {
         let d = self.gql(DETAIL, json!({ "path": id.repo, "iid": id.number.to_string() })).await?;
         let m = &d["project"]["mergeRequest"];

@@ -144,6 +144,7 @@ impl App {
             Key::Char('A') => return self.request_arm(self.targets(None), None, Origin::Key, None),
             Key::Char('a') => return self.request_simple(self.targets(None), Action::Approve, Origin::Key, None),
             Key::Char('x') => return self.request_simple(self.targets(None), Action::Close, Origin::Key, None),
+            Key::Char('u') => return self.request_simple(self.targets(None), Action::Update, Origin::Key, None),
             Key::Char('c') => {
                 let targets = self.targets(None);
                 if !targets.is_empty() {
@@ -403,6 +404,7 @@ impl App {
             }
             Cmd::Open => self.urls(&ids).into_iter().map(Effect::Open).collect(),
             Cmd::Close => self.request_simple(ids, Action::Close, o, typed),
+            Cmd::Update => self.request_simple(ids, Action::Update, o, typed),
             Cmd::Diff => {
                 if let Some(i) = ids.first().and_then(|id| self.section().visible().iter().position(|p| p.id == *id)) {
                     self.section_mut().sel = i;
