@@ -66,3 +66,12 @@ fn no_known_clone_says_how_to_add_one() {
     let err = checkout(&id, "b", &HashMap::new(), false, Path::new("/")).unwrap_err();
     assert!(err.contains("[repos]"), "{err}");
 }
+
+#[test]
+fn a_remote_that_is_a_windows_path_still_names_its_repo() {
+    let (root, clone, id) = setup("winpath");
+    git(&clone, &["remote", "add", "win", r"C:\src\acme\api.git"]).unwrap();
+    git(&clone, &["remote", "remove", "origin"]).unwrap();
+    assert_eq!(remote_for(&clone, &id.repo).as_deref(), Some("win"));
+    fs::remove_dir_all(root).unwrap();
+}
