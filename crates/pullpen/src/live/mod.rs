@@ -16,6 +16,7 @@ use tokio::sync::{Notify, OnceCell};
 
 use crate::backend::{Backend, Msg};
 use crate::config::{Config, Kind as CfgKind};
+use crate::credentials::Credentials;
 use crate::{cache, checkout};
 
 /// Per section, per forge: two screens of rows. Each 10 rows cost GitHub a
@@ -50,6 +51,7 @@ impl Live {
         sections: &[Section],
         cache_dir: PathBuf,
         since: Timestamp,
+        creds: &Credentials,
     ) -> std::io::Result<(Live, Vec<Kind>, Vec<String>)> {
         let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build()?;
         let agents = Agents(cfg.agents.logins.clone());
@@ -60,7 +62,9 @@ impl Live {
                 CfgKind::Github => Kind::GitHub,
                 CfgKind::Gitlab => Kind::GitLab,
             };
-            let token = match auth::token(kind, f.host(), f.token_cmd.as_deref(), |k| std::env::var(k).ok()) {
+            let token = match auth::token(kind, f.host(), creds.get(f.host()), f.token_cmd.as_deref(), |k| {
+                std::env::var(k).ok()
+            }) {
                 Ok(t) => t,
                 // An unconfigured forge without a token is one the user does
                 // not use; only a configured one is worth a complaint.

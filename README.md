@@ -15,15 +15,19 @@ tap. Real-forge behaviour has been checked read-only against GitHub only.
 
 ```sh
 cargo build --release
-./target/release/pullpen               # sign-in from gh or glab, or a token
-./target/release/pullpen --fixtures    # the design's data, offline
-./target/release/pullpen config check  # what works, and how to fix what doesn't
+make install-binary   # builds it into ~/.local/bin/pullpen
+pullpen setup         # sign in and answer what it needs; runs itself on first launch
+pullpen               # the queue
+pullpen settings      # see and change any setting later
+pullpen config check  # what works, and how to fix what doesn't
+pullpen --fixtures    # the design's data, offline
 ```
 
 `?` lists every key; [`docs/keymap.md`](docs/keymap.md) is the same list.
-Configuration is optional: [`docs/config.example.toml`](docs/config.example.toml).
-pullpen never stores a token; it borrows one from the environment, `gh` or
-`glab` (ADR-006).
+Every setting is in `pullpen settings`; the file it writes is described in
+[`docs/config.example.toml`](docs/config.example.toml).
+Tokens come from your `gh`/`glab` login or the environment when there is one; one you
+type into setup is kept in `credentials.toml`, readable only by you (ADR-012).
 
 ## Where things are
 

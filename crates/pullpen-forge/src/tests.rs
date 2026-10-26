@@ -23,18 +23,28 @@ fn only_retryable_failures_are_transient() {
 #[test]
 fn tokens_come_from_the_environment_first() {
     let env = |k: &str| (k == "GITHUB_TOKEN").then(|| " ghp_x \n".to_string());
-    assert_eq!(auth::token(pullpen_core::Forge::GitHub, "github.com", None, env).unwrap(), "ghp_x");
+    assert_eq!(auth::token(pullpen_core::Forge::GitHub, "github.com", None, None, env).unwrap(), "ghp_x");
     let env = |k: &str| match k {
         "PULLPEN_GITLAB_TOKEN" => Some("first".to_string()),
         "GITLAB_TOKEN" => Some("second".to_string()),
         _ => None,
     };
-    assert_eq!(auth::token(pullpen_core::Forge::GitLab, "gitlab.com", None, env).unwrap(), "first");
+    assert_eq!(auth::token(pullpen_core::Forge::GitLab, "gitlab.com", None, None, env).unwrap(), "first");
+}
+
+#[test]
+fn a_stored_token_comes_after_the_environment_and_before_the_cli() {
+    let none = |_: &str| None;
+    let t = auth::token(pullpen_core::Forge::GitLab, "nowhere.invalid", Some("stored"), Some("echo from-cmd"), none)
+        .unwrap();
+    assert_eq!(t, "stored");
+    let env = |k: &str| (k == "GITLAB_TOKEN").then(|| "env".to_string());
+    assert_eq!(auth::token(pullpen_core::Forge::GitLab, "nowhere.invalid", Some("stored"), None, env).unwrap(), "env");
 }
 
 #[test]
 fn a_configured_command_is_the_last_resort() {
     let none = |_: &str| None;
-    let t = auth::token(pullpen_core::Forge::GitLab, "nowhere.invalid", Some("echo from-cmd"), none).unwrap();
+    let t = auth::token(pullpen_core::Forge::GitLab, "nowhere.invalid", None, Some("echo from-cmd"), none).unwrap();
     assert_eq!(t, "from-cmd");
 }

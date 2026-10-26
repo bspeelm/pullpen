@@ -109,6 +109,8 @@ and the binary budget (ADR-004) is what keeps that cost honest.
 
 ## ADR-006 — pullpen never stores a token
 
+**Amended by ADR-012:** pullpen now stores a token it is given in setup.
+
 Credentials come from the environment (`PULLPEN_GITHUB_TOKEN`, then
 `GITHUB_TOKEN`), from `gh auth token` or `glab`, or from a `token_cmd` the
 user configures, in that order. They live in memory for the life of the
@@ -197,3 +199,38 @@ artifact including the checksums (bothy's ADR-030), and publishes. Each step
 can be read in a minute. cargo-dist would add installers and a Homebrew
 tap update in exchange for generated code, and either can be taken up later
 by a record that replaces this one.
+
+## ADR-012 — Setup stores the tokens it is given, owner-only, beside the config
+
+ADR-006 had pullpen borrow tokens and never keep one. That serves someone who
+already uses `gh` or `glab`, and nobody else: anyone else had to export an
+environment variable in every shell before pullpen worked at all. The
+maintainer's requirement is that someone can configure pullpen by answering
+its questions, so `pullpen setup` asks for a token when it finds no login to
+borrow, and keeps it.
+
+**Where.** `~/.config/pullpen/credentials.toml`, mode 0600, written to a new
+owner-only file and renamed into place so the token is never on disk with
+wider permissions, even briefly. It is separate from `config.toml` so that
+file can be shared or committed. This is how `gh` and `glab` store theirs.
+An OS keyring would encrypt at rest, but it adds a dependency (ADR-005) and
+fails on headless machines with no keyring running.
+
+**What still holds from ADR-006.** A login to borrow is offered first, and
+when chosen nothing is stored. The environment still overrides the file. A
+token never reaches the log, the cache, the history or the screen: setup
+reads it with echo off, and the test that holds ADR-006 still runs. A
+credentials file others can read is refused with the `chmod` that fixes it,
+not used.
+
+## ADR-013 — The code cap rises to 9,000, for setup and settings
+
+`pullpen setup` and `pullpen settings` took the code from 7,388 lines to
+8,049, over ADR-004's 8,000. They are the maintainer's requirement, since
+without them pullpen could be configured only by editing TOML, and they were
+written as plain prompts rather than as a TUI screen to stay small.
+
+The cap rises once, to 9,000 lines, which is bothy's figure. That leaves about 950
+lines, against roughly 500 that the publishing work in `docs/launch.md` is
+likely to need, so the next raise has room to be argued properly rather
+than squeezed.

@@ -4,11 +4,16 @@ mod backend;
 mod cache;
 mod checkout;
 mod cli;
+mod commands;
 mod config;
+mod credentials;
 mod fixtures;
 mod keys;
 mod live;
 mod paths;
+mod prompt;
+mod settings;
+mod setup;
 mod term;
 
 use std::env;
@@ -31,10 +36,32 @@ fn main() -> Result<()> {
     init_log(&dirs)?;
     tracing::info!(version = env!("CARGO_PKG_VERSION"), fixtures = args.fixtures, "start");
     let cfg_path = args.config.clone().unwrap_or_else(|| dirs.config.join("config.toml"));
-    let (cfg, cfg_err) = Config::load(&cfg_path);
-    if let Some(cli::Command::Config { action: cli::ConfigAction::Check }) = &args.command {
-        let found = config::check::check(&cfg_path, &cfg, cfg_err.as_deref(), &|k| env::var(k).ok());
-        std::process::exit(if config::check::report(&found) { 0 } else { 1 });
+    let creds_path = dirs.config.join("credentials.toml");
+    let (mut cfg, mut cfg_err) = Config::load(&cfg_path);
+    match args.command {
+        Some(cli::Command::Config { action: cli::ConfigAction::Check }) => {
+            let creds = credentials::load(&creds_path);
+            let found = config::check::check(
+                &cfg_path,
+                &cfg,
+                cfg_err.as_deref(),
+                creds.as_ref().map_err(String::as_str),
+                &|k| env::var(k).ok(),
+            );
+            std::process::exit(if config::check::report(&found) { 0 } else { 1 });
+        }
+        Some(cli::Command::Setup) => return commands::setup(&cfg_path, &creds_path, cfg),
+        Some(cli::Command::Settings { action }) => {
+            std::process::exit(commands::settings(&cfg_path, &creds_path, cfg, action)?)
+        }
+        None => {}
+    }
+    // A first run, with a person there to answer: ask before showing an
+    // empty list. Without a terminal, start anyway; the defaults may suffice.
+    if !args.fixtures && !cfg_path.exists() && commands::interactive() {
+        println!("No config yet, so pullpen setup runs first.\n");
+        commands::setup(&cfg_path, &creds_path, Config::default())?;
+        (cfg, cfg_err) = Config::load(&cfg_path);
     }
     let theme = theme(&args, &cfg);
     if args.fixtures {
@@ -56,7 +83,11 @@ fn main() -> Result<()> {
     let visit = std::fs::read_to_string(dirs.state.join("last-visit")).ok().and_then(|t| t.trim().parse().ok());
     // A first run treats the last day as "since last visit".
     let since = pullpen_core::time::Timestamp(visit.unwrap_or(pullpen_core::time::Timestamp::now().0 - 86_400));
-    let (mut backend, forges, problems) = live::Live::start(&cfg, &sections, dirs.cache.clone(), since)?;
+    let (creds, creds_err) = match credentials::load(&creds_path) {
+        Ok(c) => (c, None),
+        Err(e) => (credentials::Credentials::default(), Some(e)),
+    };
+    let (mut backend, forges, problems) = live::Live::start(&cfg, &sections, dirs.cache.clone(), since, &creds)?;
     let states = sections
         .into_iter()
         .map(|s| {
@@ -67,14 +98,11 @@ fn main() -> Result<()> {
     let mut app = App::new(states, theme, pullpen_core::time::Timestamp::now());
     app.forges = forges;
     apply(&mut app, &cfg, &args);
-    for p in problems.iter().chain(&cfg_err) {
+    for p in problems.iter().chain(&cfg_err).chain(&creds_err) {
         app.error(p, Mode::Normal);
     }
     if app.forges.is_empty() {
-        app.error(
-            "no forge to talk to: sign in with `gh auth login` or `glab auth login`, or set a token",
-            Mode::Normal,
-        );
+        app.error("no forge to talk to: run `pullpen setup`", Mode::Normal);
     }
     app.tz_offset = utc_offset();
     let remap = remap(&mut app, &cfg);

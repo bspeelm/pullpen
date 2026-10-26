@@ -65,7 +65,13 @@ fn every_failed_check_says_how_to_fix_it() {
     };
     c.keys.insert("nope".into(), "z".into());
     c.ui.palette = Some("/nonexistent/palette.toml".into());
-    let found = check::check(Path::new("/nonexistent/config.toml"), &c, None, &|_| None);
+    let found = check::check(
+        Path::new("/nonexistent/config.toml"),
+        &c,
+        None,
+        Ok(&crate::credentials::Credentials::default()),
+        &|_| None,
+    );
     let failed: Vec<&check::Finding> = found.iter().filter(|f| !f.ok).collect();
     assert_eq!(failed.len(), 4, "token, section term, key, palette");
     assert!(failed.iter().all(|f| f.fix.is_some()), "a failure without a fix line");

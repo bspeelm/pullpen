@@ -9,9 +9,9 @@ use std::path::Path;
 use std::time::Duration;
 
 use pullpen_core::{MergeMethod, Section, Sort, View};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 #[derive(Default)]
 pub struct Config {
@@ -22,29 +22,32 @@ pub struct Config {
     pub notify: Notify,
     pub agents: AgentsCfg,
     pub checkout: Checkout,
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub repos: HashMap<String, String>,
     pub diff: Diff,
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub keys: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub section: Vec<SectionCfg>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct ForgeCfg {
     pub kind: Kind,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub host: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token_cmd: Option<String>,
     /// GitHub: what an unscoped query is narrowed to.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
     /// GitLab: the groups an unscoped query searches.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<String>,
 }
 
-#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Kind {
     Github,
@@ -60,14 +63,16 @@ impl ForgeCfg {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Ui {
     pub glyphs: String,
     pub colors: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub accent: Option<String>,
     pub preview: String,
     pub short_names_below: usize,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub palette: Option<String>,
 }
 
@@ -84,7 +89,7 @@ impl Default for Ui {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Sync {
     pub interval: String,
@@ -110,7 +115,7 @@ impl Sync {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Merge {
     pub default_method: String,
@@ -134,7 +139,7 @@ impl Merge {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Notify {
     pub bell: bool,
@@ -147,7 +152,7 @@ impl Default for Notify {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct AgentsCfg {
     pub logins: Vec<String>,
@@ -159,31 +164,33 @@ impl Default for AgentsCfg {
     }
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Checkout {
     pub worktree: bool,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Diff {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pager: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct SectionCfg {
     pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub short: Option<String>,
     pub query: String,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sort: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub view: Option<String>,
     /// Whether the section feeds the status line's counts. Defaults to on,
     /// except for a bare `is:open`, whose failures are mostly not yours.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub counts: Option<bool>,
 }
 
@@ -214,6 +221,27 @@ impl Config {
                 Err(e) => (Config::default(), Some(format!("{}: {}; using defaults", path.display(), e.message()))),
             },
         }
+    }
+
+    /// Writes the config whole, after keeping the previous file as
+    /// `config.toml.bak`. Comments in a hand-written file do not survive a
+    /// save: the toml writer cannot keep them, and the backup does.
+    pub fn save(&self, path: &Path) -> std::io::Result<()> {
+        if let Some(dir) = path.parent() {
+            std::fs::create_dir_all(dir)?;
+        }
+        if path.exists() {
+            std::fs::copy(path, path.with_extension("toml.bak"))?;
+        }
+        let body = toml::to_string(self).map_err(std::io::Error::other)?;
+        let tmp = path.with_extension("toml.tmp");
+        std::fs::write(
+            &tmp,
+            format!(
+                "# Written by pullpen settings and pullpen setup; edit freely.\n# Tokens are not here: they are in credentials.toml, beside it.\n\n{body}"
+            ),
+        )?;
+        std::fs::rename(tmp, path)
     }
 
     /// Configured forges, or both public ones when none are configured.

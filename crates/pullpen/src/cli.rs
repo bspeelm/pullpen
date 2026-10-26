@@ -31,6 +31,13 @@ pub struct Args {
 
 #[derive(Subcommand, Debug)]
 pub enum Command {
+    /// Sign in to your forges and answer what pullpen needs to know.
+    Setup,
+    /// See and change every setting; `get` and `set` do it from a script.
+    Settings {
+        #[command(subcommand)]
+        action: Option<SettingsAction>,
+    },
     /// Check config.toml and each forge's sign-in, and say how to fix what fails.
     Config {
         #[command(subcommand)]
@@ -41,6 +48,20 @@ pub enum Command {
 #[derive(Subcommand, Debug)]
 pub enum ConfigAction {
     Check,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum SettingsAction {
+    /// Print one setting's value.
+    Get { key: String },
+    /// Change one setting.
+    Set {
+        key: String,
+        #[arg(num_args = 0.., trailing_var_arg = true)]
+        value: Vec<String>,
+    },
+    /// Where the config and credentials files are.
+    Path,
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]

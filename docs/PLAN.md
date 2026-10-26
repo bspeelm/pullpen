@@ -41,8 +41,8 @@ Each row is settled. The ones with a record are answered by its number: ADR-001 
 | Async | `tokio` (multi-thread), `reqwest` with `rustls` | Forge calls run in background tasks; UI thread never blocks. |
 | GitHub API | **GraphQL** (`https://api.github.com/graphql`) via `reqwest` + `serde_json` (hand-written queries, no codegen) | Auto-merge (`enablePullRequestAutoMerge`), review decision, status check rollup and mergeability are only sane via GraphQL. REST only for `PATCH`/`PUT` merge and checkout refs. |
 | GitLab API | **GraphQL** to read (`/api/graphql`), **REST v4** to write (`/api/v4`) | One GraphQL query per page carries pipeline, approvals and diff stats that REST needs three calls per MR for (ADR-008). Writes use the stable REST endpoints. |
-| Auth | In order: `PULLPEN_GITHUB_TOKEN` / `PULLPEN_GITLAB_TOKEN`, then `GITHUB_TOKEN` / `GITLAB_TOKEN`, then `gh auth token` / `glab auth status -t` shell-out, then `config.toml` `token_cmd` | Zero setup for anyone already using gh/glab. Never store tokens ourselves. |
-| Config | TOML at `$XDG_CONFIG_HOME/pullpen/config.toml` | Design says YAML/TOML; TOML is the Rust norm. No config UI. |
+| Auth | In order: `PULLPEN_GITHUB_TOKEN` / `PULLPEN_GITLAB_TOKEN`, then `GITHUB_TOKEN` / `GITLAB_TOKEN`, then a token `pullpen setup` stored in `credentials.toml` (0600), then `gh auth token` / `glab auth status -t`, then `config.toml` `token_cmd` | Zero setup for anyone already using gh/glab; one question for anyone else (ADR-012). |
+| Config | TOML at `$XDG_CONFIG_HOME/pullpen/config.toml`, written by `pullpen setup` and `pullpen settings` (§6.6) or by hand | Design says YAML/TOML; TOML is the Rust norm. |
 | Cache | `$XDG_CACHE_HOME/pullpen/` — JSON per section, history file, messages log | Instant first paint from cache, then refresh. |
 | Clipboard / browser | `open` crate for `o`; no clipboard in v1 | |
 | Row treatment | **1a columns** (`rowA`) | Chosen in design review. |
@@ -332,6 +332,23 @@ Translation splits each query in two. Terms a forge's search understands go to t
 armed → waiting (CI / reviews / merge train) → merged, or → needs attention (check failed, conflict, changes requested, forge disarmed it). Transitions **waiting → merged** and **waiting → needs attention** ring the bell (`\x07`) and send an OSC 9 notification (`\x1b]9;pullpen: #812 merged\x07`); both configurable under `[notify]`. The Armed section groups by this state and remembers "since last visit" using a timestamp in the cache.
 
 ---
+
+### 6.6 Setup and settings
+
+`pullpen setup` walks through what pullpen needs, as plain prompts that work
+over SSH: which forges, each host, sign-in (use the `gh`/`glab` login, or
+paste a token read with echo off, checked by asking the forge who it belongs
+to), the orgs, repos or groups an unscoped list searches, merge preferences
+and notifications, and local clones for `:checkout`. Every question has a
+default, and running it again starts from the last answers. A first launch
+with no config and a terminal runs it before the list opens.
+
+`pullpen settings` lists every setting with its value; choosing one shows what
+it means and what it takes, and a valid answer is saved at once. `s` re-runs
+sign-in, `e` opens sections and key remaps in `$EDITOR` and then checks them.
+`pullpen settings get|set <key> [value]` does the same from a script, and
+`pullpen settings path` prints both files. Saving keeps the previous
+`config.toml` as `config.toml.bak`, because the TOML writer drops comments.
 
 ## 7. Golden tests from the design artifact
 

@@ -8,6 +8,7 @@ use pullpen_core::query::{Query, Term};
 use pullpen_forge::auth;
 
 use super::{Config, Kind, expand};
+use crate::credentials::Credentials;
 
 pub struct Finding {
     pub ok: bool,
@@ -24,24 +25,38 @@ fn bad(what: String, fix: &str) -> Finding {
     Finding { ok: false, what, fix: Some(fix.into()) }
 }
 
-pub fn check(path: &Path, cfg: &Config, load_err: Option<&str>, env: &dyn Fn(&str) -> Option<String>) -> Vec<Finding> {
+pub fn check(
+    path: &Path,
+    cfg: &Config,
+    load_err: Option<&str>,
+    creds: Result<&Credentials, &str>,
+    env: &dyn Fn(&str) -> Option<String>,
+) -> Vec<Finding> {
     let mut out = vec![match load_err {
         Some(e) => bad(e.to_string(), "correct the line it names, or move the file aside to use the defaults"),
         None if path.exists() => ok(format!("{} reads", path.display())),
         None => ok(format!("no {}; using the defaults", path.display())),
     }];
+    let empty = Credentials::default();
+    let creds = match creds {
+        Ok(c) => c,
+        Err(e) => {
+            out.push(bad(e.to_string(), "run the chmod it names, or `pullpen setup` to store the token again"));
+            &empty
+        }
+    };
     for f in cfg.forges() {
         let kind = match f.kind {
             Kind::Github => Forge::GitHub,
             Kind::Gitlab => Forge::GitLab,
         };
-        out.push(match auth::token(kind, f.host(), f.token_cmd.as_deref(), env) {
+        out.push(match auth::token(kind, f.host(), creds.get(f.host()), f.token_cmd.as_deref(), env) {
             Ok(_) => ok(format!("{}: signed in", f.host())),
             Err(_) => bad(
                 format!("{}: no token", f.host()),
                 match kind {
-                    Forge::GitHub => "run `gh auth login`, or set PULLPEN_GITHUB_TOKEN, or set token_cmd",
-                    Forge::GitLab => "run `glab auth login`, or set PULLPEN_GITLAB_TOKEN, or set token_cmd",
+                    Forge::GitHub => "run `pullpen setup`, or `gh auth login`, or set PULLPEN_GITHUB_TOKEN",
+                    Forge::GitLab => "run `pullpen setup`, or `glab auth login`, or set PULLPEN_GITLAB_TOKEN",
                 },
             ),
         });

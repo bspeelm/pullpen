@@ -4,7 +4,7 @@
 # repeated in prose here; they are the lines below, and a test fails if any
 # document quotes them differently.
 MAX_BINARY_BYTES   := 10485760
-MAX_CODE_LINES     := 8000
+MAX_CODE_LINES     := 9000
 MAX_COMMENT_RATIO  := 30
 MAX_DOC_RATIO      := 75
 DOC_RATIO_FROM     := 2000

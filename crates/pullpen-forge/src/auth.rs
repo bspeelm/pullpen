@@ -1,6 +1,6 @@
-//! Where a token comes from (PLAN.md §1, ADR-006): the environment, then the
-//! forge's own CLI, then a configured command. Nothing here writes a token
-//! anywhere, and nothing logs one.
+//! Where a token comes from (PLAN.md §1, ADR-012): the environment, then a
+//! token `pullpen setup` stored, then the forge's own CLI, then a configured
+//! command. Nothing here writes a token anywhere, and nothing logs one.
 
 use std::process::Command;
 
@@ -10,13 +10,22 @@ use crate::{Error, Result};
 
 /// `env` is a parameter so tests can supply one; the binary passes
 /// `std::env::var`.
-pub fn token(kind: Forge, host: &str, token_cmd: Option<&str>, env: impl Fn(&str) -> Option<String>) -> Result<String> {
+pub fn token(
+    kind: Forge,
+    host: &str,
+    stored: Option<&str>,
+    token_cmd: Option<&str>,
+    env: impl Fn(&str) -> Option<String>,
+) -> Result<String> {
     let vars: &[&str] = match kind {
         Forge::GitHub => &["PULLPEN_GITHUB_TOKEN", "GITHUB_TOKEN"],
         Forge::GitLab => &["PULLPEN_GITLAB_TOKEN", "GITLAB_TOKEN"],
     };
     if let Some(t) = vars.iter().find_map(|v| env(v).filter(|t| !t.trim().is_empty())) {
         return Ok(t.trim().to_string());
+    }
+    if let Some(t) = stored.filter(|t| !t.is_empty()) {
+        return Ok(t.to_string());
     }
     let from_cli = match kind {
         Forge::GitHub => output("gh", &["auth", "token", "--hostname", host]),
