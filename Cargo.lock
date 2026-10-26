@@ -1684,7 +1684,7 @@ dependencies = [
 
 [[package]]
 name = "pullpen"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -1706,21 +1706,21 @@ dependencies = [
 
 [[package]]
 name = "pullpen-core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "pullpen-fixtures"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "pullpen-core",
 ]
 
 [[package]]
 name = "pullpen-forge"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "async-trait",
  "pullpen-core",
@@ -1735,7 +1735,7 @@ dependencies = [
 
 [[package]]
 name = "pullpen-ui"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "pullpen-core",
  "pullpen-fixtures",
