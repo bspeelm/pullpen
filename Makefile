@@ -19,7 +19,7 @@ SOURCES   := $(shell find crates -path '*/src/*' -name '*.rs' -not -name 'tests.
 LIVE_DOCS := $(shell find . -name '*.md' -not -path './target/*' -not -path './.git/*' \
                      -not -path './design/*' -not -path './docs/history/*')
 
-.PHONY: all build test lint fmt budgets golden keymap check clean release release-tag
+.PHONY: all build test lint fmt budgets golden keymap check clean install-binary release release-tag
 
 all: check
 
@@ -69,6 +69,12 @@ check: lint test budgets
 
 clean:
 	cargo clean
+
+# Named for what it installs, as bothy's is: the release binary, into
+# ~/.local/bin, which is on PATH on most systems and needs no root.
+install-binary: build
+	install -Dm755 $(BINARY) $(HOME)/.local/bin/pullpen
+	@echo "installed to ~/.local/bin/pullpen"
 
 # Step one of a release: open the PR that bumps the version.
 #
