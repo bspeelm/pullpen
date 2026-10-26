@@ -17,8 +17,17 @@ fn the_design_counts_hold() {
 }
 
 #[test]
-fn ages_render_back_to_the_design_strings() {
+fn opened_ages_render_back_to_the_design_strings() {
     for (raw, pr) in P.iter().zip(agent_prs()) {
-        assert_eq!(time::age(pr.updated_at, NOW), raw.age, "#{}", raw.n);
+        assert_eq!(time::age(pr.created_at, NOW), raw.age, "#{}", raw.n);
     }
+}
+
+#[test]
+fn the_diff_has_fourteen_files_and_the_design_hunks_second() {
+    let d = diff(4821);
+    assert_eq!(d.len(), 14);
+    assert_eq!((d[1].path.as_str(), d[1].additions, d[1].deletions), ("src/ledger/migrate.ts", 120, 12));
+    assert_eq!(d[1].hunks.len(), 2);
+    assert_eq!(d[1].hunks[0].lines.len(), 18);
 }

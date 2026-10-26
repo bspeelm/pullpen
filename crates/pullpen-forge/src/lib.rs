@@ -8,8 +8,10 @@ mod http;
 use std::collections::HashMap;
 
 use async_trait::async_trait;
+use pullpen_core::diff::FileDiff;
 use pullpen_core::query::Query;
-use pullpen_core::{Action, Capabilities, Forge as Kind, Job, MergeMethod, Pr, PrId};
+use pullpen_core::time::Timestamp;
+use pullpen_core::{Action, Capabilities, Forge as Kind, Job, MergeMethod, Pr, PrDetail, PrId};
 
 #[derive(Debug, thiserror::Error, Clone, PartialEq, Eq)]
 pub enum Error {
@@ -78,6 +80,19 @@ pub trait Forge: Send + Sync {
     async fn approve(&self, id: &PrId) -> Result<()>;
     async fn comment(&self, id: &PrId, body: &str) -> Result<()>;
     async fn close(&self, id: &PrId) -> Result<()>;
+    /// Description, checks and timeline, for the preview and detail view.
+    async fn detail(&self, id: &PrId) -> Result<PrDetail>;
+    async fn diff(&self, id: &PrId) -> Result<Vec<FileDiff>>;
+}
+
+/// `1m 52s`, `38s`, `1h 4m`: how long a check took.
+pub fn duration(from: Timestamp, to: Timestamp) -> String {
+    let s = (to.0 - from.0).max(0);
+    match s {
+        0..60 => format!("{s}s"),
+        60..3600 => format!("{}m {:02}s", s / 60, s % 60),
+        _ => format!("{}h {}m", s / 3600, s % 3600 / 60),
+    }
 }
 
 /// Runs a job's action, and says what else happened. Opening and checking

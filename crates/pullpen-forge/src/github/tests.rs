@@ -249,3 +249,48 @@ fn a_required_check_that_has_not_reported_is_pending() {
     let c = checks(&cut, &["required".to_string()]);
     assert_eq!((c.required_total, c.required_passed), (1, 1), "past a truncated list, the rollup decides");
 }
+
+#[tokio::test]
+async fn detail_reads_checks_timeline_and_groups_pushes() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(body_string_contains("timelineItems"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "repository": { "pullRequest": {
+            "body": "Line one.\r\nLine two.",
+            "commits": { "nodes": [ { "commit": { "statusCheckRollup": { "contexts": { "nodes": [
+                { "__typename": "CheckRun", "name": "build", "status": "COMPLETED", "conclusion": "SUCCESS",
+                  "startedAt": "2026-10-01T00:00:00Z", "completedAt": "2026-10-01T00:01:52Z", "isRequired": true },
+                { "__typename": "CheckRun", "name": "e2e", "status": "COMPLETED", "conclusion": "FAILURE",
+                  "startedAt": "2026-10-01T00:00:10Z", "completedAt": "2026-10-01T00:08:14Z", "isRequired": false }
+            ] } } } } ] },
+            "timelineItems": { "totalCount": 9, "nodes": [
+                { "__typename": "PullRequestCommit", "commit": { "messageHeadline": "a", "committedDate": "2026-10-01T00:00:00Z", "author": { "user": { "login": "claude" } } } },
+                { "__typename": "PullRequestCommit", "commit": { "messageHeadline": "b", "committedDate": "2026-10-01T01:00:00Z", "author": { "user": { "login": "claude" } } } },
+                { "__typename": "PullRequestReview", "state": "APPROVED", "body": "lgtm", "createdAt": "2026-10-01T02:00:00Z", "author": { "login": "jkoh" } }
+            ] }
+        } } } })))
+        .mount(&server)
+        .await;
+    let d = gh(&server).detail(&id()).await.unwrap();
+    assert_eq!(d.description, "Line one.\nLine two.");
+    assert_eq!((d.checks[0].duration.as_str(), d.checks[0].required), ("1m 52s", true));
+    assert_eq!(d.checks[1].state, CheckState::Failed);
+    assert_eq!(d.checks_took, "8m 14s", "first start to last finish");
+    assert_eq!(d.activity[0].kind, ActivityKind::Approved, "newest first");
+    assert_eq!(d.activity[1].kind, ActivityKind::Pushed { commits: 2 }, "consecutive pushes by one author are one");
+    assert_eq!(d.activity[1].who, "claude");
+    assert_eq!(d.conversation_total, 9);
+}
+
+#[tokio::test]
+async fn the_diff_is_asked_for_as_a_diff() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/repos/o/r/pulls/7"))
+        .and(wiremock::matchers::header("Accept", "application/vnd.github.diff"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("diff --git a/x b/x\n@@ -1 +1 @@\n-a\n+b\n"))
+        .mount(&server)
+        .await;
+    let files = gh(&server).diff(&id()).await.unwrap();
+    assert_eq!((files[0].path.as_str(), files[0].additions, files[0].deletions), ("x", 1, 1));
+}

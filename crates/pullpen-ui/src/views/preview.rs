@@ -134,7 +134,7 @@ pub fn preview(pr: &Pr, d: &PrDetail, w: usize, ctx: &Ctx) -> Vec<Line> {
             esc(&pr.id.repo),
             pr.id.number,
             who(&pr.author.login, pr.author.is_agent),
-            age(pr.updated_at, ctx.now)
+            age(pr.created_at, ctx.now)
         )),
         vec![],
     ];

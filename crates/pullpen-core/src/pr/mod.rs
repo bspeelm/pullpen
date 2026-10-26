@@ -68,6 +68,8 @@ impl Checks {
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Reviews {
     pub have: u32,
+    /// Who has approved, as the detail view lists them.
+    pub approved_by: Vec<String>,
     pub need: u32,
     pub changes_requested: bool,
     pub pending: Vec<String>,

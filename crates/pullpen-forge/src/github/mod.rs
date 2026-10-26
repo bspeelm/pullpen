@@ -4,13 +4,14 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 
 use async_trait::async_trait;
+use pullpen_core::diff::FileDiff;
 use pullpen_core::query::{Is, Query, Term};
 use pullpen_core::time::{Timestamp, parse_rfc3339};
 use pullpen_core::*;
 use serde_json::{Value, json};
 
 use crate::http::{self, graphql, send};
-use crate::{Agents, Error, Forge as ForgeTrait, Page, Result};
+use crate::{Agents, Error, Forge as ForgeTrait, Page, Result, duration};
 
 const SEARCH: &str = include_str!("search.graphql");
 /// Mergeability and check details, asked for separately and a few PRs at a
@@ -18,6 +19,7 @@ const SEARCH: &str = include_str!("search.graphql");
 /// for GitHub to time it out with a 502.
 const DETAILS: &str = include_str!("checks.graphql");
 const DETAIL_BATCH: usize = 10;
+const DETAIL: &str = include_str!("detail.graphql");
 
 /// What a branch's rulesets require. Rulesets are readable with read
 /// access, unlike classic branch protection, which only admins can read.
@@ -66,10 +68,16 @@ impl GitHub {
     }
 
     fn req(&self, method: reqwest::Method, path: &str) -> reqwest::RequestBuilder {
+        self.req_as(method, path, "application/vnd.github+json")
+    }
+
+    /// `accept` replaces the JSON default rather than adding to it: a second
+    /// Accept header leaves the answer's format to the server's choosing.
+    fn req_as(&self, method: reqwest::Method, path: &str, accept: &str) -> reqwest::RequestBuilder {
         self.http
             .request(method, format!("{}{path}", self.api))
             .bearer_auth(&self.token)
-            .header("Accept", "application/vnd.github+json")
+            .header("Accept", accept)
             .header("X-GitHub-Api-Version", "2022-11-28")
     }
 
@@ -251,7 +259,9 @@ impl GitHub {
             .unwrap_or(MergeMethod::Merge);
         let approvals: Vec<&Value> =
             n.pointer("/latestOpinionatedReviews/nodes").and_then(Value::as_array).into_iter().flatten().collect();
-        let have = approvals.iter().filter(|a| a["state"] == "APPROVED").count() as u32;
+        let approved_by: Vec<String> =
+            approvals.iter().filter(|a| a["state"] == "APPROVED").map(|a| s(a, "/author/login").to_string()).collect();
+        let have = approved_by.len() as u32;
         let decision = s(n, "/reviewDecision");
         let need = rules.reviews.unwrap_or(match decision {
             "REVIEW_REQUIRED" => have + 1,
@@ -305,7 +315,7 @@ impl GitHub {
             checks: n
                 .pointer("/commits/nodes/0/commit/statusCheckRollup")
                 .map_or_else(Checks::default, |r| checks(r, &rules.checks)),
-            reviews: Reviews { have, need, changes_requested: decision == "CHANGES_REQUESTED", pending },
+            reviews: Reviews { have, need, approved_by, changes_requested: decision == "CHANGES_REQUESTED", pending },
             mergeable,
             // GitHub keeps the request on a PR after it merges or closes.
             auto_merge: (!am.is_null() && s(n, "/state") == "OPEN").then(|| AutoMerge {
@@ -324,6 +334,116 @@ impl GitHub {
             url: s(n, "/url").into(),
             repo_default_method: default,
             repo_allowed_methods: allowed,
+        }
+    }
+}
+
+impl GitHub {
+    fn to_detail(&self, p: &Value) -> PrDetail {
+        let mut checks = Vec::new();
+        let (mut first, mut last) = (i64::MAX, 0);
+        for n in p
+            .pointer("/commits/nodes/0/commit/statusCheckRollup/contexts/nodes")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            let run = n["__typename"] == "CheckRun";
+            let state = match (run, s(n, "/status"), s(n, "/conclusion"), s(n, "/state")) {
+                (true, "COMPLETED", "SUCCESS" | "NEUTRAL" | "SKIPPED", _) | (false, _, _, "SUCCESS") => {
+                    CheckState::Passed
+                }
+                (true, "COMPLETED", _, _) | (false, _, _, "FAILURE" | "ERROR") => CheckState::Failed,
+                (true, "QUEUED", _, _) => CheckState::Queued,
+                _ => CheckState::Running,
+            };
+            let (from, to) = (time(n, "/startedAt"), time(n, "/completedAt"));
+            if from.0 > 0 {
+                first = first.min(from.0);
+                last = last.max(to.0);
+            }
+            checks.push(CheckLine {
+                name: if run { s(n, "/name") } else { s(n, "/context") }.into(),
+                state,
+                required: n["isRequired"] == true,
+                duration: if from.0 > 0 && to.0 > 0 { duration(from, to) } else { String::new() },
+            });
+        }
+        let t = &p["timelineItems"];
+        let mut items: Vec<Activity> = Vec::new();
+        for n in t["nodes"].as_array().into_iter().flatten() {
+            let who = |p: &str| (s(n, p).to_string(), self.agents.is_agent(s(n, p), false));
+            let act = |(who, is_agent): (String, bool), kind, at: &str, body: &str| Activity {
+                who,
+                is_agent,
+                kind,
+                at: time(n, at),
+                body: body.into(),
+            };
+            let a = match s(n, "/__typename") {
+                "PullRequestReview" => {
+                    let kind = match s(n, "/state") {
+                        "APPROVED" => ActivityKind::Approved,
+                        "CHANGES_REQUESTED" => ActivityKind::ChangesRequested,
+                        _ => ActivityKind::Commented,
+                    };
+                    act(who("/author/login"), kind, "/createdAt", s(n, "/body"))
+                }
+                "PullRequestCommit" => {
+                    let login = if s(n, "/commit/author/user/login").is_empty() {
+                        "/commit/author/name"
+                    } else {
+                        "/commit/author/user/login"
+                    };
+                    act(
+                        who(login),
+                        ActivityKind::Pushed { commits: 1 },
+                        "/commit/committedDate",
+                        s(n, "/commit/messageHeadline"),
+                    )
+                }
+                "AutoMergeEnabledEvent" => act(who("/actor/login"), ActivityKind::ArmedAutoMerge, "/createdAt", ""),
+                "AutoMergeDisabledEvent" => act(who("/actor/login"), ActivityKind::DisarmedAutoMerge, "/createdAt", ""),
+                "ReviewRequestedEvent" => {
+                    let target = if s(n, "/requestedReviewer/login").is_empty() {
+                        "/requestedReviewer/slug"
+                    } else {
+                        "/requestedReviewer/login"
+                    };
+                    act(
+                        who(target),
+                        ActivityKind::ReviewRequested { by: Some(s(n, "/actor/login").into()) },
+                        "/createdAt",
+                        "",
+                    )
+                }
+                "IssueComment" => act(who("/author/login"), ActivityKind::Commented, "/createdAt", s(n, "/body")),
+                _ => continue,
+            };
+            // Consecutive pushes by one person read as one push of several.
+            match (items.last_mut(), &a.kind) {
+                (Some(prev), ActivityKind::Pushed { .. })
+                    if prev.who == a.who && matches!(prev.kind, ActivityKind::Pushed { .. }) =>
+                {
+                    if let ActivityKind::Pushed { commits } = &mut prev.kind {
+                        *commits += 1;
+                    }
+                    prev.at = a.at;
+                    prev.body.clear();
+                }
+                _ => items.push(a),
+            }
+        }
+        items.reverse();
+        let conversation =
+            items.iter().filter(|a| !a.body.is_empty() || a.kind == ActivityKind::Approved).take(8).cloned().collect();
+        PrDetail {
+            description: s(p, "/body").replace("\r\n", "\n"),
+            checks,
+            checks_took: if last > first { duration(Timestamp(first), Timestamp(last)) } else { String::new() },
+            activity: items.into_iter().take(6).collect(),
+            conversation,
+            conversation_total: t["totalCount"].as_u64().unwrap_or(0) as usize,
         }
     }
 }
@@ -421,6 +541,18 @@ impl ForgeTrait for GitHub {
     async fn close(&self, id: &PrId) -> Result<()> {
         let path = format!("/repos/{}/pulls/{}", id.repo, id.number);
         send(&self.host, self.req(reqwest::Method::PATCH, &path).json(&json!({ "state": "closed" }))).await.map(|_| ())
+    }
+
+    async fn detail(&self, id: &PrId) -> Result<PrDetail> {
+        let (owner, name) = id.repo.split_once('/').ok_or_else(|| Error::Decode(format!("repo {}", id.repo)))?;
+        let d = self.gql(DETAIL, json!({ "o": owner, "n": name, "num": id.number })).await?;
+        Ok(self.to_detail(&d["repository"]["pullRequest"]))
+    }
+
+    async fn diff(&self, id: &PrId) -> Result<Vec<FileDiff>> {
+        let path = format!("/repos/{}/pulls/{}", id.repo, id.number);
+        let body = send(&self.host, self.req_as(reqwest::Method::GET, &path, "application/vnd.github.diff")).await?;
+        Ok(pullpen_core::diff::parse(body.as_str().unwrap_or("")))
     }
 }
 

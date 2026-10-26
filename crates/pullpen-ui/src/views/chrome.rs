@@ -60,7 +60,7 @@ impl Mode {
 
 pub struct Status<'a> {
     pub mode: Mode,
-    pub section: &'a str,
+    pub section: String,
     pub pos: String,
     pub extra: Line,
     pub armed: usize,
@@ -79,7 +79,7 @@ pub fn status(w: usize, o: &Status) -> Line {
     let mut left = vec![
         Span::new(format!(" {} ", o.mode.word()), Tok::Bg).bold().on(o.mode.block()),
         sp(2),
-        s(o.section, Tok::Fg),
+        s(&o.section, Tok::Fg),
         sp(2),
         s(&o.pos, Tok::Dim),
     ];

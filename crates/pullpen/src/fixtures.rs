@@ -4,7 +4,7 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 use std::thread;
 use std::time::Duration;
 
-use pullpen_core::{Action, Job, JobResult, Outcome};
+use pullpen_core::{Action, Job, JobResult, Outcome, PrId};
 use pullpen_fixtures as fx;
 use pullpen_ui::app::{App, SectionState};
 use pullpen_ui::paint::Theme;
@@ -68,6 +68,15 @@ impl Backend for Fake {
     }
 
     fn refresh(&mut self, _: Option<usize>) {}
+
+    fn fetch(&mut self, id: PrId, diff: bool) {
+        // The receiver is gone only once the app has quit.
+        let _ = self.tx.send(if diff {
+            Msg::Diff(id.clone(), fx::diff(id.number))
+        } else {
+            Msg::Detail(id.clone(), fx::detail(id.number))
+        });
+    }
 
     fn messages(&mut self) -> Vec<Msg> {
         self.rx.try_iter().collect()

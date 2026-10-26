@@ -2,6 +2,7 @@
 //! out, no terminal. That is what lets the golden tests render them.
 
 pub mod chrome;
+pub mod detail;
 pub mod help;
 pub mod list;
 pub mod preview;

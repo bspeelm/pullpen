@@ -153,7 +153,7 @@ pub fn row(p: &Pr, w: usize, o: &RowOpts, ctx: &Ctx) -> Line {
         l.push(s(size, Tok::Dim));
     }
     if c.age > 0 {
-        l.push(s(pad_start(&age(p.updated_at, ctx.now), 4), Tok::Dim));
+        l.push(s(pad_start(&age(p.created_at, ctx.now), 4), Tok::Dim));
     }
     let mut l = fit(&l, w, false);
     if o.dim_all {

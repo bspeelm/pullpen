@@ -5,11 +5,13 @@
 pub mod act;
 pub mod cmdline;
 pub mod command;
+mod detail;
 pub mod input;
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::Instant;
 
+use pullpen_core::diff::FileDiff;
 use pullpen_core::time::Timestamp;
 use pullpen_core::{Capabilities, Forge, Job, MergeMethod, Pr, PrDetail, PrId, Readiness, Section, readiness};
 use ratatui::buffer::Buffer;
@@ -147,6 +149,8 @@ pub enum Effect {
     Refresh {
         all: bool,
     },
+    FetchDetail(PrId),
+    FetchDiff(PrId),
     Redraw,
     SaveHistory,
 }
@@ -157,6 +161,11 @@ pub struct App {
     pub sections: Vec<SectionState>,
     pub active: usize,
     pub details: HashMap<PrId, PrDetail>,
+    pub diffs: HashMap<PrId, Vec<FileDiff>>,
+    /// Fetches already asked for, as (PR, is the diff).
+    pub requested: HashSet<(PrId, bool)>,
+    pub failed: HashSet<(PrId, bool)>,
+    pub detail: Option<crate::views::detail::Detail>,
     pub caps: HashMap<String, Capabilities>,
     pub forges: Vec<Forge>,
     pub theme: Theme,
@@ -188,6 +197,10 @@ impl App {
             sections,
             active: 0,
             details: HashMap::new(),
+            diffs: HashMap::new(),
+            requested: HashSet::new(),
+            failed: HashSet::new(),
+            detail: None,
             caps: HashMap::new(),
             forges: vec![Forge::GitHub, Forge::GitLab],
             theme,
@@ -306,9 +319,18 @@ impl App {
         let extra =
             if sec.marks.is_empty() { vec![] } else { vec![s(format!("{} marked", sec.marks.len()), Tok::Acc)] };
         let (armed, failing) = self.counts();
+        // The detail view names the PR where the list names the section, and
+        // the focused pane where the list gives a position (design §04).
+        let (section, pos) = match &self.detail {
+            Some(d) => {
+                let pane = if d.focus == crate::views::detail::Pane::Diff { "diff" } else { "overview" };
+                (format!("#{}", d.id.number), pane.to_string())
+            }
+            None => (if narrow { sec.section.short.clone() } else { sec.section.name.clone() }, pos),
+        };
         Status {
             mode: self.mode(),
-            section: if narrow { &sec.section.short } else { &sec.section.name },
+            section,
             pos,
             extra,
             armed,
@@ -458,7 +480,10 @@ impl App {
             status: self.status(w),
             cmd: self.cmd_line(w),
         };
-        let mut lines = list_screen(&screen, &ctx);
+        let mut lines = match self.detail_lines(w, h) {
+            Some(l) => l,
+            None => list_screen(&screen, &ctx),
+        };
         if let Some((menu, mw)) = self.menu() {
             let bottom = lines.len().saturating_sub(2);
             let top = bottom.saturating_sub(menu.len());
@@ -479,6 +504,27 @@ impl App {
             _ => {}
         }
         lines
+    }
+
+    fn detail_lines(&self, w: usize, h: usize) -> Option<Vec<Line>> {
+        let d = self.detail.as_ref()?;
+        let pr = self.find(&d.id)?;
+        let sec = self.section();
+        let at = sec.prs.iter().position(|p| p.id == d.id).map_or(0, |i| i + 1);
+        let empty = PrDetail::default();
+        let screen = crate::views::detail::DetailScreen {
+            w,
+            h,
+            pr,
+            detail: self.details.get(&d.id).unwrap_or(&empty),
+            files: self.diffs.get(&d.id).map(Vec::as_slice),
+            d,
+            section: &sec.section.name,
+            position: format!("{at} of {}", sec.total),
+            status: self.status(w),
+            cmd: self.cmd_line(w),
+        };
+        Some(crate::views::detail::detail_screen(&screen, &self.ctx()))
     }
 
     /// The design's row strips (tui.js `strip`): the first `k` rows, the
@@ -518,6 +564,18 @@ impl App {
     /// if it is still there, else at the same index (design §13); marks on
     /// PRs that left are dropped.
     pub fn synced(&mut self, i: usize, mut prs: Vec<Pr>, total: usize) {
+        // A PR that changed has a stale detail and diff; a fetch that failed
+        // gets another try.
+        for p in &prs {
+            if self.find(&p.id).is_some_and(|old| old.updated_at != p.updated_at) {
+                self.details.remove(&p.id);
+                self.diffs.remove(&p.id);
+                self.requested.retain(|(id, _)| *id != p.id);
+            }
+        }
+        for f in std::mem::take(&mut self.failed) {
+            self.requested.remove(&f);
+        }
         let Some(s) = self.sections.get_mut(i) else { return };
         let keep = s.selected().map(|p| p.id.clone());
         // Rows with an action in flight keep their optimistic state until the

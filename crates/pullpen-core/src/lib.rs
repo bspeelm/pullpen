@@ -5,6 +5,7 @@
 
 pub mod action;
 pub mod detail;
+pub mod diff;
 pub mod pr;
 pub mod query;
 pub mod section;

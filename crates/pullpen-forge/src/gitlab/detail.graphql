@@ -1,0 +1,9 @@
+query($path: ID!, $iid: String!) {
+  project(fullPath: $path) {
+    mergeRequest(iid: $iid) {
+      description
+      headPipeline { startedAt finishedAt jobs(first: 60) { nodes { name status duration } } }
+      notes(last: 20) { nodes { system body createdAt author { username bot } } }
+    }
+  }
+}

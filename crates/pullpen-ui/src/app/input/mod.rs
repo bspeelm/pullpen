@@ -58,7 +58,10 @@ impl App {
             }
             Input::Normal => {
                 self.message = None;
-                self.normal_key(key, now)
+                match self.detail_key(key, now) {
+                    Some(effects) => effects,
+                    None => self.normal_key(key, now),
+                }
             }
         }
     }
@@ -148,7 +151,8 @@ impl App {
                 }
             }
             Key::Char('o') => return self.urls(&self.targets(None)).into_iter().map(Effect::Open).collect(),
-            Key::Char('d') | Key::Enter => self.refused("the detail view and diff arrive in M5 (docs/PLAN.md §8)"),
+            Key::Enter => self.open_detail(false),
+            Key::Char('d') => self.open_detail(true),
             _ => {}
         }
         vec![]
@@ -164,7 +168,7 @@ impl App {
         match (first, key) {
             ('g', Key::Char('g')) => self.select(0),
             (']' | '[', Key::Char('f' | 'c')) | ('z', Key::Char('o' | 'c')) => {
-                self.refused("files, hunks and folds belong to the detail view (M5)")
+                self.refused("files, hunks and folds are in the detail view: Enter opens it")
             }
             _ => {}
         }
@@ -400,7 +404,10 @@ impl App {
             Cmd::Open => self.urls(&ids).into_iter().map(Effect::Open).collect(),
             Cmd::Close => self.request_simple(ids, Action::Close, o, typed),
             Cmd::Diff => {
-                self.refused("the detail view and diff arrive in M5 (docs/PLAN.md §8)");
+                if let Some(i) = ids.first().and_then(|id| self.section().visible().iter().position(|p| p.id == *id)) {
+                    self.section_mut().sel = i;
+                    self.open_detail(true);
+                }
                 vec![]
             }
             Cmd::Refresh => vec![Effect::Refresh { all: p.rest.trim() == "all" }],

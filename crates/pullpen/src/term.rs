@@ -126,8 +126,15 @@ fn event_loop(terminal: &mut DefaultTerminal, term: &mut Term, l: &mut Loop) -> 
                 Msg::Down(f, msg) => l.app.forge_down(f, msg),
                 Msg::Up(f) => l.app.forge_up(f),
                 Msg::Caps(c) => l.app.caps.extend(c),
+                Msg::Detail(id, d) => l.app.detail_loaded(id, d),
+                Msg::Diff(id, f) => l.app.diff_loaded(id, f),
+                Msg::Unfetched { id, diff, why } => {
+                    tracing::warn!(pr = id.number, diff, %why, "fetch failed");
+                    l.app.fetch_failed(&id, diff);
+                }
             }
         }
+        effects.extend(l.app.wants());
         for e in effects {
             run_effect(e, terminal, term, l)?;
         }
@@ -162,6 +169,8 @@ fn run_effect(e: Effect, terminal: &mut DefaultTerminal, term: &mut Term, l: &mu
             }
         }
         Effect::Refresh { all } => l.backend.refresh(if all { None } else { Some(l.app.active) }),
+        Effect::FetchDetail(id) => l.backend.fetch(id, false),
+        Effect::FetchDiff(id) => l.backend.fetch(id, true),
         Effect::Redraw => terminal.clear()?,
         Effect::SaveHistory => save_history(&l.dirs.state.join("history"), &l.app.history)?,
     }

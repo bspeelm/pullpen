@@ -4,6 +4,7 @@
 //! Rows are transcribed in tui.js's compact form and expanded into full
 //! `Pr`s here, so a reader can check them against the design line by line.
 
+use pullpen_core::diff::FileDiff;
 use pullpen_core::time::{Timestamp, parse_age};
 use pullpen_core::*;
 
@@ -155,7 +156,13 @@ fn expand(x: &Raw) -> Pr {
         files: if x.n == 4821 { 14 } else { 3 },
         draft: x.draft,
         checks: Checks { required_total: total, required_passed: passed, running, failed },
-        reviews: Reviews { have: x.rv.0, need: x.rv.1, changes_requested: false, pending },
+        reviews: Reviews {
+            have: x.rv.0,
+            need: x.rv.1,
+            approved_by: if x.n == 4821 { vec!["jkoh".into()] } else { vec![] },
+            changes_requested: false,
+            pending,
+        },
         mergeable: if x.conflict { Mergeable::Conflict } else { Mergeable::Clean },
         auto_merge: x.armed.then(|| AutoMerge {
             method: MergeMethod::Squash,
@@ -164,7 +171,9 @@ fn expand(x: &Raw) -> Pr {
         }),
         merge_train: None,
         state: PrState::Open,
-        updated_at: ago(x.age),
+        // The design's detail view says #4821 was opened 3h ago and updated
+        // 12m ago; the list's age column is time since opening.
+        updated_at: if x.n == 4821 { ago("12m") } else { ago(x.age) },
         created_at: ago(x.age),
         url: format!("https://{host}/{}/{sep}/{}", x.r, x.n),
         repo_default_method: MergeMethod::Squash,
@@ -288,6 +297,8 @@ pub fn detail(n: u64) -> PrDetail {
     PrDetail {
         description: "Moves invoice writes onto the ledger v2 double-entry tables. The backfill runs as an online migration in batches of 5,000 with a checkpoint table, so it resumes cleanly after a deploy. Reads switch behind the ledger_v2_reads flag, off by default.\n\n- add migrate_invoices job and checkpoint table\n- dual-write legacy + ledger until the flag flips\n- remove InvoiceTotalsCache, unused since #4790".into(),
         checks,
+        checks_took: "8m 14s".into(),
+        conversation_total: 4,
         activity: vec![
             act("jkoh", ActivityKind::Approved, "2h", ""),
             act("ash", ActivityKind::ArmedAutoMerge, "2h", ""),
@@ -304,6 +315,61 @@ pub fn detail(n: u64) -> PrDetail {
 
 #[cfg(test)]
 mod tests;
+
+/// tui.js `DIFF`: the hunks the design shows for #4821's second file.
+const MIGRATE: &str = "diff --git a/src/ledger/migrate.ts b/src/ledger/migrate.ts
+--- a/src/ledger/migrate.ts
++++ b/src/ledger/migrate.ts
+@@ -38,14 +38,24 @@ migrateInvoices(db, opts)
+ const cursor = await loadCheckpoint(db)
+ while (true) {
+   const batch = await nextBatch(cursor, 5000)
+-  if (!batch.length) break
+-  for (const inv of batch) await writeLegacy(inv)
++  if (batch.length === 0) {
++    await markComplete(db)
++    break
++  }
++  await db.tx(async (tx) => {
++    for (const inv of batch) {
++      await writeLegacy(tx, inv)
++      await writeLedger(tx, toEntries(inv))
++    }
++    await saveCheckpoint(tx, batch.at(-1).id)
++  })
+   metrics.batches.inc()
+ }
+@@ -88,6 +98,9 @@ function toEntries(inv: Invoice)
+ return [
+   debit(inv.accountId, inv.total),
+   credit(LEDGER_REVENUE, inv.net),
++  ...inv.taxLines.map((t) =>
++    credit(LEDGER_TAX, t.amount)),
+ ]
+";
+
+/// #4821's diff: fourteen files, as the design's header counts them, with
+/// the design's hunks as the second. The others are small, so file and
+/// hunk navigation have somewhere to go. Line counts are the design's, not
+/// the hunks', because the design shows an excerpt of a larger change.
+pub fn diff(n: u64) -> Vec<FileDiff> {
+    if n != 4821 {
+        return Vec::new();
+    }
+    let mut text = String::from(
+        "diff --git a/db/checkpoint.sql b/db/checkpoint.sql\n@@ -0,0 +1,2 @@\n+create table checkpoint (id bigint);\n+create index on checkpoint (invoice_id);\n",
+    );
+    text.push_str(MIGRATE);
+    for i in 3..=14 {
+        text.push_str(&format!(
+            "diff --git a/src/ledger/part{i}.ts b/src/ledger/part{i}.ts\n@@ -1,2 +1,2 @@ part{i}\n context\n-old {i}\n+new {i}\n@@ -20,1 +20,2 @@ tail\n end\n+more {i}\n"
+        ));
+    }
+    let mut files = pullpen_core::diff::parse(&text);
+    files[1].additions = 120;
+    files[1].deletions = 12;
+    files
+}
 
 /// A golden screen from `tests/golden/`: `(plain, styled)`.
 pub fn golden(name: &str) -> (String, String) {

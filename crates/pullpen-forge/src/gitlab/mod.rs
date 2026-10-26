@@ -5,15 +5,17 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 
 use async_trait::async_trait;
+use pullpen_core::diff::FileDiff;
 use pullpen_core::query::{Is, Query, Term};
-use pullpen_core::time::parse_rfc3339;
+use pullpen_core::time::{Timestamp, parse_rfc3339};
 use pullpen_core::*;
 use serde_json::{Map, Value, json};
 
 use crate::http::{self, encode_path, graphql, send};
-use crate::{Agents, Error, Forge as ForgeTrait, Page, Result};
+use crate::{Agents, Error, Forge as ForgeTrait, Page, Result, duration};
 
 const FRAGMENT: &str = include_str!("mr.graphql");
+const DETAIL: &str = include_str!("detail.graphql");
 
 pub struct GitLab {
     http: reqwest::Client,
@@ -213,6 +215,7 @@ impl GitLab {
         let left = n["approvalsLeft"].as_u64().unwrap_or(0) as u32;
         let have = need.saturating_sub(left).max(if need == 0 { approved.len() as u32 } else { 0 });
         let pending = names(n, "/reviewers/nodes").into_iter().filter(|r| !approved.contains(r)).collect();
+        let approved_by = approved.clone();
         let status = s(n, "/detailedMergeStatus");
         let mergeable = match status {
             _ if n["conflicts"] == true => Mergeable::Conflict,
@@ -243,7 +246,7 @@ impl GitLab {
             files: n.pointer("/diffStatsSummary/fileCount").and_then(Value::as_u64).unwrap_or(0) as u32,
             draft: n["draft"].as_bool().unwrap_or(false),
             checks,
-            reviews: Reviews { have, need, changes_requested: status == "REQUESTED_CHANGES", pending },
+            reviews: Reviews { have, need, approved_by, changes_requested: status == "REQUESTED_CHANGES", pending },
             mergeable,
             auto_merge: (n["autoMergeEnabled"] == true).then(|| AutoMerge {
                 method: if squash { MergeMethod::Squash } else { default },
@@ -373,6 +376,99 @@ impl ForgeTrait for GitLab {
         send(&self.host, self.rest(reqwest::Method::PUT, id, "").json(&json!({ "state_event": "close" })))
             .await
             .map(|_| ())
+    }
+
+    async fn detail(&self, id: &PrId) -> Result<PrDetail> {
+        let d = self.gql(DETAIL, json!({ "path": id.repo, "iid": id.number.to_string() })).await?;
+        let m = &d["project"]["mergeRequest"];
+        let pipe = &m["headPipeline"];
+        let checks = pipe
+            .pointer("/jobs/nodes")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .map(|j| CheckLine {
+                name: s(j, "/name").into(),
+                state: match s(j, "/status") {
+                    "SUCCESS" | "SKIPPED" | "MANUAL" => CheckState::Passed,
+                    "FAILED" | "CANCELED" => CheckState::Failed,
+                    "CREATED" | "PENDING" | "WAITING_FOR_RESOURCE" | "SCHEDULED" => CheckState::Queued,
+                    _ => CheckState::Running,
+                },
+                required: true,
+                duration: j["duration"].as_i64().map_or(String::new(), |d| duration(Timestamp(0), Timestamp(d))),
+            })
+            .collect();
+        let took = match (parse_rfc3339(s(pipe, "/startedAt")), parse_rfc3339(s(pipe, "/finishedAt"))) {
+            (Some(a), Some(b)) => duration(a, b),
+            _ => String::new(),
+        };
+        let mut items: Vec<Activity> = m
+            .pointer("/notes/nodes")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(|n| {
+                let body = s(n, "/body");
+                // GitLab's system notes are sentences; these are the ones the
+                // timeline shows, recognised by how they start.
+                let kind = match n["system"] == true {
+                    false => ActivityKind::Commented,
+                    true if body.starts_with("approved") => ActivityKind::Approved,
+                    true if body.starts_with("requested changes") => ActivityKind::ChangesRequested,
+                    true if body.contains("automatic merge") || body.contains("auto-merge") => {
+                        if body.starts_with("cancel") {
+                            ActivityKind::DisarmedAutoMerge
+                        } else {
+                            ActivityKind::ArmedAutoMerge
+                        }
+                    }
+                    true if body.starts_with("requested review") => ActivityKind::ReviewRequested { by: None },
+                    true if body.starts_with("added ") && body.contains("commit") => ActivityKind::Pushed {
+                        commits: body.split_whitespace().nth(1).and_then(|n| n.parse().ok()).unwrap_or(1),
+                    },
+                    true => return None,
+                };
+                let login = s(n, "/author/username");
+                let text = if kind == ActivityKind::Commented { body } else { "" };
+                Some(Activity {
+                    who: login.into(),
+                    is_agent: self.agents.is_agent(login, n.pointer("/author/bot") == Some(&json!(true))),
+                    kind,
+                    at: parse_rfc3339(s(n, "/createdAt")).unwrap_or_default(),
+                    body: text.into(),
+                })
+            })
+            .collect();
+        items.sort_by_key(|a| std::cmp::Reverse(a.at));
+        let conversation: Vec<Activity> =
+            items.iter().filter(|a| !a.body.is_empty() || a.kind == ActivityKind::Approved).take(8).cloned().collect();
+        Ok(PrDetail {
+            description: s(m, "/description").replace("\r\n", "\n"),
+            checks,
+            checks_took: took,
+            conversation_total: conversation.len(),
+            conversation,
+            activity: items.into_iter().take(6).collect(),
+        })
+    }
+
+    async fn diff(&self, id: &PrId) -> Result<Vec<FileDiff>> {
+        let mut text = String::new();
+        for page in 1..=10 {
+            let list =
+                send(&self.host, self.rest(reqwest::Method::GET, id, &format!("/diffs?per_page=100&page={page}")))
+                    .await?;
+            let files = list.as_array().cloned().unwrap_or_default();
+            for f in &files {
+                let (a, b) = (s(f, "/old_path"), s(f, "/new_path"));
+                text.push_str(&format!("diff --git a/{a} b/{b}\n--- a/{a}\n+++ b/{b}\n{}\n", s(f, "/diff")));
+            }
+            if files.len() < 100 {
+                break;
+            }
+        }
+        Ok(pullpen_core::diff::parse(&text))
     }
 }
 

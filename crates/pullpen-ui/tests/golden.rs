@@ -30,7 +30,7 @@ fn tabs() -> Vec<Tab> {
 fn status(mode: Mode, section: &str, pos: &str) -> Status<'static> {
     Status {
         mode,
-        section: Box::leak(section.to_string().into_boxed_str()),
+        section: section.to_string(),
         pos: pos.into(),
         extra: vec![],
         armed: 7,
@@ -392,4 +392,13 @@ fn s_help() {
     let mut a = app();
     keys(&mut a, &[Key::Char('?')]);
     check("sHelp", &a.lines(120, 40), 120, Tier::True, Glyphs::Unicode);
+}
+
+#[test]
+fn s_detail() {
+    let mut a = app();
+    let id = a.section().prs[0].id.clone();
+    a.diffs.insert(id, fx::diff(4821));
+    keys(&mut a, &[Key::Enter, Key::Char(']'), Key::Char('f')]);
+    check("sDetail", &a.lines(120, 40), 120, Tier::True, Glyphs::Unicode);
 }

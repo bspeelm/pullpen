@@ -138,3 +138,47 @@ async fn refusals_carry_gitlabs_message_in_either_shape() {
     assert_eq!(g.comment(&id(), "").await.unwrap_err(), Error::Refused("body can't be blank".into()));
     assert_eq!(g.approve(&id()).await.unwrap_err(), Error::Auth("gitlab.com".into()));
 }
+
+#[tokio::test]
+async fn detail_reads_jobs_and_recognises_system_notes() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(body_string_contains("mergeRequest(iid: $iid)"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "project": { "mergeRequest": {
+            "description": "Bump it.",
+            "headPipeline": { "startedAt": "2026-10-01T00:00:00Z", "finishedAt": "2026-10-01T00:04:00Z",
+                              "jobs": { "nodes": [ { "name": "test", "status": "FAILED", "duration": 38 } ] } },
+            "notes": { "nodes": [
+                { "system": true, "body": "added 3 commits", "createdAt": "2026-10-01T00:00:00Z", "author": { "username": "renovate-bot", "bot": true } },
+                { "system": true, "body": "approved this merge request", "createdAt": "2026-10-01T01:00:00Z", "author": { "username": "lena", "bot": false } },
+                { "system": true, "body": "changed the description", "createdAt": "2026-10-01T01:30:00Z", "author": { "username": "lena", "bot": false } },
+                { "system": false, "body": "please rebase", "createdAt": "2026-10-01T02:00:00Z", "author": { "username": "ash", "bot": false } }
+            ] }
+        } } } })))
+        .mount(&server)
+        .await;
+    let d = gl(&server, &[]).detail(&id()).await.unwrap();
+    assert_eq!((d.checks[0].state, d.checks[0].duration.as_str()), (CheckState::Failed, "38s"));
+    assert_eq!(d.checks_took, "4m 00s");
+    let kinds: Vec<ActivityKind> = d.activity.iter().map(|a| a.kind.clone()).collect();
+    assert_eq!(
+        kinds,
+        [ActivityKind::Commented, ActivityKind::Approved, ActivityKind::Pushed { commits: 3 }],
+        "unrecognised system notes are skipped"
+    );
+    assert!(d.activity[2].is_agent);
+}
+
+#[tokio::test]
+async fn the_diff_is_assembled_from_the_diffs_endpoint() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v4/projects/platform%2Frunner/merge_requests/812/diffs"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!([
+            { "old_path": "go.mod", "new_path": "go.mod", "diff": "@@ -1 +1 @@\n-go 1.25.2\n+go 1.25.3\n" }
+        ])))
+        .mount(&server)
+        .await;
+    let files = gl(&server, &[]).diff(&id()).await.unwrap();
+    assert_eq!((files[0].path.as_str(), files[0].additions), ("go.mod", 1));
+}

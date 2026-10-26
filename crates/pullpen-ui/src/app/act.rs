@@ -534,6 +534,10 @@ impl App {
             s.marks.retain(|m| m != id);
             s.sel = s.sel.min(s.visible().len().saturating_sub(1));
         }
+        // A detail view of a PR that merged or closed has nothing to show.
+        if self.detail.as_ref().is_some_and(|d| d.id == *id) {
+            self.detail = None;
+        }
         // A prompt asked about a PR that has since left: it is no longer a
         // question anyone can answer.
         if let Input::Confirm(p) = &mut self.input {

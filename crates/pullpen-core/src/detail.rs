@@ -8,10 +8,14 @@ use serde::{Deserialize, Serialize};
 pub struct PrDetail {
     pub description: String,
     pub checks: Vec<CheckLine>,
+    /// Wall time of the latest check run, first start to last finish.
+    pub checks_took: String,
     /// The timeline, newest first: reviews, arming, pushes, requests.
     pub activity: Vec<Activity>,
-    /// Reviews and comments with their bodies, as the detail view lists them.
+    /// Reviews and comments with their bodies, as the detail view lists them:
+    /// the most recent few, out of `conversation_total`.
     pub conversation: Vec<Activity>,
+    pub conversation_total: usize,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use pullpen_core::query::Query;
-use pullpen_core::{Action, Capabilities, Forge as Kind, Job, JobResult, Outcome, Pr, Section, Sort, readiness};
+use pullpen_core::{Action, Capabilities, Forge as Kind, Job, JobResult, Outcome, Pr, PrId, Section, Sort, readiness};
 use pullpen_forge::{Agents, Error, Forge, auth};
 use tokio::runtime::Runtime;
 use tokio::sync::{Notify, OnceCell};
@@ -221,6 +221,27 @@ impl Backend for Live {
                 wake.iter().for_each(|w| w.notify_one());
             }
             let _ = tx.send(Msg::Job(JobResult { job, outcome, note }));
+        });
+    }
+
+    fn fetch(&mut self, id: PrId, diff: bool) {
+        let (forges, tx) = (self.forges.clone(), self.tx.clone());
+        self.rt.spawn(async move {
+            let Some(e) = forges.iter().find(|e| e.forge.kind() == id.forge && e.forge.host() == id.host) else {
+                return;
+            };
+            let msg = if diff {
+                match e.forge.diff(&id).await {
+                    Ok(files) => Msg::Diff(id, files),
+                    Err(err) => Msg::Unfetched { id, diff, why: err.to_string() },
+                }
+            } else {
+                match e.forge.detail(&id).await {
+                    Ok(d) => Msg::Detail(id, d),
+                    Err(err) => Msg::Unfetched { id, diff, why: err.to_string() },
+                }
+            };
+            let _ = tx.send(msg);
         });
     }
 

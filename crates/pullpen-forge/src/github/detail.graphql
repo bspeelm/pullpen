@@ -1,0 +1,22 @@
+query($o: String!, $n: String!, $num: Int!) {
+  repository(owner: $o, name: $n) {
+    pullRequest(number: $num) {
+      body
+      commits(last: 1) { nodes { commit { statusCheckRollup { contexts(first: 60) { nodes { __typename
+        ... on CheckRun { name status conclusion startedAt completedAt isRequired(pullRequestNumber: $num) }
+        ... on StatusContext { context state createdAt isRequired(pullRequestNumber: $num) }
+      } } } } } }
+      timelineItems(last: 20, itemTypes: [PULL_REQUEST_REVIEW, PULL_REQUEST_COMMIT, AUTO_MERGE_ENABLED_EVENT, AUTO_MERGE_DISABLED_EVENT, REVIEW_REQUESTED_EVENT, ISSUE_COMMENT]) {
+        totalCount
+        nodes { __typename
+          ... on PullRequestReview { state body createdAt author { login __typename } }
+          ... on PullRequestCommit { commit { messageHeadline committedDate author { user { login } name } } }
+          ... on AutoMergeEnabledEvent { createdAt actor { login } }
+          ... on AutoMergeDisabledEvent { createdAt actor { login } }
+          ... on ReviewRequestedEvent { createdAt actor { login } requestedReviewer { __typename ... on User { login } ... on Team { slug } } }
+          ... on IssueComment { body createdAt author { login __typename } }
+        }
+      }
+    }
+  }
+}
