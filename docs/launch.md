@@ -3,8 +3,9 @@
 How pullpen goes from the local branches to a public repository with
 bothy's process around it. Where it stands: §1 and §2 are done (the repository is public, the work
 merged in one PR, the ruleset requires every named check, CodeQL runs). The
-wiki is written but not yet published, because GitHub creates a wiki's
-repository only when its first page is saved in the web UI. §3's GitHub run
+wiki is published: after its first page was saved in the web UI (GitHub
+creates a wiki's repository no other way), `wiki.yml` copied all of
+`wiki/` to it, and copies it again on every merge that changes it. §3's GitHub run
 is recorded in `docs/testing.md`; GitLab is not run.
 
 Decided already: the repository is **public** (`bspeelm/pullpen`), like
