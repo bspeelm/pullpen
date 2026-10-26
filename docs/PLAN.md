@@ -477,6 +477,12 @@ view  = "armed"
 name  = "All"
 short = "All"
 query = "is:open"
+
+[[section]]
+name  = "Merged"
+short = "Merged"
+query = "is:merged merged:7d"
+view  = "merged"
 ```
 
 ---

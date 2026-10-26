@@ -46,7 +46,10 @@ Download the archive for your system from the
 [latest release](https://github.com/bspeelm/pullpen/releases/latest): Linux
 and macOS as `.tar.gz`, Windows as `.zip`, each for amd64 and arm64, and each
 signed by the workflow that built it. Put `pullpen` (`pullpen.exe` on
-Windows) somewhere on your `PATH` and run it. With no settings yet, it starts
+Windows) somewhere on your `PATH` and run it. The binaries are not
+code-signed by Apple or Microsoft, so macOS and Windows may warn the first
+time; [Installing](https://github.com/bspeelm/pullpen/wiki/Installing) says
+what to do. With no settings yet, it starts
 `pullpen setup` first.
 
 From a clone, with Rust installed, `make install-binary` builds it into
@@ -82,7 +85,7 @@ Inside, `:` opens a command line with completion, and `?` shows every key.
 
 Each tab is a query in one syntax that works on both forges:
 `is:open review-requested:@me`, `is:open is:agent`, `repo:acme/api ci:fail`.
-Five ship by default, and you can replace them.
+Six ship by default, and you can replace them.
 [Sections and queries](https://github.com/bspeelm/pullpen/wiki/Sections-and-queries).
 
 ## Merging and auto-merge
@@ -117,10 +120,11 @@ the screen.
 
 ## Where it runs
 
-Linux, macOS and Windows, built and tested in CI on all three; on Windows,
-interactive use is not yet confirmed by anyone running it. GitHub has been exercised
-against real repositories; GitLab only against recorded answers, because no
-GitLab account has tried it yet.
+Linux, macOS and Windows, built and tested in CI on all three; so far only
+Linux has been used interactively. GitHub has been exercised against real
+repositories, merging and arming included. GitLab has listed real merge
+requests and their pipelines, but its merge, arm and approve have run only
+against recorded answers.
 [Where it runs](https://github.com/bspeelm/pullpen/wiki/Where-it-runs).
 
 ## Scope

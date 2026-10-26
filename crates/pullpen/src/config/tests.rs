@@ -26,7 +26,7 @@ fn the_documented_example_parses() {
     let c: Config =
         toml::from_str(&block[a..b]).unwrap_or_else(|e| panic!("PLAN.md §9 does not load as a Config: {e}"));
     assert_eq!(c.forge.len(), 2);
-    assert_eq!(c.section.len(), 5);
+    assert_eq!(c.section.len(), 6, "the six default sections");
     assert_eq!(c.sync.every(), Duration::from_secs(60));
 }
 
