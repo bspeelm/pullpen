@@ -290,7 +290,7 @@ function armedScreen(){
  const W=120,L=[tabs(3,W,{right:'is:armed + merged since last visit'}),[]];
  const grp=(t,rows,first)=>{L.push([sp(2),S(t,'fg',{b:1}),S('  '+rows.length,'dim')]);rows.forEach((p,i)=>L.push(rowArm(p,W-1,{sel:first&&i===0})));L.push([]);};
  grp('needs attention',[A(2290,{why:'{r|failing}{d|  e2e/chromium · 2 retries}',when:'18m'}),A(4818,{why:'{r|conflict}{d|  with main after #4815}',when:'25m'})],true);
- grp('waiting',[A(4821,{why:'{y|review}{d|  @mara · 1 of 2}',when:'2h'}),A(809,{why:'{y|ci}{d|  6/9 running · ~4m left}',when:'30m'}),A(377,{armed:1,why:'{y|ci}{d|  4/9 running, then review}',when:'12m'}),A(145,{armed:1,why:'{y|merge train}{d|  position 2 of 3}',when:'1h'}),A(4809,{why:'{y|ci}{d|  required check sbom queued}',when:'5d'})]);
+ grp('waiting',[A(4821,{why:'{y|review}{d|  @mara · 1 of 2}',when:'2h'}),A(809,{why:'{y|ci}{d|  6/9 running · ~4m left}',when:'30m'}),A(377,{armed:1,why:'{y|ci}{d|  4/9 running, then review}',when:'12m'}),A(145,{armed:1,why:'{y|merge train}{d|  position 2 of 3}',when:'1h'}),A(4809,{ci:'run',why:'{y|ci}{d|  required check sbom queued}',when:'5d'})]);
  grp('merged since 09:14',[A(2288,{merged:1,why:'{d|merged · squash}',when:'22m'}),A(812,{merged:1,why:'{d|merged · squash}',when:'41m'}),A(1199,{merged:1,why:'{d|merged · squash}',when:'1h'}),A(4815,{merged:1,why:'{d|merged · rebase}',when:'1h'})]);
  while(L.length<38) L.push([]);
  L.push(status(W,{mode:'NORMAL',section:'Auto-merge armed',pos:'1/7'}));

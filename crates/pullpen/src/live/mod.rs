@@ -8,7 +8,8 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use pullpen_core::query::Query;
-use pullpen_core::{Action, Capabilities, Forge as Kind, Job, JobResult, Outcome, Pr, PrId, Section, Sort, readiness};
+use pullpen_core::time::Timestamp;
+use pullpen_core::{Action, Forge as Kind, Job, JobResult, Outcome, Pr, PrId, PrState, Section, Sort, View, readiness};
 use pullpen_forge::{Agents, Error, Forge, auth};
 use tokio::runtime::Runtime;
 use tokio::sync::{Notify, OnceCell};
@@ -42,10 +43,13 @@ pub struct Live {
 impl Live {
     /// The backend, the forges it reaches, and why any configured forge
     /// could not be reached.
+    /// `since` is the last visit: an armed section also keeps what merged
+    /// after it.
     pub fn start(
         cfg: &Config,
         sections: &[Section],
         cache_dir: PathBuf,
+        since: Timestamp,
     ) -> std::io::Result<(Live, Vec<Kind>, Vec<String>)> {
         let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build()?;
         let agents = Agents(cfg.agents.logins.clone());
@@ -101,12 +105,12 @@ impl Live {
             worktree: cfg.checkout.worktree,
         };
         for (i, s) in sections.iter().enumerate() {
-            live.spawn_section(i, s.clone(), cfg.sync.every(), cache_dir.clone());
+            live.spawn_section(i, s.clone(), cfg.sync.every(), cache_dir.clone(), since);
         }
         Ok((live, kinds, problems))
     }
 
-    fn spawn_section(&self, i: usize, section: Section, every: Duration, cache_dir: PathBuf) {
+    fn spawn_section(&self, i: usize, section: Section, every: Duration, cache_dir: PathBuf, since: Timestamp) {
         let (forges, tx, wake, last) = (self.forges.clone(), self.tx.clone(), self.wake[i].clone(), self.last.clone());
         self.rt.spawn(async move {
             let q = Query::parse(&section.query);
@@ -131,14 +135,11 @@ impl Live {
                     caps.extend(e.forge.capabilities());
                 }
                 let client_side = q.terms.iter().any(|t| t.client_side());
+                let armed_view = section.view == View::Armed;
                 prs.retain(|p| {
-                    q.keeps(
-                        p,
-                        readiness(
-                            p,
-                            caps.get(&format!("{}/{}", p.id.host, p.id.repo)).unwrap_or(&Capabilities::default()),
-                        ),
-                    )
+                    let fresh = matches!(p.state, PrState::Merged { at, .. } if at >= since);
+                    let caps = caps.get(&format!("{}/{}", p.id.host, p.id.repo)).cloned().unwrap_or_default();
+                    q.keeps(p, readiness(p, &caps)) || (armed_view && fresh)
                 });
                 if client_side {
                     total = prs.len();

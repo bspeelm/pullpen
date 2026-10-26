@@ -155,7 +155,7 @@ fn expand(x: &Raw) -> Pr {
         deletions: x.de,
         files: if x.n == 4821 { 14 } else { 3 },
         draft: x.draft,
-        checks: Checks { required_total: total, required_passed: passed, running, failed },
+        checks: Checks { required_total: total, required_passed: passed, running, failed, ..Default::default() },
         reviews: Reviews {
             have: x.rv.0,
             need: x.rv.1,

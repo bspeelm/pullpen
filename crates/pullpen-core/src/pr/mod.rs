@@ -54,6 +54,10 @@ pub struct Checks {
     pub required_passed: u32,
     pub running: u32,
     pub failed: Vec<CheckRun>,
+    /// Required checks that have not started, when the forge says which.
+    pub queued: Vec<String>,
+    /// Minutes until the running checks finish, when the forge can tell.
+    pub eta_mins: Option<u32>,
 }
 
 impl Checks {

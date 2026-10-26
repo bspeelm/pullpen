@@ -402,3 +402,63 @@ fn s_detail() {
     keys(&mut a, &[Key::Enter, Key::Char(']'), Key::Char('f')]);
     check("sDetail", &a.lines(120, 40), 120, Tier::True, Glyphs::Unicode);
 }
+
+/// The design's armed view after coming back: each PR in the state the
+/// screen shows, with the times its right-hand column counts from.
+fn armed_app() -> App {
+    use pullpen_core::time::{Timestamp, parse_age};
+    use pullpen_core::{AutoMerge, MergeMethod, MergeTrainPos, PrState};
+    let ago = |s: &str| Timestamp(fx::NOW.0 - parse_age(s).unwrap());
+    let pr = |n: u64| fx::by_number(n).unwrap();
+    let armed = |mut p: Pr, at: &str| {
+        p.auto_merge = Some(AutoMerge { method: MergeMethod::Squash, armed_by: "ash".into(), armed_at: ago(at) });
+        p
+    };
+    let merged = |mut p: Pr, at: &str, method| {
+        p.auto_merge = None;
+        p.state = PrState::Merged { at: ago(at), method };
+        p
+    };
+    let mut p809 = armed(pr(809), "30m");
+    p809.checks.eta_mins = Some(4);
+    let mut p145 = armed(pr(145), "1h");
+    p145.merge_train = Some(MergeTrainPos { position: 2, length: 3 });
+    let mut p4809 = armed(pr(4809), "5d");
+    (p4809.checks.required_passed, p4809.checks.running, p4809.checks.queued) = (8, 1, vec!["sbom".into()]);
+    let rows = vec![
+        armed(pr(2290), "2h"),
+        armed(pr(4818), "2h"),
+        armed(pr(4821), "2h"),
+        p809,
+        armed(pr(377), "12m"),
+        p145,
+        p4809,
+        merged(pr(2288), "22m", MergeMethod::Squash),
+        merged(pr(812), "41m", MergeMethod::Squash),
+        merged(pr(1199), "1h", MergeMethod::Squash),
+        merged(pr(4815), "1h", MergeMethod::Rebase),
+    ];
+    let mut a = app();
+    a.active = 3;
+    a.sections[3].prs = rows;
+    a.sections[3].total = 7;
+    for (n, since) in [(2290, "18m"), (4818, "25m")] {
+        let id = a.sections[3].prs.iter().find(|p| p.id.number == n).unwrap().id.clone();
+        a.watches.insert(
+            id,
+            pullpen_ui::app::Watch {
+                group: pullpen_ui::views::armed::Group::Attention,
+                since: ago(since),
+                disarmed: false,
+            },
+        );
+    }
+    // 09:14 UTC on the fixture day, with the clock shown in UTC.
+    a.last_visit = Some(Timestamp(fx::NOW.0 - (14 * 3600 + 13 * 60 + 20) + (9 * 3600 + 14 * 60)));
+    a
+}
+
+#[test]
+fn s_armed() {
+    check("sArmed", &armed_app().lines(120, 40), 120, Tier::True, Glyphs::Unicode);
+}

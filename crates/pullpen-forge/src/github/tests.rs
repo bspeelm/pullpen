@@ -50,7 +50,7 @@ async fn search_maps_a_pr_and_reads_requirements_from_rulesets() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/graphql"))
-        .and(body_string_contains("is:pr is:open review-requested:@me"))
+        .and(body_string_contains("is:pr is:open review-requested:@me sort:updated-desc"))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "search": {
             "issueCount": 41, "pageInfo": { "hasNextPage": false, "endCursor": null }, "nodes": [node(), {}]
         } } })))
@@ -98,11 +98,11 @@ async fn search_maps_a_pr_and_reads_requirements_from_rulesets() {
 #[test]
 fn an_unnarrowed_query_is_scoped_and_client_side_terms_stay_home() {
     let g = GitHub::with_api("github.com", "http://x", "t".into(), Agents::default(), "involves:@me", false);
-    assert_eq!(g.server_query(&Query::parse("is:open")), "is:pr is:open involves:@me");
-    assert_eq!(g.server_query(&Query::parse("is:armed ci:fail")), "is:pr involves:@me");
+    assert_eq!(g.server_query(&Query::parse("is:open")), "is:pr is:open involves:@me sort:updated-desc");
+    assert_eq!(g.server_query(&Query::parse("is:armed ci:fail")), "is:pr involves:@me sort:updated-desc");
     assert_eq!(
         g.server_query(&Query::parse("is:open author:@me label:needs-review")),
-        "is:pr is:open author:@me label:\"needs-review\""
+        "is:pr is:open author:@me label:\"needs-review\" sort:updated-desc"
     );
 }
 

@@ -37,10 +37,20 @@ fn main() -> Result<()> {
         let mut app = fixtures::app(theme);
         apply(&mut app, &cfg, &args);
         let mut backend = fixtures::Fake::new();
-        return term::run(term::Loop { app: &mut app, backend: &mut backend, dirs: &dirs, on_focus: false });
+        return term::run(term::Loop {
+            app: &mut app,
+            backend: &mut backend,
+            dirs: &dirs,
+            on_focus: false,
+            bell: false,
+            osc9: false,
+        });
     }
     let sections = cfg.sections();
-    let (mut backend, forges, problems) = live::Live::start(&cfg, &sections, dirs.cache.clone())?;
+    let visit = std::fs::read_to_string(dirs.state.join("last-visit")).ok().and_then(|t| t.trim().parse().ok());
+    // A first run treats the last day as "since last visit".
+    let since = pullpen_core::time::Timestamp(visit.unwrap_or(pullpen_core::time::Timestamp::now().0 - 86_400));
+    let (mut backend, forges, problems) = live::Live::start(&cfg, &sections, dirs.cache.clone(), since)?;
     let states = sections
         .into_iter()
         .map(|s| {
@@ -60,7 +70,15 @@ fn main() -> Result<()> {
             Mode::Normal,
         );
     }
-    term::run(term::Loop { app: &mut app, backend: &mut backend, dirs: &dirs, on_focus: cfg.sync.on_focus })
+    app.tz_offset = utc_offset();
+    term::run(term::Loop {
+        app: &mut app,
+        backend: &mut backend,
+        dirs: &dirs,
+        on_focus: cfg.sync.on_focus,
+        bell: cfg.notify.bell,
+        osc9: cfg.notify.osc9,
+    })
 }
 
 /// The config's choices that live in the app, and the starting section.
@@ -98,6 +116,21 @@ fn theme(args: &cli::Args, cfg: &Config) -> Theme {
     let mut palette = Palette::new(tier);
     palette.accent = cfg.ui.accent.as_deref().and_then(rgb);
     Theme { palette, glyphs }
+}
+
+/// Seconds east of UTC, from `date +%z` (`+0200`). The standard library has
+/// no time zones and none of the allowed crates does either (ADR-005); a
+/// clock shown in UTC is the fallback, and only the armed view shows one.
+fn utc_offset() -> i64 {
+    let out = std::process::Command::new("date").arg("+%z").output().ok();
+    let z = out.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string()).unwrap_or_default();
+    let (sign, digits) = match z.split_at_checked(1) {
+        Some(("-", d)) => (-1, d),
+        Some(("+", d)) => (1, d),
+        _ => return 0,
+    };
+    let n: i64 = digits.parse().unwrap_or(0);
+    sign * (n / 100 * 3600 + n % 100 * 60)
 }
 
 fn rgb(hex: &str) -> Option<(u8, u8, u8)> {

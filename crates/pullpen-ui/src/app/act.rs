@@ -554,6 +554,10 @@ impl App {
         let id = run.job.target.clone();
         let n = id.number;
         let single = run.batch.is_none() || run.merging_now;
+        if r.outcome == Outcome::Done && matches!(run.job.action, Action::Merge { .. } | Action::Disarm | Action::Close)
+        {
+            self.unwatch(&id);
+        }
         match &r.outcome {
             Outcome::Done => {
                 if let Some(line) = self.apply_done(&run, r.note.as_deref())

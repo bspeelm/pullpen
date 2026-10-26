@@ -428,13 +428,7 @@ impl App {
                 vec![]
             }
             Cmd::Clear => {
-                for s in &mut self.sections {
-                    if s.section.view == pullpen_core::View::Armed {
-                        let before = s.prs.len();
-                        s.prs.retain(|p| !p.merged());
-                        s.total = s.total.saturating_sub(before - s.prs.len());
-                    }
-                }
+                self.clear_merged();
                 vec![]
             }
             Cmd::Quit | Cmd::QuitAll => {

@@ -1,6 +1,7 @@
 //! Screens as lines of spans. Every function here is pure: state in, lines
 //! out, no terminal. That is what lets the golden tests render them.
 
+pub mod armed;
 pub mod chrome;
 pub mod detail;
 pub mod help;

@@ -12,7 +12,7 @@ fn pr() -> Pr {
         deletions: 0,
         files: 0,
         draft: false,
-        checks: Checks { required_total: 2, required_passed: 2, running: 0, failed: vec![] },
+        checks: Checks { required_total: 2, required_passed: 2, running: 0, failed: vec![], ..Default::default() },
         reviews: Reviews { have: 1, need: 1, approved_by: vec![], changes_requested: false, pending: vec![] },
         mergeable: Mergeable::Clean,
         auto_merge: None,

@@ -159,3 +159,12 @@ behind.
 
 GitHub was already split the same way, for the same reason: GraphQL for
 reading, REST for the merge, review, comment and close endpoints.
+
+## ADR-009 — The armed example's #4809 shows that it is waiting
+
+In the design's armed view, #4809 sits under *waiting* with the reason
+"required check sbom queued", but its state glyph was ✓, ready. A PR
+waiting on a required check is not ready, and the glyph is the one cell the
+design asks the user to trust at a glance. So the example changed, as
+ADR-007's did: `design/tui.js` gives #4809 a running check there, its row
+shows ○, and the goldens were regenerated.

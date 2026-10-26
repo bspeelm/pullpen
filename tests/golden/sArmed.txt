@@ -9,7 +9,7 @@
   gl ○ ◆  #809 Retry artifact upload on 503 with jittered backoff   runner      ci  6/9 running · ~4m left          30m 
   gh ○ ◆  #377 Rotate staging TLS certs via cert-manager            infra       ci  4/9 running, then review        12m 
   gl ✓ ◆  #145 Add PodDisruptionBudget to ingest workers            charts      merge train  position 2 of 3         1h 
-  gh ✓ ◆ #4809 Bump pgx to v5.7.2                                   api         ci  required check sbom queued       5d 
+  gh ○ ◆ #4809 Bump pgx to v5.7.2                                   api         ci  required check sbom queued       5d 
                                                                                                                         
   merged since 09:14  4                                                                                                 
   gh ●   #2288 chore(deps): update dependency vite to v7.1.4        web         merged · squash                     22m 

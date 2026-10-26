@@ -65,12 +65,19 @@ pub struct Loop<'a> {
     pub backend: &'a mut dyn Backend,
     pub dirs: &'a Dirs,
     pub on_focus: bool,
+    pub bell: bool,
+    pub osc9: bool,
 }
 
 pub fn run(mut l: Loop) -> Result<()> {
     l.app.history = load_history(&l.dirs.state.join("history"));
+    let visit = l.dirs.state.join("last-visit");
+    l.app.last_visit =
+        fs::read_to_string(&visit).ok().and_then(|t| t.trim().parse().ok()).map(pullpen_core::time::Timestamp);
     let (mut terminal, mut term) = Term::enter()?;
     let result = event_loop(&mut terminal, &mut term, &mut l);
+    // Losing the visit time costs only a longer "merged since" list next time.
+    let _ = fs::write(visit, pullpen_core::time::Timestamp::now().0.to_string());
     term.leave();
     result
 }
@@ -171,6 +178,18 @@ fn run_effect(e: Effect, terminal: &mut DefaultTerminal, term: &mut Term, l: &mu
         Effect::Refresh { all } => l.backend.refresh(if all { None } else { Some(l.app.active) }),
         Effect::FetchDetail(id) => l.backend.fetch(id, false),
         Effect::FetchDiff(id) => l.backend.fetch(id, true),
+        Effect::Notify(text) => {
+            // The bell, then OSC 9, which terminals that support it turn into
+            // a desktop notification (design §06).
+            let mut out = stdout();
+            if l.bell {
+                write!(out, "\x07")?;
+            }
+            if l.osc9 {
+                write!(out, "\x1b]9;pullpen: {}\x07", text.replace(['\x07', '\x1b'], ""))?;
+            }
+            out.flush()?;
+        }
         Effect::Redraw => terminal.clear()?,
         Effect::SaveHistory => save_history(&l.dirs.state.join("history"), &l.app.history)?,
     }

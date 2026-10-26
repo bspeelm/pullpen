@@ -18,7 +18,7 @@ fn pr(n: u64) -> Pr {
             deletions: 0,
             files: 0,
             draft: false,
-            checks: Checks { required_total: 9, required_passed: 4, running: 5, failed: vec![] },
+            checks: Checks { required_total: 9, required_passed: 4, running: 5, failed: vec![], ..Default::default() },
             reviews: Reviews { have: 0, need: 1, approved_by: vec![], changes_requested: false, pending: vec![] },
             mergeable: Mergeable::Clean,
             auto_merge: None,

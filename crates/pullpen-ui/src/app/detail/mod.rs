@@ -25,7 +25,7 @@ impl App {
     /// Fetches the view needs and has not asked for: the selected PR's
     /// detail for the preview, and the open PR's detail and diff.
     pub fn wants(&mut self) -> Vec<Effect> {
-        let mut out = Vec::new();
+        let mut out = self.notifications();
         let sel = self.section().selected().map(|p| p.id.clone());
         let open = self.detail.as_ref().map(|d| d.id.clone());
         for id in sel.iter().chain(open.iter()) {

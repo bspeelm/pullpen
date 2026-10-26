@@ -3,6 +3,8 @@
 //! terminal and runs the effects this returns.
 
 pub mod act;
+mod armed;
+pub use armed::Watch;
 pub mod cmdline;
 pub mod command;
 mod detail;
@@ -151,6 +153,8 @@ pub enum Effect {
     },
     FetchDetail(PrId),
     FetchDiff(PrId),
+    /// Ring the bell and send an OSC 9 notification, as configured.
+    Notify(String),
     Redraw,
     SaveHistory,
 }
@@ -166,6 +170,12 @@ pub struct App {
     pub requested: HashSet<(PrId, bool)>,
     pub failed: HashSet<(PrId, bool)>,
     pub detail: Option<crate::views::detail::Detail>,
+    pub watches: HashMap<PrId, armed::Watch>,
+    pub notify: Vec<String>,
+    /// When the user last left pullpen, for "merged since".
+    pub last_visit: Option<Timestamp>,
+    /// Seconds east of UTC, for showing clock times.
+    pub tz_offset: i64,
     pub caps: HashMap<String, Capabilities>,
     pub forges: Vec<Forge>,
     pub theme: Theme,
@@ -193,7 +203,7 @@ pub struct App {
 
 impl App {
     pub fn new(sections: Vec<SectionState>, theme: Theme, now: Timestamp) -> Self {
-        App {
+        let mut app = App {
             sections,
             active: 0,
             details: HashMap::new(),
@@ -201,6 +211,10 @@ impl App {
             requested: HashSet::new(),
             failed: HashSet::new(),
             detail: None,
+            watches: HashMap::new(),
+            notify: Vec::new(),
+            last_visit: None,
+            tz_offset: 0,
             caps: HashMap::new(),
             forges: vec![Forge::GitHub, Forge::GitLab],
             theme,
@@ -221,7 +235,9 @@ impl App {
             height: 24,
             last_width: 120,
             now,
-        }
+        };
+        app.arrange();
+        app
     }
 
     pub fn section(&self) -> &SectionState {
@@ -480,7 +496,7 @@ impl App {
             status: self.status(w),
             cmd: self.cmd_line(w),
         };
-        let mut lines = match self.detail_lines(w, h) {
+        let mut lines = match self.detail_lines(w, h).or_else(|| self.armed_lines(w, h)) {
             Some(l) => l,
             None => list_screen(&screen, &ctx),
         };
@@ -564,6 +580,8 @@ impl App {
     /// if it is still there, else at the same index (design §13); marks on
     /// PRs that left are dropped.
     pub fn synced(&mut self, i: usize, mut prs: Vec<Pr>, total: usize) {
+        self.track(i, &mut prs);
+        let total = if self.armed_view(i) { self.armed_count(&prs) } else { total };
         // A PR that changed has a stale detail and diff; a fetch that failed
         // gets another try.
         for p in &prs {

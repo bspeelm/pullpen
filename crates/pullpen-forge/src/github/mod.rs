@@ -132,6 +132,8 @@ impl GitHub {
         if !q.narrowed() && !self.scope.is_empty() {
             parts.push(self.scope.clone());
         }
+        // Search's default order is relevance; every section wants recency.
+        parts.push("sort:updated-desc".into());
         parts.join(" ")
     }
 
