@@ -9,7 +9,11 @@ use crate::prompt::Io;
 
 /// Each setting: its name, what it means, and the values it takes.
 pub const KEYS: &[(&str, &str, &str)] = &[
-    ("merge.default_method", "how to merge when you do not say", "repo, squash, merge, rebase"),
+    (
+        "merge.default_method",
+        "which method M and A use (s, m, r at the prompt override it)",
+        "repo (each repository's default), squash, merge, rebase",
+    ),
     ("merge.delete_branch", "delete the branch after merging", "yes, no"),
     ("notify.bell", "ring when an armed PR merges or needs you", "yes, no"),
     ("notify.osc9", "send a desktop notification as well", "yes, no"),
@@ -20,8 +24,16 @@ pub const KEYS: &[(&str, &str, &str)] = &[
     ("ui.preview", "the preview pane", "auto, on, off"),
     ("ui.accent", "accent colour", "#rrggbb, or blank for the default"),
     ("ui.palette", "a palette file of your own", "a path, or blank"),
-    ("github.scope", "orgs or repos an unscoped GitHub list searches", "space-separated, blank: PRs that involve you"),
-    ("gitlab.groups", "groups an unscoped GitLab list searches", "space-separated"),
+    (
+        "github.scope",
+        "which GitHub PRs lists like All and Agent-opened include",
+        "orgs, users or owner/repo, space-separated; blank: PRs that involve you",
+    ),
+    (
+        "gitlab.groups",
+        "which GitLab merge requests lists like All include",
+        "groups, space-separated; blank: ones that involve you",
+    ),
     ("checkout.worktree", ":checkout makes a worktree", "yes, no"),
 ];
 

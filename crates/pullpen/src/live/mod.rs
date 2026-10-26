@@ -132,7 +132,10 @@ impl Live {
                             total += p.total;
                             prs.extend(p.prs);
                             // The receiver is gone only once the app has quit.
-                            let _ = tx.send(Msg::Up(kind));
+                            let _ = tx.send(match p.hidden {
+                                Some(why) => Msg::Down(kind, why),
+                                None => Msg::Up(kind),
+                            });
                         }
                         Err(err) => failed = Some((kind, e.forge.host().to_string(), err)),
                     }

@@ -51,3 +51,22 @@ fn clones_are_asked_for_and_checked() {
     assert!(c.checkout.worktree);
     assert!(out.contains("is not a git clone"));
 }
+
+#[test]
+fn a_classic_github_token_is_questioned_before_it_is_kept() {
+    // GitHub; host; no gh login; the typed token is classic: decline it, then
+    // skip with a blank one.
+    let mut input = Cursor::new(b"1\n\nn\n".to_vec());
+    let mut out = Vec::new();
+    let mut answers = vec![String::new(), "ghp_classic".to_string()];
+    let mut secret = || Ok(answers.pop().unwrap_or_default());
+    let mut verify = |_: Forge, _: &str, _: &str| Ok("me".to_string());
+    let cli = |_: Forge, _: &str| None;
+    let env = |_: &str| None;
+    let mut d = Deps { verify: &mut verify, cli: &cli, env: &env };
+    let mut io = Io { input: &mut input, out: &mut out, secret: &mut secret };
+    let (c, k) = run(&mut io, &mut d, Config::default(), Credentials::default()).unwrap();
+    let out = String::from_utf8(out).unwrap();
+    assert!(out.contains("classic token") && out.contains("settings/personal-access-tokens/new"));
+    assert!(c.forge.is_empty() && k.token.is_empty(), "the declined classic token was not kept");
+}

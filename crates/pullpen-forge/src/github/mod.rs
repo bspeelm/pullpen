@@ -148,6 +148,17 @@ impl GitHub {
     }
 }
 
+/// The status line's words for rows the forge withheld. No count: the line
+/// is shared by every section, and a section that searches closed PRs too
+/// would report a number no list shows. An org that refuses classic tokens is
+/// common enough, and its fix specific enough, to name.
+fn hidden_reason(why: &str) -> String {
+    match why.split('`').nth(1).filter(|_| why.contains("personal access token (classic)")) {
+        Some(org) => format!("{org} hides its PRs from classic tokens; run `pullpen setup` and use your gh login"),
+        None => format!("some PRs hidden: {why}"),
+    }
+}
+
 fn parse_rules(list: &Value) -> Rules {
     let mut r = Rules::default();
     for rule in list.as_array().into_iter().flatten() {
@@ -467,9 +478,11 @@ impl ForgeTrait for GitHub {
 
     async fn search(&self, q: &Query, _me: &str, limit: usize) -> Result<Page> {
         let text = self.server_query(q);
-        let (mut nodes, mut total, mut after) = (Vec::new(), 0, Value::Null);
+        let (mut nodes, mut total, mut after, mut why) = (Vec::new(), 0, Value::Null, None);
         while nodes.len() < limit {
-            let d = self.gql(SEARCH, json!({ "q": text, "after": after })).await?;
+            let req = self.http.post(self.graphql_url()).bearer_auth(&self.token);
+            let (d, w) = http::graphql_partial(&self.host, req, SEARCH, json!({ "q": text, "after": after })).await?;
+            why = why.or(w);
             total = d.pointer("/search/issueCount").and_then(Value::as_u64).unwrap_or(0) as usize;
             nodes.extend(d.pointer("/search/nodes").and_then(Value::as_array).cloned().unwrap_or_default());
             match d.pointer("/search/pageInfo") {
@@ -477,8 +490,11 @@ impl ForgeTrait for GitHub {
                 _ => break,
             }
         }
+        // A row the token may not read comes back null, counted but empty.
+        let withheld = nodes.iter().filter(|n| n.is_null()).count();
         nodes.retain(|n| n.get("number").is_some());
         nodes.truncate(limit);
+        let hidden = (withheld > 0).then(|| hidden_reason(why.as_deref().unwrap_or("no reason given")));
         for batch in nodes.chunks_mut(DETAIL_BATCH) {
             let ids: Vec<&str> = batch.iter().map(|n| s(n, "/id")).collect();
             let d = self.gql(DETAILS, json!({ "ids": ids })).await?;
@@ -493,7 +509,7 @@ impl ForgeTrait for GitHub {
             let rules = self.rules(s(n, "/repository/nameWithOwner"), s(n, "/baseRefName")).await;
             prs.push(self.to_pr(n, &rules));
         }
-        Ok(Page { prs, total })
+        Ok(Page { prs, total: total.saturating_sub(withheld), hidden })
     }
 
     fn capabilities(&self) -> HashMap<String, Capabilities> {

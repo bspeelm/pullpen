@@ -90,14 +90,38 @@ fn header_secs(r: &Response, name: &str) -> Option<u64> {
 /// field null, so success means at least one non-null field; otherwise the
 /// first error's message becomes the refusal.
 pub async fn graphql(host: &str, req: RequestBuilder, query: &str, vars: Value) -> Result<Value> {
+    graphql_partial(host, req, query, vars).await.map(|(d, _)| d)
+}
+
+/// As `graphql`, and also why part of the answer is missing, when it is:
+/// a search can come back with some rows withheld and the rest intact.
+pub async fn graphql_partial(
+    host: &str,
+    req: RequestBuilder,
+    query: &str,
+    vars: Value,
+) -> Result<(Value, Option<String>)> {
     let body = send(host, req.json(&serde_json::json!({ "query": query, "variables": vars }))).await?;
     let data = body.get("data").filter(|d| d.as_object().is_some_and(|o| o.values().any(|v| !v.is_null())));
     match (data, explanation(&body)) {
         (Some(d), why) => {
-            if let Some(why) = why {
+            if let Some(why) = &why {
                 tracing::warn!(%host, %why, "partial GraphQL answer");
             }
-            Ok(d.clone())
+            // One error per withheld row says the same thing many times.
+            let why = why.map(|w| {
+                let mut seen: Vec<&str> = Vec::new();
+                w.split("; ")
+                    .filter(|p| {
+                        !seen.contains(p) && {
+                            seen.push(p);
+                            true
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join("; ")
+            });
+            Ok((d.clone(), why))
         }
         (None, Some(why)) => Err(Error::Refused(why)),
         (None, None) => Err(Error::Decode("GraphQL answered with neither data nor errors".into())),

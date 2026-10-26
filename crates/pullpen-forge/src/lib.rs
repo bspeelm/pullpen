@@ -43,8 +43,11 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// One section's worth of PRs from one forge.
 pub struct Page {
     pub prs: Vec<Pr>,
-    /// What the forge says matched, which can exceed `prs`.
+    /// What the forge says matched and pullpen may see, which can exceed `prs`.
     pub total: usize,
+    /// Rows the forge counted but would not show, and why: the user should
+    /// know their list is incomplete, not find out by noticing.
+    pub hidden: Option<String>,
 }
 
 /// Who counts as an agent: these logins, plus any login ending in `[bot]`

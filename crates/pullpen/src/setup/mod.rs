@@ -28,7 +28,7 @@ fn kind_of(k: Forge) -> Kind {
 }
 
 const NAMES: [(Forge, &str, &str, &str, &str); 2] = [
-    (Forge::GitHub, "GitHub", "github.com", "gh", "repo, read:org"),
+    (Forge::GitHub, "GitHub", "github.com", "gh", "Pull requests and Contents: read and write"),
     (Forge::GitLab, "GitLab", "gitlab.com", "glab", "api"),
 ];
 
@@ -52,18 +52,32 @@ fn sign_in(io: &mut Io, d: &mut Deps, f: Forge, host: &str, creds: &mut Credenti
         return Ok(Some(login));
     }
     loop {
-        let page = match f {
+        match f {
+            // Organisations can refuse pasted tokens and still accept the
+            // CLI's OAuth login, so the login is the better first answer.
             Forge::GitHub => {
-                format!("https://{host}/settings/tokens/new?scopes={}&description=pullpen", scopes.replace(", ", ","))
+                io.say(&format!("  Easiest: Ctrl-C, run `{cli} auth login`, then `pullpen setup` again."))?;
+                io.say(&format!("  Or make a fine-grained token for the repos you watch, with {scopes}:"))?;
+                io.say(&format!("  https://{host}/settings/personal-access-tokens/new"))?;
             }
             Forge::GitLab => {
-                format!("https://{host}/-/user_settings/personal_access_tokens?name=pullpen&scopes={scopes}")
+                io.say(&format!("  Make a token with the {scopes} scope, then paste it:"))?;
+                io.say(&format!(
+                    "  https://{host}/-/user_settings/personal_access_tokens?name=pullpen&scopes={scopes}"
+                ))?;
             }
-        };
-        io.say(&format!("  Make a token with the {scopes} scope(s) here, then paste it:\n  {page}"))?;
+        }
         let t = io.hidden(&format!("  {name} token (blank to skip {host})"))?;
         if t.is_empty() {
             return Ok(None);
+        }
+        if t.starts_with("ghp_")
+            && !io.yes(
+                "  That is a classic token, which some organisations refuse: their PRs will not show. Use it anyway",
+                false,
+            )?
+        {
+            continue;
         }
         if let Ok(login) = check(io, d, f, host, &t)? {
             creds.set(host, t);
@@ -114,7 +128,10 @@ pub fn run(io: &mut Io, d: &mut Deps, mut cfg: Config, mut creds: Credentials) -
         };
         if f == Forge::GitHub {
             let was = old.and_then(|o| o.scope).unwrap_or_default().replace("org:", "").replace("repo:", "");
-            let a = io.line("  Orgs or repos to watch, space-separated (blank: PRs that involve you)", &was)?;
+            io.say("  Which PRs should lists like All and Agent-opened include?")?;
+            io.say("  Blank: only PRs that involve you (you opened, review, are assigned or mentioned).")?;
+            io.say("  Or name orgs, users or owner/repo to include every PR there, e.g.  acme  acme/api")?;
+            let a = io.line("  Watch", &was)?;
             let terms: Vec<String> = a
                 .split_whitespace()
                 .map(|t| if t.contains('/') { format!("repo:{t}") } else { format!("org:{t}") })
@@ -122,8 +139,12 @@ pub fn run(io: &mut Io, d: &mut Deps, mut cfg: Config, mut creds: Credentials) -
             fc.scope = (!terms.is_empty()).then(|| terms.join(" "));
         } else {
             let was = old.map(|o| o.groups.join(" ")).unwrap_or_default();
-            let a =
-                io.line("  Groups to watch, space-separated (blank: PRs you authored, review or are assigned)", &was)?;
+            let a = {
+                io.say("  Which merge requests should lists like All and Agent-opened include?")?;
+                io.say("  Blank: only ones that involve you (you opened, review or are assigned).")?;
+                io.say("  Or name groups to include every merge request in them, e.g.  platform  platform/infra")?;
+                io.line("  Watch", &was)?
+            };
             fc.groups = a.split_whitespace().map(String::from).collect();
         }
         forges.push(fc);
@@ -137,8 +158,15 @@ pub fn run(io: &mut Io, d: &mut Deps, mut cfg: Config, mut creds: Credentials) -
     io.say("\nMerging")?;
     let methods = ["repo", "squash", "merge", "rebase"];
     let now = methods.iter().position(|m| *m == cfg.merge.default_method).unwrap_or(0);
-    io.say("  How to merge when you do not say: the repo's own default, or always one method.")?;
-    cfg.merge.default_method = methods[io.pick("  Default method", &methods, now)?].to_string();
+    io.say("  When you press M or A, which merge method should pullpen use?")?;
+    io.say("  (You can still pick another for any one merge: s, m or r at the confirm prompt.)")?;
+    let labels = [
+        "repo     whatever each repository is set to use (its default merge button)",
+        "squash   always squash the PR into one commit",
+        "merge    always make a merge commit",
+        "rebase   always rebase the commits onto the base branch",
+    ];
+    cfg.merge.default_method = methods[io.pick("  Merge method", &labels, now)?].to_string();
     cfg.merge.delete_branch = io.yes("  Delete the branch after merging", cfg.merge.delete_branch)?;
     cfg.notify.bell = io.yes("  Ring the bell when an armed PR merges or needs you", cfg.notify.bell)?;
     cfg.notify.osc9 = io.yes("  Send a desktop notification as well", cfg.notify.osc9)?;

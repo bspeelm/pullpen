@@ -342,7 +342,7 @@ impl ForgeTrait for GitLab {
         prs.truncate(limit);
         // A union of several searches overlaps, so its counts would add up
         // to more PRs than exist; the deduplicated rows are the honest total.
-        Ok(Page { total: if several { prs.len() } else { total }, prs })
+        Ok(Page { total: if several { prs.len() } else { total }, prs, hidden: None })
     }
 
     fn capabilities(&self) -> HashMap<String, Capabilities> {

@@ -294,3 +294,23 @@ async fn the_diff_is_asked_for_as_a_diff() {
     let files = gh(&server).diff(&id()).await.unwrap();
     assert_eq!((files[0].path.as_str(), files[0].additions, files[0].deletions), ("x", 1, 1));
 }
+
+#[tokio::test]
+async fn rows_the_token_may_not_read_are_counted_and_explained_not_dropped_silently() {
+    let server = MockServer::start().await;
+    let why = "`SimplySF` forbids access via a personal access token (classic). Please use a GitHub App, OAuth App, or a personal access token with fine-grained permissions.";
+    Mock::given(method("POST"))
+        .and(body_string_contains("search("))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "data": { "search": { "issueCount": 3, "pageInfo": { "hasNextPage": false }, "nodes": [null, null, null] } },
+            "errors": [ { "message": why }, { "message": why }, { "message": why } ]
+        })))
+        .mount(&server)
+        .await;
+    let page = gh(&server).search(&Query::parse("is:open"), "me", 50).await.unwrap();
+    assert_eq!((page.prs.len(), page.total), (0, 0), "the tab does not count what cannot be shown");
+    assert_eq!(
+        page.hidden.as_deref(),
+        Some("SimplySF hides its PRs from classic tokens; run `pullpen setup` and use your gh login")
+    );
+}

@@ -46,17 +46,19 @@ impl Io<'_> {
         }
     }
 
-    /// One of `options` by number or by name; returns its index.
+    /// One of `options` by number or by name; returns its index. An option
+    /// may carry a description after its name, which is shown but not typed.
     pub fn pick(&mut self, q: &str, options: &[&str], default: usize) -> io::Result<usize> {
+        let name = |o: &str| o.split_whitespace().next().unwrap_or("").to_string();
         for (i, o) in options.iter().enumerate() {
             self.say(&format!("  {}  {o}", i + 1))?;
         }
         loop {
-            let a = self.line(q, options[default])?;
+            let a = self.line(q, &name(options[default]))?;
             if let Some(i) = a.parse::<usize>().ok().filter(|i| (1..=options.len()).contains(i)) {
                 return Ok(i - 1);
             }
-            if let Some(i) = options.iter().position(|o| o.eq_ignore_ascii_case(&a)) {
+            if let Some(i) = options.iter().position(|o| name(o).eq_ignore_ascii_case(&a)) {
                 return Ok(i);
             }
             self.say(&format!("  a number from 1 to {}", options.len()))?;
