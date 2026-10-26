@@ -16,10 +16,21 @@ pub fn client() -> reqwest::Client {
         .unwrap_or_default()
 }
 
-/// The forge's own explanation from an error body: GitHub's `message` and
-/// `errors[].message`, GitLab's `message` (a string, or an object of lists)
-/// or `error`.
+/// The forge's own explanation from an error body: GitHub's `errors` (each a
+/// string or an object with a `message`) in preference to its generic
+/// `message`, GitLab's `message` (a string, or an object of lists) or `error`.
 fn explanation(body: &Value) -> Option<String> {
+    let specific: Vec<String> = body
+        .get("errors")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|e| e.as_str().or_else(|| e.get("message").and_then(Value::as_str)).map(String::from))
+        .collect();
+    // GitHub says "Unprocessable Entity" for every 422; the errors say why.
+    if !specific.is_empty() {
+        return Some(specific.join("; "));
+    }
     let mut parts = Vec::new();
     match body.get("message") {
         Some(Value::String(m)) => parts.push(m.clone()),
@@ -33,9 +44,6 @@ fn explanation(body: &Value) -> Option<String> {
         }
         Some(Value::Array(a)) => parts.extend(a.iter().filter_map(Value::as_str).map(String::from)),
         _ => {}
-    }
-    if let Some(errs) = body.get("errors").and_then(Value::as_array) {
-        parts.extend(errs.iter().filter_map(|e| e.get("message").and_then(Value::as_str).map(String::from)));
     }
     if let Some(e) = body.get("error").and_then(Value::as_str) {
         parts.push(e.to_string());

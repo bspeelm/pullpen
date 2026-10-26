@@ -6,8 +6,21 @@ cannot cover is a forge's own judgement: whether GitHub really enables
 auto-merge on this PR, or GitLab really skips a draft. This script is that
 check, run by hand before a release, once per forge.
 
-**Status: not yet run.** It needs a scratch repository on each forge that
-pullpen may write to.
+**GitHub: run on 2026-10-26** against
+[`bspeelm/pullpen-scratch`](https://github.com/bspeelm/pullpen-scratch), partly
+by hand and partly driven in a terminal:
+
+| step | result |
+|---|---|
+| 1. Arm | passed: method prompt, `◆ Armed #6   squash · waiting on CI (0/1)`; #3 armed this way merged on its own when its check passed |
+| 2. Merge | passed: #1 and #2 merged, branches deleted |
+| 3. Batch with a draft | passed: one prompt for two PRs; #5 (green) merged at once, #4 (draft) untouched |
+| 4. Approve your own PR | failed, then fixed: it said `Unprocessable Entity`, because GitHub sends the reason as a plain string, which the parser missed; it now shows GitHub's reason |
+| 5. Disarm | passed: `Auto-merge off for #6   A to re-arm` |
+| 6. Checkout | passed: the clone switched to the PR's branch at its head commit |
+
+**GitLab: not run.** No GitLab project with merge requests has been
+available to write to.
 
 ## Setup
 

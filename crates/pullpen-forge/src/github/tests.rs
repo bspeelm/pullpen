@@ -223,7 +223,7 @@ async fn http_failures_map_to_what_the_ui_does_with_them() {
         .await;
     Mock::given(path("/repos/o/r/pulls/5/reviews"))
         .respond_with(ResponseTemplate::new(422).set_body_json(json!({ "message": "Unprocessable Entity",
-            "errors": [ { "message": "Can not approve your own pull request" } ] })))
+            "errors": ["Review Can not approve your own pull request"], "status": "422" })))
         .mount(&server)
         .await;
     let g = gh(&server);
@@ -234,7 +234,8 @@ async fn http_failures_map_to_what_the_ui_does_with_them() {
     assert_eq!(g.approve(&at(4)).await.unwrap_err(), Error::RateLimited { retry_in: 3 });
     assert_eq!(
         g.approve(&at(5)).await.unwrap_err(),
-        Error::Refused("Unprocessable Entity; Can not approve your own pull request".into())
+        Error::Refused("Review Can not approve your own pull request".into()),
+        "GitHub's errors are plain strings here, and they, not \"Unprocessable Entity\", say why"
     );
 }
 
