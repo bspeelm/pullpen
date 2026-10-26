@@ -66,6 +66,15 @@ impl App {
             .len()
     }
 
+    /// The terminal tab's title: the attention count rides along, so a broken
+    /// branch shows from another tab.
+    pub fn title(&self) -> String {
+        match self.broken() {
+            0 => "pullpen".into(),
+            n => format!("pullpen ✗{n}"),
+        }
+    }
+
     /// `D`: the rows are resolved by hand, and stay gone. Only merged rows
     /// can be; anywhere else it says where it works.
     pub(super) fn dismiss_here(&mut self, ids: &[PrId]) -> Vec<Effect> {
