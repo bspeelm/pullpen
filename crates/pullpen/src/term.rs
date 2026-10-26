@@ -16,7 +16,8 @@ use crossterm::event::{
     self, DisableFocusChange, DisableMouseCapture, EnableFocusChange, EnableMouseCapture, Event, KeyEventKind,
     KeyboardEnhancementFlags, MouseButton, MouseEventKind, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
 };
-use crossterm::terminal::{BeginSynchronizedUpdate, EndSynchronizedUpdate, supports_keyboard_enhancement};
+use crossterm::style::Print;
+use crossterm::terminal::{BeginSynchronizedUpdate, EndSynchronizedUpdate, SetTitle, supports_keyboard_enhancement};
 use crossterm::{execute, queue};
 use pullpen_core::PrId;
 use pullpen_ui::app::{App, Effect, Mouse};
@@ -46,13 +47,17 @@ impl Term {
             execute!(stdout(), PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES))?;
         }
         execute!(stdout(), EnableFocusChange, EnableMouseCapture)?;
+        // Save the window title on the terminal's own stack (XTWINOPS 22),
+        // so leaving can put back whatever the shell had; a terminal without
+        // the stack ignores it, and the shell's next prompt retitles anyway.
+        execute!(stdout(), Print("\x1b[22;0t"), SetTitle("pullpen"))?;
         Ok((terminal, Term { kitty }))
     }
 
     /// Best effort: the terminal may already be gone, and an error here
     /// would only hide the one the caller is about to return.
     fn leave(&self) {
-        let _ = execute!(stdout(), DisableFocusChange, DisableMouseCapture);
+        let _ = execute!(stdout(), DisableFocusChange, DisableMouseCapture, Print("\x1b[23;0t"));
         if self.kitty {
             let _ = execute!(stdout(), PopKeyboardEnhancementFlags);
         }
