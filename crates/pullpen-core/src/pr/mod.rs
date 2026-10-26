@@ -152,6 +152,27 @@ pub struct Pr {
     pub url: String,
     pub repo_default_method: MergeMethod,
     pub repo_allowed_methods: Vec<MergeMethod>,
+    /// The pipeline on the merge commit, once merged and if there is one.
+    #[serde(default)]
+    pub post_merge: Option<Pipeline>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PipelineState {
+    Running,
+    Passed,
+    Failed,
+}
+
+/// What ran on the base branch after a merge: deploys usually live here.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Pipeline {
+    pub state: PipelineState,
+    pub passed: u32,
+    pub total: u32,
+    /// The first failed job if it failed, else the first still running.
+    pub job: String,
+    pub url: String,
 }
 
 impl Pr {

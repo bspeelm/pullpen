@@ -1,7 +1,7 @@
 # Sections and queries
 
 Each tab is a section: a name, a short name for narrow terminals, and a query.
-Five ship:
+Six ship:
 
 | section | query |
 |---|---|
@@ -10,6 +10,7 @@ Five ship:
 | Agent-opened | `is:open is:agent` |
 | Auto-merge armed | `is:armed` |
 | All | `is:open` |
+| Merged | `is:merged merged:7d`, shown as [the merged view](The-merged-view) |
 
 Replace them in `config.toml` (`pullpen settings`, then `e`):
 
@@ -35,6 +36,7 @@ search, and evaluates the rest itself.
 | `org:<name>` `group:<name>` `forge:gh` `forge:gl` | where |
 | `ci:pass` `ci:fail` `ci:running` | checks |
 | `label:<name>` `base:<branch>` | labels, target branch |
+| `merged:7d` `merged:24h` | merged within that long |
 | anything else | text in the title |
 
 A term pullpen does not know is matched against titles, so a typo narrows the

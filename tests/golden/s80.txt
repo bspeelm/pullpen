@@ -1,4 +1,4 @@
-  Mine 6   Review 4   Agent 23   Armed 7   All 96                               
+  Mine 6   Review 4   Agent 23   Armed 7   All 96   Merged 6                    
                                                                                 
              # title                     repo               author    rev   age 
 ▌ gh ○ ◆ #4821 Migrate invoices to led…  acme/api         ◇ claude    1/2    3h 

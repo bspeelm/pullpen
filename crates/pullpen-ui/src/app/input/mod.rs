@@ -429,6 +429,7 @@ impl App {
                 self.input = Input::Messages;
                 vec![]
             }
+            Cmd::Clear if self.view_is(self.active, pullpen_core::View::Merged) => self.clear_landed(),
             Cmd::Clear => {
                 self.clear_merged();
                 vec![]

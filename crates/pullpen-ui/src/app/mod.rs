@@ -4,6 +4,7 @@
 
 pub mod act;
 mod armed;
+mod merged;
 pub use armed::Watch;
 pub mod cmdline;
 pub mod command;
@@ -17,7 +18,9 @@ use std::time::Instant;
 
 use pullpen_core::diff::FileDiff;
 use pullpen_core::time::Timestamp;
-use pullpen_core::{Capabilities, Forge, Job, MergeMethod, Pr, PrDetail, PrId, Readiness, Section, readiness};
+use pullpen_core::{
+    Capabilities, Forge, Job, MergeMethod, PipelineState, Pr, PrDetail, PrId, Readiness, Section, View, readiness,
+};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 
@@ -30,7 +33,7 @@ use crate::span::{Line, fit, lr, markup, overlay, s, sp, with_bg};
 use crate::views::Ctx;
 use crate::views::chrome::{Mode, Status, Tab, status};
 use crate::views::help;
-use crate::views::list::{ListScreen, PREVIEW_W, RowOpts, body_rows, list_screen, row, state_glyph};
+use crate::views::list::{ListScreen, PREVIEW_W, RowOpts, body_rows, glyph, list_screen, row};
 use crate::views::preview::preview;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -159,6 +162,8 @@ pub enum Effect {
     Notify(String),
     Redraw,
     SaveHistory,
+    /// Write `App::cleared`, so cleared Merged rows stay gone next session.
+    SaveCleared,
 }
 
 pub const LOG_MAX: usize = 200;
@@ -173,6 +178,10 @@ pub struct App {
     pub failed: HashSet<(PrId, bool)>,
     pub detail: Option<crate::views::detail::Detail>,
     pub watches: HashMap<PrId, armed::Watch>,
+    /// Merged PRs `:clear` dropped, oldest first.
+    pub cleared: Vec<PrId>,
+    /// Each merged PR's pipeline state as last seen, to ring when it finishes.
+    pub landings: HashMap<PrId, Option<PipelineState>>,
     pub notify: Vec<String>,
     /// When the user last left pullpen, for "merged since".
     pub last_visit: Option<Timestamp>,
@@ -215,6 +224,8 @@ impl App {
             failed: HashSet::new(),
             detail: None,
             watches: HashMap::new(),
+            cleared: Vec::new(),
+            landings: HashMap::new(),
             notify: Vec::new(),
             last_visit: None,
             tz_offset: 0,
@@ -449,7 +460,7 @@ impl App {
                         if sel {
                             num = num.bold();
                         }
-                        let mut l = vec![sp(1), state_glyph(ctx.readiness(p)), sp(1), num];
+                        let mut l = vec![sp(1), glyph(p, ctx.readiness(p)), sp(1), num];
                         l.extend(fit(&[s(&p.title, Tok::Fg)], 40, true));
                         l.push(sp(2));
                         l.push(s(&p.id.repo, Tok::Dim));
@@ -503,10 +514,11 @@ impl App {
             status: self.status(w),
             cmd: self.cmd_line(w),
         };
-        let mut lines = match self.detail_lines(w, h).or_else(|| self.armed_lines(w, h)) {
-            Some(l) => l,
-            None => list_screen(&screen, &ctx),
-        };
+        let mut lines =
+            match self.detail_lines(w, h).or_else(|| self.armed_lines(w, h)).or_else(|| self.merged_lines(w, h)) {
+                Some(l) => l,
+                None => list_screen(&screen, &ctx),
+            };
         if let Some((menu, mw)) = self.menu() {
             let bottom = lines.len().saturating_sub(2);
             let top = bottom.saturating_sub(menu.len());
@@ -593,7 +605,14 @@ impl App {
     /// PRs that left are dropped.
     pub fn synced(&mut self, i: usize, mut prs: Vec<Pr>, total: usize) {
         self.track(i, &mut prs);
-        let total = if self.armed_view(i) { self.armed_count(&prs) } else { total };
+        if self.view_is(i, View::Merged) {
+            self.land(&mut prs);
+        }
+        let total = match () {
+            _ if self.view_is(i, View::Armed) => self.armed_count(&prs),
+            _ if self.view_is(i, View::Merged) => prs.len(),
+            _ => total,
+        };
         // A PR that changed has a stale detail and diff; a fetch that failed
         // gets another try.
         for p in &prs {

@@ -1,4 +1,4 @@
-{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Agent-opened{faint} 23{fg}    {acc b}Auto-merge armed{acc} 7{fg}    {dim}All{faint} 96{fg}     {faint}is:armed + merged since last visit{fg} 
+{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Agent-opened{faint} 23{fg}    {acc b}Auto-merge armed{acc} 7{fg}    {dim}All{faint} 96{fg}    {dim}Merged{faint} 6{fg}   {faint}is:armed + recent merges{fg} 
 {fg}                                                                                                                        
 {fg}  {fg b}needs attention{dim}  2{fg}                                                                                                    
 {acc bg=sel}▌ {dim bg=sel}gh {err bg=sel}✗{fg bg=sel} {acc bg=sel}◆{fg bg=sel} #2290 {fg bg=sel b}Fix hydration mismatch on settings page when local…{fg bg=sel}  {dim bg=sel}web{fg bg=sel}         {err bg=sel}failing{dim bg=sel}  e2e/chromium · 2 retries{fg bg=sel} {dim bg=sel}  18m{fg} 
@@ -12,10 +12,10 @@
 {fg}  {dim}gh {warn}○{fg} {acc}◆{fg} {dim}#4809 {fg}Bump pgx to v5.7.2                                   {dim}api{fg}         {warn}ci{dim}  required check sbom queued{fg}    {dim}   5d{fg} 
 {fg}                                                                                                                        
 {fg}  {fg b}merged since 09:14{dim}  4{fg}                                                                                                 
-{fg}  {dim}gh ●{fg}   {dim}#2288 chore(deps): update dependency vite to v7.1.4{fg}        {dim}web{fg}         {dim}merged · squash{fg}                   {dim}  22m{fg} 
-{fg}  {dim}gl ●{fg}   {dim} #812 Bump go toolchain to 1.25.3{fg}                          {dim}runner{fg}      {dim}merged · squash{fg}                   {dim}  41m{fg} 
-{fg}  {dim}gh ●{fg}   {dim}#1199 Ledger: emit backfill progress metrics{fg}               {dim}billing{fg}     {dim}merged · squash{fg}                   {dim}   1h{fg} 
-{fg}  {dim}gh ●{fg}   {dim}#4815 Remove deprecated v1 webhooks handler{fg}                {dim}api{fg}         {dim}merged · rebase{fg}                   {dim}   1h{fg} 
+{fg}  {dim}gh {warn}○{fg}   {dim}#2288 chore(deps): update dependency vite to v7.1.4{fg}        {dim}web{fg}         {dim}merged · squash{fg}                   {dim}  22m{fg} 
+{fg}  {dim}gl {warn}○{fg}   {dim} #812 Bump go toolchain to 1.25.3{fg}                          {dim}runner{fg}      {dim}merged · squash{fg}                   {dim}  41m{fg} 
+{fg}  {dim}gh {ok}✓{fg}   {dim}#1199 Ledger: emit backfill progress metrics{fg}               {dim}billing{fg}     {dim}merged · squash{fg}                   {dim}   1h{fg} 
+{fg}  {dim}gh {err}✗{fg}   {dim}#4815 Remove deprecated v1 webhooks handler{fg}                {dim}api{fg}         {dim}merged · rebase{fg}                   {dim}   1h{fg} 
 {fg}                                                                                                                        
 {fg}                                                                                                                        
 {fg}                                                                                                                        

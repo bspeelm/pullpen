@@ -73,6 +73,9 @@ pub struct Loop<'a> {
 
 pub fn run(mut l: Loop) -> Result<()> {
     l.app.history = load_history(&l.dirs.state.join("history"));
+    // An unreadable list only brings back rows that were cleared; :clear again.
+    let cleared = fs::read_to_string(l.dirs.state.join("cleared.json")).ok();
+    l.app.set_cleared(cleared.and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default());
     let visit = l.dirs.state.join("last-visit");
     l.app.last_visit =
         fs::read_to_string(&visit).ok().and_then(|t| t.trim().parse().ok()).map(pullpen_core::time::Timestamp);
@@ -214,6 +217,11 @@ fn run_effect(e: Effect, terminal: &mut DefaultTerminal, term: &mut Term, l: &mu
         }
         Effect::Redraw => terminal.clear()?,
         Effect::SaveHistory => save_history(&l.dirs.state.join("history"), &l.app.history)?,
+        Effect::SaveCleared => {
+            let path = l.dirs.state.join("cleared.json");
+            fs::write(&path, serde_json::to_string(&l.app.cleared)?)
+                .with_context(|| format!("writing {}", path.display()))?
+        }
     }
     Ok(())
 }

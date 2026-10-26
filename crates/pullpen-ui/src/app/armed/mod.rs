@@ -20,8 +20,8 @@ pub struct Watch {
 }
 
 impl App {
-    pub(super) fn armed_view(&self, i: usize) -> bool {
-        self.sections.get(i).is_some_and(|s| s.section.view == View::Armed)
+    pub(super) fn view_is(&self, i: usize, v: View) -> bool {
+        self.sections.get(i).is_some_and(|s| s.section.view == v)
     }
 
     fn group_of(&self, p: &Pr) -> Option<Group> {
@@ -62,7 +62,7 @@ impl App {
                 Watch { group: g, since, disarmed: disarmed || prev.is_some_and(|w| w.disarmed) },
             );
         }
-        if self.armed_view(i) {
+        if self.view_is(i, View::Armed) {
             prs.sort_by_key(|p| self.group_of(p).unwrap_or(Group::Waiting));
         }
     }
@@ -71,9 +71,13 @@ impl App {
     /// before any sync: first sight rings nothing.
     pub(super) fn arrange(&mut self) {
         for i in 0..self.sections.len() {
-            if self.armed_view(i) {
+            if self.view_is(i, View::Armed) || self.view_is(i, View::Merged) {
                 let mut prs = std::mem::take(&mut self.sections[i].prs);
                 self.track(i, &mut prs);
+                if self.view_is(i, View::Merged) {
+                    self.land(&mut prs);
+                    self.sections[i].total = prs.len();
+                }
                 self.sections[i].prs = prs;
             }
         }
@@ -125,12 +129,51 @@ impl App {
         markup(&format!("{{a|◆}} {{f|{first}}}{tail}"))
     }
 
-    /// The armed view's lines, or `None` when the active section is a list.
+    /// The armed view's lines, or `None` when the active section is not it.
     pub(super) fn armed_lines(&self, w: usize, h: usize) -> Option<Vec<Line>> {
-        if !self.armed_view(self.active) || self.detail.is_some() {
+        if !self.view_is(self.active, View::Armed) || self.detail.is_some() {
             return None;
         }
         let ctx = self.ctx();
+        let sec = self.section();
+        let rows = sec.visible();
+        let all: Vec<Pr> = rows.iter().map(|p| (*p).clone()).collect();
+        let groups = [Group::Attention, Group::Waiting, Group::Merged]
+            .into_iter()
+            .map(|g| {
+                let title = match g {
+                    Group::Attention => "needs attention".to_string(),
+                    Group::Waiting => "waiting".into(),
+                    Group::Merged => format!("merged {}", self.since_label()),
+                };
+                let members = rows
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, p)| self.group_of(p) == Some(g))
+                    .map(|(i, p)| {
+                        let disarmed = self.watches.get(&p.id).is_some_and(|w| w.disarmed);
+                        let why = why(p, g, disarmed, &all);
+                        (i, row(p, w - 1, i == sec.sel, &why, self.when(p, g), false, &ctx))
+                    })
+                    .collect();
+                (title, members)
+            })
+            .collect();
+        let right = format!("{} + recent merges", sec.section.query);
+        Some(self.grouped(w, h, &right, groups, self.armed_summary()))
+    }
+
+    /// A grouped view's frame: tabs, each non-empty group under its
+    /// heading, scrolled to keep the cursor in view, then the status line
+    /// and the summary while nothing else wants the last row.
+    pub(super) fn grouped(
+        &self,
+        w: usize,
+        h: usize,
+        right: &str,
+        groups: Vec<(String, Vec<(usize, Line)>)>,
+        summary: Line,
+    ) -> Vec<Line> {
         let sec = self.section();
         let tab: Vec<_> = self
             .sections
@@ -141,29 +184,15 @@ impl App {
                 count: x.total,
             })
             .collect();
-        let right = format!("{} + merged since last visit", sec.section.query);
-        let mut out = vec![tabs(&tab, self.active, w, self.narrow(w), &right), vec![]];
-        let rows = sec.visible();
-        let all: Vec<Pr> = rows.iter().map(|p| (*p).clone()).collect();
+        let mut out = vec![tabs(&tab, self.active, w, self.narrow(w), right), vec![]];
         let (mut body, mut sel_line) = (Vec::new(), 0);
-        for g in [Group::Attention, Group::Waiting, Group::Merged] {
-            let members: Vec<(usize, &&Pr)> =
-                rows.iter().enumerate().filter(|(_, p)| self.group_of(p) == Some(g)).collect();
-            if members.is_empty() {
-                continue;
-            }
-            let title = match g {
-                Group::Attention => "needs attention".to_string(),
-                Group::Waiting => "waiting".into(),
-                Group::Merged => format!("merged {}", self.since_label()),
-            };
+        for (title, members) in groups.into_iter().filter(|(_, m)| !m.is_empty()) {
             body.push(heading(&title, members.len()));
-            for (i, p) in members {
+            for (i, line) in members {
                 if i == sec.sel {
                     sel_line = body.len();
                 }
-                let disarmed = self.watches.get(&p.id).is_some_and(|w| w.disarmed);
-                body.push(row(p, w - 1, i == sec.sel, &why(p, g, disarmed, &all), self.when(p, g), &ctx));
+                body.push(line);
             }
             body.push(vec![]);
         }
@@ -175,11 +204,11 @@ impl App {
         }
         out.push(crate::views::chrome::status(w, &self.status(w)));
         let cmd = match (&self.input, &self.message) {
-            (Input::Normal, None) if self.jobs.is_empty() => self.armed_summary(),
+            (Input::Normal, None) if self.jobs.is_empty() => summary,
             _ => self.cmd_line(w),
         };
         out.push(cmd);
-        Some(out.into_iter().map(|l| crate::span::fit(&l, w, false)).collect())
+        out.into_iter().map(|l| crate::span::fit(&l, w, false)).collect()
     }
 
     /// Rows still armed: what the tab counts and the position counts in.

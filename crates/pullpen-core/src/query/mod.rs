@@ -39,6 +39,8 @@ pub enum Term {
     Ci(Ci),
     Label(String),
     Base(String),
+    /// `merged:7d`: merged within that long of now, as seconds.
+    MergedWithin(i64),
     Text(String),
 }
 
@@ -106,6 +108,7 @@ impl Query {
                     ("ci", "running") => Term::Ci(Ci::Running),
                     ("label", l) => Term::Label(l.into()),
                     ("base", b) => Term::Base(b.into()),
+                    ("merged", w) => crate::time::parse_age(w).map_or(Term::Text(tok.into()), Term::MergedWithin),
                     _ => Term::Text(tok.into()),
                 }
             })

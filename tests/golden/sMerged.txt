@@ -1,0 +1,40 @@
+  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96    Merged 6        is:merged merged:7d 
+                                                                                                                        
+  failed  1                                                                                                             
+▌ gh ✗   #4815 Remove deprecated v1 webhooks handler                api         failed  deploy-production            1h 
+                                                                                                                        
+  running  2                                                                                                            
+  gh ○   #2288 chore(deps): update dependency vite to v7.1.4        web         running  5/7 · deploy-staging       22m 
+  gl ○    #812 Bump go toolchain to 1.25.3                          runner      running  2/4 · build                41m 
+                                                                                                                        
+  done  3                                                                                                               
+  gh ✓   #1199 Ledger: emit backfill progress metrics               billing     passed  6/6                          1h 
+  gh ✓   #4811 Split payments service config by environment         api         passed  11/11                        3h 
+  gl ●     #60 Fix broken links in runner install guide             docs        no pipeline                          5h 
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+ NORMAL   Merged  1/6                                                 ◆ 7 armed   ✗ 3 failing   synced 40s   gh ✓  gl ✓ 
+✗ 1 failed   ·   2 running   ·   3 done                                                                                 

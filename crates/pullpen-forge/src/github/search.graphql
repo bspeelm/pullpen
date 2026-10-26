@@ -13,6 +13,9 @@ query($q: String!, $after: String) {
         reviewRequests(first: 10) { nodes { requestedReviewer { __typename ... on User { login } ... on Team { slug organization { login } } } } }
         latestOpinionatedReviews(first: 20) { nodes { state author { login } } }
         commits(last: 1) { nodes { commit { statusCheckRollup { state contexts(first: 1) { totalCount } } } } }
+        mergeCommit { oid statusCheckRollup { state contexts(first: 50) {
+          nodes { __typename ... on CheckRun { name status conclusion } ... on StatusContext { context state } }
+        } } }
       }
     }
   }

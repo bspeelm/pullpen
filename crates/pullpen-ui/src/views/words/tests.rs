@@ -29,6 +29,7 @@ fn pr(n: u64) -> Pr {
             url: String::new(),
             repo_default_method: MergeMethod::Squash,
             repo_allowed_methods: vec![MergeMethod::Squash],
+            post_merge: None,
         }
     }
 }

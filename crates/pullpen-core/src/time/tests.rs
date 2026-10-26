@@ -1,4 +1,4 @@
-use crate::time::{Timestamp, age, parse_age, parse_rfc3339};
+use crate::time::{Timestamp, age, parse_age, parse_rfc3339, rfc3339};
 
 #[test]
 fn ages_round_down_to_the_largest_unit() {
@@ -38,4 +38,11 @@ fn rfc3339_in_the_shapes_both_forges_send() {
     assert_eq!(parse_rfc3339("2026-10-25T21:28:04+02:00"), Some(Timestamp(1_792_956_484)));
     assert_eq!(parse_rfc3339("2000-02-29T00:00:00Z"), Some(Timestamp(951_782_400)));
     assert_eq!(parse_rfc3339("yesterday"), None);
+}
+
+#[test]
+fn rfc3339_round_trips_including_leap_days() {
+    for t in ["2026-10-25T19:28:04Z", "2024-02-29T00:00:00Z", "1999-12-31T23:59:59Z", "2000-03-01T12:00:00Z"] {
+        assert_eq!(rfc3339(parse_rfc3339(t).unwrap()), t);
+    }
 }
