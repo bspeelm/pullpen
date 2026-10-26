@@ -109,6 +109,63 @@ pub const ENTRIES: &[Entry] = &[
     e("j k ^d ^u gg G", "scroll the focused pane (detail)", Group::More),
 ];
 
+/// Actions `[keys]` in config.toml can rebind, by name, with the key each
+/// is bound to by default. A rebinding adds a key; the default keeps working.
+pub const NAMED: &[(&str, Key)] = &[
+    ("merge", Key::Char('M')),
+    ("arm", Key::Char('A')),
+    ("approve", Key::Char('a')),
+    ("comment", Key::Char('c')),
+    ("close", Key::Char('x')),
+    ("open", Key::Char('o')),
+    ("diff", Key::Char('d')),
+    ("detail", Key::Enter),
+    ("refresh", Key::Char('r')),
+    ("refresh_all", Key::Char('R')),
+    ("preview", Key::Char('p')),
+    ("mark", Key::Char(' ')),
+    ("mark_range", Key::Char('V')),
+    ("filter", Key::Char('/')),
+    ("help", Key::Char('?')),
+    ("command", Key::Char(':')),
+    ("quit", Key::Char('q')),
+    ("down", Key::Char('j')),
+    ("up", Key::Char('k')),
+    ("bottom", Key::Char('G')),
+    ("prev_section", Key::Char('h')),
+    ("next_section", Key::Char('l')),
+];
+
+/// `M`, `^x`, `Space`, `Enter`, `Esc`, `Tab`.
+pub fn parse_key(s: &str) -> Option<Key> {
+    let mut chars = s.chars();
+    match (s, chars.next(), chars.next(), chars.next()) {
+        ("Space", ..) => Some(Key::Char(' ')),
+        ("Enter", ..) => Some(Key::Enter),
+        ("Esc", ..) => Some(Key::Esc),
+        ("Tab", ..) => Some(Key::Tab),
+        (_, Some('^'), Some(c), None) => Some(Key::Ctrl(c.to_ascii_lowercase())),
+        (_, Some(c), None, _) => Some(Key::Char(c)),
+        _ => None,
+    }
+}
+
+/// `[keys]` as a map from the key pressed to the key it stands for, and
+/// the entries that could not be read. Names may carry a view prefix
+/// (`list.merge`), as the plan's example writes them.
+pub fn remaps<'a>(cfg: impl IntoIterator<Item = (&'a String, &'a String)>) -> (Vec<(Key, Key)>, Vec<String>) {
+    let (mut ok, mut bad) = (Vec::new(), Vec::new());
+    for (name, key) in cfg {
+        let bare = name.rsplit('.').next().unwrap_or(name);
+        match (NAMED.iter().find(|(n, _)| *n == bare), parse_key(key)) {
+            (Some((_, to)), Some(from)) => ok.push((from, *to)),
+            (None, _) => bad.push(format!("[keys] {name}: no such action")),
+            (_, None) => bad.push(format!("[keys] {name}: cannot read the key {key:?}")),
+        }
+    }
+    (ok, bad)
+}
+
 /// The display form of an entry's keys for `n` sections.
 pub fn keys_for(e: &Entry, sections: usize) -> String {
     e.keys.replace("1–N", &format!("1–{}", sections.clamp(1, 9)))

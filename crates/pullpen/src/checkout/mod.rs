@@ -60,7 +60,7 @@ fn diverged(branch: &str) -> String {
 /// its remotes points at the repo.
 fn clone_for(id: &PrId, repos: &HashMap<String, String>, cwd: &Path) -> Result<PathBuf, String> {
     if let Some(p) = repos.get(&id.repo) {
-        return Ok(expand(p));
+        return Ok(crate::config::expand(p));
     }
     if remote_for(cwd, &id.repo).is_some() {
         return Ok(cwd.to_path_buf());
@@ -97,13 +97,6 @@ fn git(dir: &Path, args: &[&str]) -> Result<String, String> {
 
 fn home() -> Option<PathBuf> {
     std::env::var_os("HOME").map(PathBuf::from)
-}
-
-fn expand(p: &str) -> PathBuf {
-    match (p.strip_prefix("~/"), home()) {
-        (Some(rest), Some(h)) => h.join(rest),
-        _ => PathBuf::from(p),
-    }
 }
 
 fn tilde(p: &Path) -> String {

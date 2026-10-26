@@ -32,11 +32,16 @@ fn main() -> Result<()> {
     tracing::info!(version = env!("CARGO_PKG_VERSION"), fixtures = args.fixtures, "start");
     let cfg_path = args.config.clone().unwrap_or_else(|| dirs.config.join("config.toml"));
     let (cfg, cfg_err) = Config::load(&cfg_path);
+    if let Some(cli::Command::Config { action: cli::ConfigAction::Check }) = &args.command {
+        let found = config::check::check(&cfg_path, &cfg, cfg_err.as_deref(), &|k| env::var(k).ok());
+        std::process::exit(if config::check::report(&found) { 0 } else { 1 });
+    }
     let theme = theme(&args, &cfg);
     if args.fixtures {
         let mut app = fixtures::app(theme);
         apply(&mut app, &cfg, &args);
         let mut backend = fixtures::Fake::new();
+        let remap = remap(&mut app, &cfg);
         return term::run(term::Loop {
             app: &mut app,
             backend: &mut backend,
@@ -44,6 +49,7 @@ fn main() -> Result<()> {
             on_focus: false,
             bell: false,
             osc9: false,
+            remap,
         });
     }
     let sections = cfg.sections();
@@ -71,6 +77,7 @@ fn main() -> Result<()> {
         );
     }
     app.tz_offset = utc_offset();
+    let remap = remap(&mut app, &cfg);
     term::run(term::Loop {
         app: &mut app,
         backend: &mut backend,
@@ -78,7 +85,17 @@ fn main() -> Result<()> {
         on_focus: cfg.sync.on_focus,
         bell: cfg.notify.bell,
         osc9: cfg.notify.osc9,
+        remap,
     })
+}
+
+/// `[keys]`, with anything unreadable said on the command line.
+fn remap(app: &mut App, cfg: &Config) -> Vec<(pullpen_ui::keymap::Key, pullpen_ui::keymap::Key)> {
+    let (ok, bad) = pullpen_ui::keymap::remaps(&cfg.keys);
+    for b in bad {
+        app.error(&b, Mode::Normal);
+    }
+    ok
 }
 
 /// The config's choices that live in the app, and the starting section.
@@ -102,7 +119,11 @@ fn apply(app: &mut App, cfg: &Config, args: &cli::Args) {
 }
 
 fn theme(args: &cli::Args, cfg: &Config) -> Theme {
+    // NO_COLOR (no-color.org): any non-empty value, unless a flag asks for
+    // colours outright.
+    let no_color = env::var("NO_COLOR").is_ok_and(|v| !v.is_empty());
     let tier = match (args.colors, cfg.ui.colors.as_str()) {
+        (None, _) if no_color => Tier::Mono,
         (Some(cli::Colors::True), _) | (None, "true") => Tier::True,
         (Some(cli::Colors::C256), _) | (None, "256") => Tier::C256,
         (Some(cli::Colors::C16), _) | (None, "16") => Tier::C16,
@@ -114,7 +135,15 @@ fn theme(args: &cli::Args, cfg: &Config) -> Theme {
         _ => Glyphs::Unicode,
     };
     let mut palette = Palette::new(tier);
-    palette.accent = cfg.ui.accent.as_deref().and_then(rgb);
+    palette.accent = cfg.ui.accent.as_deref().and_then(pullpen_ui::palette::parse_hex);
+    // An unreadable palette file is reported by `pullpen config check`; the
+    // built-in palette is the fallback.
+    palette.custom = cfg
+        .ui
+        .palette
+        .as_deref()
+        .and_then(|p| std::fs::read_to_string(config::expand(p)).ok())
+        .and_then(|t| pullpen_ui::palette::parse_file(&t).ok());
     Theme { palette, glyphs }
 }
 
@@ -131,12 +160,6 @@ fn utc_offset() -> i64 {
     };
     let n: i64 = digits.parse().unwrap_or(0);
     sign * (n / 100 * 3600 + n % 100 * 60)
-}
-
-fn rgb(hex: &str) -> Option<(u8, u8, u8)> {
-    let h = hex.strip_prefix('#')?;
-    let n = u32::from_str_radix(h, 16).ok().filter(|_| h.len() == 6)?;
-    Some(((n >> 16) as u8, (n >> 8) as u8, n as u8))
 }
 
 /// Logs go to a file and never to stdout or stderr, which belong to the TUI.

@@ -379,7 +379,7 @@ Armed view grouping (needs attention / waiting / merged since), *why* column, `:
 **Exit:** `sArmed` golden passes; a fixture sync sequence (armed → ci running → merged) produces the right groups and exactly one notification.
 
 ### M7 — Polish and release
-`NO_COLOR`; PR numbers as OSC 8 links; styled underline for matches where supported; mouse (click row, double-click opens detail, click tab, wheel); `[keys]` remapping; `config.example.toml` and README with a 30-second GIF (vhs); `cargo-dist` release with linux/macos binaries, every artifact and `checksums.txt` attested by `actions/attest-build-provenance`; release in two steps (`make release` opens the version-bump PR, `make release-tag` tags the merged commit); Homebrew tap formula, with Copr and AUR as their own issues; `pullpen --version`, `pullpen config check`.
+`NO_COLOR` (glyphs, bold and reverse video carry it); coloured underline for matches; mouse (click row, double-click opens detail, click tab, wheel); `[keys]` remapping by action name; `config.example.toml`; a release workflow building linux and macOS binaries for amd64 and arm64, every artifact and `checksums.txt` attested by `actions/attest-build-provenance` (ADR-011); release in two steps (`make release` opens the version-bump PR, `make release-tag` tags the merged commit); a Homebrew formula template, with the tap, Copr and AUR as their own issues; OSC 8 links on PR numbers are deferred (ADR-010); a README GIF waits on `vhs`; `pullpen --version`, `pullpen config check`.
 **Exit:** fresh machine with only `gh auth login` done: `brew install <tap>/pullpen && pullpen` works.
 
 ---

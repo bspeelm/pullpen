@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::{Parser, ValueEnum};
+use clap::{Parser, Subcommand, ValueEnum};
 
 #[derive(Parser, Debug)]
 #[command(name = "pullpen", version, about)]
@@ -24,6 +24,23 @@ pub struct Args {
     /// Section to open on, by name or short name.
     #[arg(long, value_name = "NAME")]
     pub section: Option<String>,
+
+    #[command(subcommand)]
+    pub command: Option<Command>,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum Command {
+    /// Check config.toml and each forge's sign-in, and say how to fix what fails.
+    Config {
+        #[command(subcommand)]
+        action: ConfigAction,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum ConfigAction {
+    Check,
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]

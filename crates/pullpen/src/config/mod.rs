@@ -2,6 +2,8 @@
 //! valid config; a file that cannot be read is reported and the defaults
 //! are used, rather than refusing to start.
 
+pub mod check;
+
 use std::collections::HashMap;
 use std::path::Path;
 use std::time::Duration;
@@ -192,6 +194,14 @@ const DEFAULT_SECTIONS: [(&str, &str, &str, &str); 5] = [
     ("Auto-merge armed", "Armed", "is:armed", "armed"),
     ("All", "All", "is:open", "list"),
 ];
+
+/// `~/x` as a path under $HOME.
+pub fn expand(p: &str) -> std::path::PathBuf {
+    match (p.strip_prefix("~/"), std::env::var_os("HOME")) {
+        (Some(rest), Some(h)) => std::path::PathBuf::from(h).join(rest),
+        _ => std::path::PathBuf::from(p),
+    }
+}
 
 impl Config {
     /// The config, and the reason it could not be read if it could not.

@@ -168,3 +168,32 @@ waiting on a required check is not ready, and the glyph is the one cell the
 design asks the user to trust at a glance. So the example changed, as
 ADR-007's did: `design/tui.js` gives #4809 a running check there, its row
 shows ○, and the goldens were regenerated.
+
+## ADR-010 — PR numbers are not OSC 8 links yet
+
+The design asks for PR numbers as OSC 8 hyperlinks, so cmd-click opens them.
+ratatui 0.30's cells carry a symbol and a style and nothing else; there is
+no hyperlink attribute. The workaround in circulation writes the escape
+sequence into a cell's symbol, where ratatui measures it as text when
+deciding which cells to redraw, and the layout this project tests byte for
+byte (ADR-002) would rest on that measurement going right.
+
+`o` opens the selected PR in the browser, so nothing is unreachable without
+links. This is deferred, not refused: it returns when ratatui gains a link
+attribute, or with a test that proves the workaround leaves every golden
+screen intact.
+
+## ADR-011 — Releases are a workflow in this repository, not cargo-dist
+
+`PLAN.md` named `cargo-dist`. It is not installed where this project is
+built, so the workflow it would generate could not be read and run here
+before being trusted, which is the opposite of what bothy's release
+records ask for.
+
+`.github/workflows/release.yml` is about a hundred lines. It runs `make
+check`, refuses a tag that disagrees with `Cargo.toml`, builds four targets,
+packages them under fixed names, writes `checksums.txt`, attests every
+artifact including the checksums (bothy's ADR-030), and publishes. Each step
+can be read in a minute. cargo-dist would add installers and a Homebrew
+tap update in exchange for generated code, and either can be taken up later
+by a record that replaces this one.

@@ -18,3 +18,15 @@ fn section_keys_follow_the_section_count() {
     assert_eq!(keys_for(e, 5), "1–5");
     assert_eq!(keys_for(e, 12), "1–9");
 }
+
+#[test]
+fn remaps_read_names_with_or_without_a_view_prefix() {
+    let cfg = [
+        ("list.merge".to_string(), "m".to_string()),
+        ("quit".to_string(), "^q".to_string()),
+        ("nope".to_string(), "z".to_string()),
+    ];
+    let (ok, bad) = remaps(cfg.iter().map(|(a, b)| (a, b)));
+    assert_eq!(ok, vec![(Key::Char('m'), Key::Char('M')), (Key::Ctrl('q'), Key::Char('q'))]);
+    assert_eq!(bad, vec!["[keys] nope: no such action".to_string()]);
+}

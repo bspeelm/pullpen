@@ -9,6 +9,8 @@ pub mod cmdline;
 pub mod command;
 mod detail;
 pub mod input;
+mod mouse;
+pub use mouse::Mouse;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::Instant;
@@ -176,6 +178,7 @@ pub struct App {
     pub last_visit: Option<Timestamp>,
     /// Seconds east of UTC, for showing clock times.
     pub tz_offset: i64,
+    pub last_click: Option<(usize, Instant)>,
     pub caps: HashMap<String, Capabilities>,
     pub forges: Vec<Forge>,
     pub theme: Theme,
@@ -215,6 +218,7 @@ impl App {
             notify: Vec::new(),
             last_visit: None,
             tz_offset: 0,
+            last_click: None,
             caps: HashMap::new(),
             forges: vec![Forge::GitHub, Forge::GitLab],
             theme,

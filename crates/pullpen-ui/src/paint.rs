@@ -6,7 +6,7 @@ use ratatui::layout::Rect;
 use ratatui::style::{Color, Modifier, Style};
 
 use crate::glyphs::Glyphs;
-use crate::palette::{Palette, Tok};
+use crate::palette::{Palette, Tier, Tok};
 use crate::span::Line;
 
 #[derive(Clone, Copy, Debug)]
@@ -21,6 +21,11 @@ impl Theme {
         let mut bold = bold;
         match bg.map(|b| (b, self.palette.color(b))) {
             Some((_, Some(c))) => st = st.bg(c),
+            // Without colour, a filled label (mode block, verdict) is reverse
+            // video, so it still reads as a label.
+            Some((Tok::Acc | Tok::Warn | Tok::Ok | Tok::Err | Tok::Dim, None)) if self.palette.tier == Tier::Mono => {
+                st = st.add_modifier(Modifier::REVERSED);
+            }
             // No reliable selection shade in this tier: the row turns bold
             // and the gutter mark carries the rest (design §03).
             Some((Tok::Sel, None)) => bold = true,
@@ -30,7 +35,12 @@ impl Theme {
             st = st.add_modifier(Modifier::BOLD);
         }
         if underline {
+            // The underline takes the text's colour as its own, so terminals
+            // that draw coloured underlines show the match in accent (design §13).
             st = st.add_modifier(Modifier::UNDERLINED);
+            if let Some(c) = self.palette.color(fg) {
+                st = st.underline_color(c);
+            }
         }
         st
     }

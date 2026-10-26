@@ -105,3 +105,27 @@ fn every_flag_the_plan_names_for_m0_exists() {
         assert!(help.contains(flag), "PLAN.md M0 names {flag}, but `pullpen --help` does not offer it");
     }
 }
+
+/// CLAUDE.md: unit tests live in a sibling `tests.rs`. The code budget
+/// tells tests from code by that filename alone (ADR-004), so an inline
+/// `mod tests { … }` would be counted as code and slip past the rule.
+#[test]
+fn no_test_module_is_inline() {
+    fn walk(dir: &Path, out: &mut Vec<String>) {
+        for e in fs::read_dir(dir).unwrap().flatten() {
+            let p = e.path();
+            if p.is_dir() {
+                walk(&p, out);
+            } else if p.extension().is_some_and(|x| x == "rs")
+                && fs::read_to_string(&p).unwrap().contains("mod tests {")
+            {
+                out.push(p.display().to_string());
+            }
+        }
+    }
+    let mut bad = Vec::new();
+    for c in fs::read_dir(root().join("crates")).unwrap().flatten() {
+        walk(&c.path().join("src"), &mut bad);
+    }
+    assert!(bad.is_empty(), "inline test modules; move them to a sibling tests.rs:\n{}", bad.join("\n"));
+}

@@ -13,13 +13,13 @@ use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
 use crossterm::event::{
-    self, DisableFocusChange, EnableFocusChange, Event, KeyEventKind, KeyboardEnhancementFlags,
-    PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+    self, DisableFocusChange, DisableMouseCapture, EnableFocusChange, EnableMouseCapture, Event, KeyEventKind,
+    KeyboardEnhancementFlags, MouseButton, MouseEventKind, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
 };
 use crossterm::terminal::{BeginSynchronizedUpdate, EndSynchronizedUpdate, supports_keyboard_enhancement};
 use crossterm::{execute, queue};
 use pullpen_core::PrId;
-use pullpen_ui::app::{App, Effect};
+use pullpen_ui::app::{App, Effect, Mouse};
 use pullpen_ui::views::chrome::Mode;
 use ratatui::DefaultTerminal;
 
@@ -45,14 +45,14 @@ impl Term {
         if kitty {
             execute!(stdout(), PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES))?;
         }
-        execute!(stdout(), EnableFocusChange)?;
+        execute!(stdout(), EnableFocusChange, EnableMouseCapture)?;
         Ok((terminal, Term { kitty }))
     }
 
     /// Best effort: the terminal may already be gone, and an error here
     /// would only hide the one the caller is about to return.
     fn leave(&self) {
-        let _ = execute!(stdout(), DisableFocusChange);
+        let _ = execute!(stdout(), DisableFocusChange, DisableMouseCapture);
         if self.kitty {
             let _ = execute!(stdout(), PopKeyboardEnhancementFlags);
         }
@@ -67,6 +67,8 @@ pub struct Loop<'a> {
     pub on_focus: bool,
     pub bell: bool,
     pub osc9: bool,
+    /// `[keys]`: a pressed key and the key it stands for.
+    pub remap: Vec<(pullpen_ui::keymap::Key, pullpen_ui::keymap::Key)>,
 }
 
 pub fn run(mut l: Loop) -> Result<()> {
@@ -112,10 +114,30 @@ fn event_loop(terminal: &mut DefaultTerminal, term: &mut Term, l: &mut Loop) -> 
             match event::read()? {
                 Event::Key(k) if k.kind != KeyEventKind::Release => {
                     if let Some(key) = keys::convert(k) {
+                        // Remaps apply only where a key is an action, not inside
+                        // the command line, filter or help, where it is text.
+                        let typing = !matches!(l.app.input, pullpen_ui::app::Input::Normal);
+                        let key = if typing {
+                            key
+                        } else {
+                            l.remap.iter().find(|(from, _)| *from == key).map_or(key, |(_, to)| *to)
+                        };
                         effects.extend(l.app.key(key, Instant::now()));
                     }
                 }
                 Event::FocusGained if l.on_focus => l.backend.refresh(None),
+                Event::Mouse(m) => {
+                    let (x, y) = (m.column, m.row);
+                    let ev = match m.kind {
+                        MouseEventKind::Down(MouseButton::Left) => Some(Mouse::Click { x, y }),
+                        MouseEventKind::ScrollDown => Some(Mouse::Scroll { x, down: true }),
+                        MouseEventKind::ScrollUp => Some(Mouse::Scroll { x, down: false }),
+                        _ => None,
+                    };
+                    if let Some(ev) = ev {
+                        l.app.mouse(ev, Instant::now());
+                    }
+                }
                 // A resize needs nothing beyond the redraw at the top of the
                 // loop: ratatui re-reads the size on every draw.
                 _ => {}
