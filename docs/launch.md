@@ -1,7 +1,11 @@
 # Publishing on GitHub
 
 How pullpen goes from the local branches to a public repository with
-bothy's process around it. §2 is done: the repository exists, with one PR open. §3 is pending.
+bothy's process around it. Where it stands: §1 and §2 are done (the repository is public, the work
+merged in one PR, the ruleset requires every named check, CodeQL runs). The
+wiki is written but not yet published, because GitHub creates a wiki's
+repository only when its first page is saved in the web UI. §3's GitHub run
+is recorded in `docs/testing.md`; GitLab is not run.
 
 Decided already: the repository is **public** (`bspeelm/pullpen`), like
 bothy. On a free plan the wiki, branch rulesets and CodeQL work only on
