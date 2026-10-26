@@ -101,7 +101,7 @@ fn the_config_reference_is_valid_toml() {
     let end = start + section[start..].find("```").unwrap();
     let doc: toml::Table =
         toml::from_str(&section[start..end]).unwrap_or_else(|e| panic!("PLAN.md §9 is not valid TOML: {e}"));
-    assert_eq!(doc["section"].as_array().map(Vec::len), Some(5), "the five default sections");
+    assert_eq!(doc["section"].as_array().map(Vec::len), Some(6), "the six default sections");
 }
 
 #[test]

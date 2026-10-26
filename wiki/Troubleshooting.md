@@ -23,6 +23,7 @@ check, a conflict or a draft, and the key that helps.
 **A merge or an approval fails.** The message is the forge's own reason.
 `:messages` keeps the last 200.
 
-**Something else.** The log is `~/.local/state/pullpen/pullpen.log`; it never
-contains a token. Attach `pullpen config check` and `pullpen --version` to an
+**Something else.** The log is `~/.local/state/pullpen/pullpen.log`
+(`%LOCALAPPDATA%\pullpen\state\pullpen.log` on Windows); it never contains a
+token. Attach `pullpen config check` and `pullpen --version` to an
 [issue](https://github.com/bspeelm/pullpen/issues).

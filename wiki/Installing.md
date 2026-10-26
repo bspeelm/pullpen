@@ -15,12 +15,28 @@ On Linux or macOS:
 
 ```sh
 curl -LO https://github.com/bspeelm/pullpen/releases/latest/download/pullpen_linux_amd64.tar.gz
-tar -xzf pullpen_linux_amd64.tar.gz pullpen
+tar -xzf pullpen_linux_amd64.tar.gz ./pullpen
 mv pullpen ~/.local/bin/
 ```
 
-On Windows, unzip it and put `pullpen.exe` in a folder on your `PATH`, then
-run `pullpen` from Windows Terminal.
+Use the archive name for your system: `darwin_arm64` on an Apple silicon
+Mac, `darwin_amd64` on an Intel one.
+
+**macOS** may refuse to open it, saying the developer cannot be verified:
+the binary is not notarised by Apple. Downloading with `curl` as above
+avoids that. If you used a browser, clear the flag it set:
+
+```sh
+xattr -d com.apple.quarantine ~/.local/bin/pullpen
+```
+
+**Windows:** unzip it, put `pullpen.exe` in a folder on your `PATH`, and run
+`pullpen` from Windows Terminal. The binary is not signed by Microsoft, so
+SmartScreen may warn; *More info*, then *Run anyway*, or once in PowerShell:
+
+```powershell
+Unblock-File pullpen.exe
+```
 
 Every archive, and the `checksums.txt` that covers them, is signed by the
 workflow that built it. To check one:

@@ -7,7 +7,7 @@ auto-merge on this PR, or GitLab really skips a draft. This script is that
 check, run by hand before a release, once per forge.
 
 **GitHub: run on 2026-10-26** against
-[`bspeelm/pullpen-scratch`](https://github.com/bspeelm/pullpen-scratch), partly
+`bspeelm/pullpen-scratch` (since deleted), partly
 by hand and partly driven in a terminal:
 
 | step | result |
@@ -20,7 +20,9 @@ by hand and partly driven in a terminal:
 | 6. Checkout | passed: the clone switched to the PR's branch at its head commit |
 
 **GitLab: not run.** No GitLab project with merge requests has been
-available to write to.
+available to write to. Reading has run live on 2026-10-26: listing merge
+requests, and the Merged section's pipelines, which found and fixed a query
+GitLab refused as too complex.
 
 ## Setup
 

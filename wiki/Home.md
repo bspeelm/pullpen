@@ -22,7 +22,7 @@ assume them.
 ## Start here
 
 - **[Your first session](Your-first-session)**: the screen, and the keys that matter on day one.
-- **[Installing](Installing)**: building it, and what comes with the first release.
+- **[Installing](Installing)**: downloading a release for your system, or building it.
 - **[Setup and settings](Setup-and-settings)**: signing in and changing anything later.
 
 ## Doing the work
