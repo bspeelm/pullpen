@@ -238,3 +238,46 @@ async fn update_rebases_through_the_rebase_endpoint() {
         .await;
     gl(&server, &[]).update(&id()).await.unwrap();
 }
+
+#[tokio::test]
+async fn a_merged_request_carries_the_pipeline_on_its_merge_commit() {
+    let server = MockServer::start().await;
+    let mut n = node();
+    n["state"] = json!("merged");
+    n["mergedAt"] = json!("2026-10-02T00:00:00Z");
+    n["mergeCommitSha"] = json!("abc123");
+    Mock::given(method("POST"))
+        .and(body_string_contains("mergedAfter: $mergedAfter"))
+        .and(body_partial_json(json!({ "variables": { "state": "merged" } })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "x": { "mergeRequests": {
+            "count": 1, "pageInfo": { "hasNextPage": false }, "nodes": [n]
+        } } } })))
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(body_partial_json(json!({ "variables": { "r0": "platform/runner", "s0": "abc123", "b0": "main" } })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "p0": { "pipelines": { "nodes": [ {
+            "status": "RUNNING", "path": "/platform/runner/-/pipelines/9",
+            "jobs": { "nodes": [ { "name": "build", "status": "SUCCESS" }, { "name": "deploy-staging", "status": "RUNNING" } ] }
+        } ] } } } })))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let page = gl(&server, &["platform"]).search(&Query::parse("is:merged merged:7d"), "me", 50).await.unwrap();
+    let pl = page.prs[0].post_merge.as_ref().unwrap();
+    assert_eq!((pl.state, pl.passed, pl.total, pl.job.as_str()), (PipelineState::Running, 1, 2, "deploy-staging"));
+    assert_eq!(pl.url, format!("{}/platform/runner/-/pipelines/9", server.uri()));
+}
+
+#[test]
+fn a_canceled_pipeline_failed_and_a_manual_one_is_still_running() {
+    let p = |status: &str, job: &str| {
+        pipeline(&json!({ "status": status, "jobs": { "nodes": [ { "name": "deploy", "status": job } ] } }), "")
+    };
+    assert_eq!(
+        (p("CANCELED", "CANCELED").state, p("CANCELED", "CANCELED").job),
+        (PipelineState::Failed, "deploy".into())
+    );
+    assert_eq!(p("MANUAL", "MANUAL").state, PipelineState::Running);
+    assert_eq!(p("MANUAL", "MANUAL").job, "deploy (manual)");
+}

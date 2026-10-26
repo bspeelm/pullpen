@@ -91,8 +91,12 @@ Five ship by default, and you can replace them.
 unless you set another; `s`, `m` or `r` at the prompt picks one for that merge.
 If a PR is only waiting, `M` offers to arm auto-merge instead. If the forge
 would refuse, pullpen refuses first and says why. `A` arms or disarms.
+After a merge, the Merged section shows what the base branch's pipeline did,
+so you can see a deploy go through or fail; a failure stays until you clear
+it.
 [Merging and auto-merge](https://github.com/bspeelm/pullpen/wiki/Merging-and-auto-merge) ·
-[the armed view](https://github.com/bspeelm/pullpen/wiki/The-armed-view)
+[the armed view](https://github.com/bspeelm/pullpen/wiki/The-armed-view) ·
+[the merged view](https://github.com/bspeelm/pullpen/wiki/The-merged-view)
 
 ## What it touches
 
@@ -100,7 +104,7 @@ would refuse, pullpen refuses first and says why. `A` arms or disarms.
 ~/.config/pullpen/config.toml        your settings
 ~/.config/pullpen/credentials.toml   a token you gave setup, readable only by you
 ~/.cache/pullpen/                    the last list, so it opens instantly
-~/.local/state/pullpen/              its log, command history, last visit
+~/.local/state/pullpen/              its log, command history, last visit, cleared rows
 ```
 
 On Windows, the first two are in `%APPDATA%\pullpen\` and the others in

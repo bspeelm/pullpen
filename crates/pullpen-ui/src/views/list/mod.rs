@@ -2,7 +2,7 @@
 //! `listScreen`).
 
 use pullpen_core::time::age;
-use pullpen_core::{Pr, Readiness};
+use pullpen_core::{PipelineState, Pr, Readiness};
 
 use super::Ctx;
 use super::chrome::{Status, Tab, status, tabs};
@@ -70,6 +70,17 @@ pub fn state_glyph(r: Readiness) -> Span {
     }
 }
 
+/// The state glyph, or for a merged PR its pipeline's: ○ running, ✓
+/// passed, ✗ failed (ADR-017).
+pub fn glyph(p: &Pr, r: Readiness) -> Span {
+    match p.post_merge.as_ref().filter(|_| p.merged()).map(|x| x.state) {
+        Some(PipelineState::Running) => s("○", Tok::Warn),
+        Some(PipelineState::Passed) => s("✓", Tok::Ok),
+        Some(PipelineState::Failed) => s("✗", Tok::Err),
+        None => state_glyph(r),
+    }
+}
+
 fn rev(p: &Pr) -> Span {
     let (h, n) = (p.reviews.have, p.reviews.need);
     if n == 0 { s("–", Tok::Faint) } else { s(format!("{h}/{n}"), if h >= n { Tok::Ok } else { Tok::Warn }) }
@@ -119,7 +130,7 @@ pub fn row(p: &Pr, w: usize, o: &RowOpts, ctx: &Ctx) -> Line {
     }
     l.push(match o.spin {
         Some(f) => s(f.to_string(), Tok::Acc),
-        None => state_glyph(ctx.readiness(p)),
+        None => glyph(p, ctx.readiness(p)),
     });
     l.push(sp(1));
     l.push(if p.armed() { s("◆", Tok::Acc) } else { sp(1) });

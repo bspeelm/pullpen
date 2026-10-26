@@ -768,8 +768,18 @@ impl App {
     }
 
     /// The URL to open for each target.
+    /// What `o` opens: the PR, or in the Merged view its pipeline.
     pub fn urls(&self, ids: &[PrId]) -> Vec<String> {
-        ids.iter().filter_map(|id| self.find(id)).map(|p| p.url.clone()).collect()
+        let pipeline = self.view_is(self.active, pullpen_core::View::Merged) && self.detail.is_none();
+        // The same PR can sit in an open-PR section too, without its pipeline.
+        let here = |id: &PrId| self.section().prs.iter().find(|p| p.id == *id).or_else(|| self.find(id));
+        ids.iter()
+            .filter_map(here)
+            .map(|p| match &p.post_merge {
+                Some(pl) if pipeline && !pl.url.is_empty() => pl.url.clone(),
+                _ => p.url.clone(),
+            })
+            .collect()
     }
 
     pub fn refused(&mut self, what: &str) {

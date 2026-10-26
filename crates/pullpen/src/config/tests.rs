@@ -5,9 +5,14 @@ fn no_file_means_the_defaults() {
     let (c, err) = Config::load(Path::new("/nonexistent/pullpen/config.toml"));
     assert!(err.is_none());
     let s = c.sections();
-    assert_eq!(s.iter().map(|s| s.short.as_str()).collect::<Vec<_>>(), ["Mine", "Review", "Agent", "Armed", "All"]);
+    assert_eq!(
+        s.iter().map(|s| s.short.as_str()).collect::<Vec<_>>(),
+        ["Mine", "Review", "Agent", "Armed", "All", "Merged"]
+    );
     assert!(!s[4].counts, "the catch-all section does not feed the status counts");
     assert_eq!(s[3].view, View::Armed);
+    assert_eq!(s[5].view, View::Merged);
+    assert!(!s[5].counts, "merged PRs' pipelines are not failing PRs");
     assert_eq!(c.forges().len(), 2);
 }
 

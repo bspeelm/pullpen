@@ -74,10 +74,11 @@ const H=[
  {f:'gl',r:'platform/runner',n:801,t:'Shell executor: honor umask from config',a:'lena',ci:'ok',rv:[1,1],ad:15,de:2,age:'1w'},
 ];
 const ALL=(()=>{const o=[];let i=0,j=0;while(i<P.length||j<H.length){if(j<H.length)o.push(H[j++]);if(i<P.length)o.push(P[i++]);if(i<P.length)o.push(P[i++]);}return o;})();
-const byN=n=>P.find(p=>p.n===n);
+const byN=n=>P.find(p=>p.n===n)||H.find(p=>p.n===n);
 
 // ---------- row A (default)
-function stateG(p){ if(p.merged) return S('●','dim'); if(p.draft) return S('◌','dim'); if(p.conflict) return S('≠','err'); if(p.ci==='fail') return S('✗','err'); if(p.ci==='run'||p.rv[0]<p.rv[1]) return S('○','warn'); return S('✓','ok'); }
+const PL={run:S('○','warn'),ok:S('✓','ok'),fail:S('✗','err')};
+function stateG(p){ if(p.merged) return PL[p.pl]||S('●','dim'); if(p.draft) return S('◌','dim'); if(p.conflict) return S('≠','err'); if(p.ci==='fail') return S('✗','err'); if(p.ci==='run'||p.rv[0]<p.rv[1]) return S('○','warn'); return S('✓','ok'); }
 function revS(p){const [h,n]=p.rv; if(!n) return S('–','faint'); return S(h+'/'+n,h>=n?'ok':'warn');}
 function cols(w){
  const c={forge:3,repo:17,author:12,rev:5,size:12,age:4}; const sum=()=>12+c.forge+c.repo+c.author+c.rev+c.size+c.age;
@@ -117,7 +118,7 @@ function headA(w){
 }
 
 // ---------- chrome
-const SECS=[['Mine','Mine',6],['Needs my review','Review',4],['Agent-opened','Agent',23],['Auto-merge armed','Armed',7],['All','All',96]];
+const SECS=[['Mine','Mine',6],['Needs my review','Review',4],['Agent-opened','Agent',23],['Auto-merge armed','Armed',7],['All','All',96],['Merged','Merged',6]];
 function tabs(active,W,o={}){
  const l=[sp(2)];
  SECS.forEach((s,i)=>{const nm=o.short?s[1]:s[0];
@@ -259,7 +260,7 @@ function helpScreen(){
  pl.push(...block(['move','act on selection','sections & views'],[
   [['j k','down / up'],['gg G','top / bottom'],['^d ^u','half page'],['/','filter list'],['n N','next / prev match'],['Esc','clear, cancel'],['Space','mark row'],['V','mark range'],['Enter','open detail']],
   [['M','merge…'],['A','arm / disarm auto'],['a','approve'],['c','comment'],['d','open diff'],['o','open in browser'],['x','close…'],['u','update branch'],['r','refresh']],
-  [['h l','prev / next section'],['Tab S-Tab','next / prev section'],['1–5','go to section'],['p','toggle preview'],[':','command line'],['?','this help'],['q','back / quit']]]));
+  [['h l','prev / next section'],['Tab S-Tab','next / prev section'],['1–6','go to section'],['p','toggle preview'],[':','command line'],['?','this help'],['q','back / quit']]]));
  pl.push(pad([]));
  pl.push(...block(['detail view','command line','confirm prompt'],[
   [['h l','focus pane'],['n b','next / prev file'],['F','all files'],[']c [c','next / prev hunk'],['zo zc','expand / fold'],['q Esc','back to list']],
@@ -283,18 +284,32 @@ const A=(n,x)=>({...byN(n),...x});
 function rowArm(p,w,o={}){
  const sel=o.sel,RW=34,tw=w-2-3-2-2-6-12-RW-5;
  let l=[gut(o),S(p.f+' ','dim'),stateG(p),sp(1),p.merged?sp(1):S('◆','acc'),sp(1),S(('#'+p.n).padStart(5)+' ',sel?'fg':'dim'),
-  ...fit([S(p.t,p.merged?'dim':'fg',{b:sel})],tw-2),sp(2),...fit([S(p.r.split('/').pop(),'dim')],12),...fit(M(p.why),RW),S(p.when.padStart(5),'dim')];
+  ...fit([S(p.t,p.merged&&!o.lit?'dim':'fg',{b:sel})],tw-2),sp(2),...fit([S(p.r.split('/').pop(),'dim')],11),sp(1),...fit(M(p.why),RW),S(p.when.padStart(5),'dim')];
  l=fit(l,w,false); return sel?withBg(l,'sel'):l;
 }
 function armedScreen(){
- const W=120,L=[tabs(3,W,{right:'is:armed + merged since last visit'}),[]];
+ const W=120,L=[tabs(3,W,{right:'is:armed + recent merges'}),[]];
  const grp=(t,rows,first)=>{L.push([sp(2),S(t,'fg',{b:1}),S('  '+rows.length,'dim')]);rows.forEach((p,i)=>L.push(rowArm(p,W-1,{sel:first&&i===0})));L.push([]);};
  grp('needs attention',[A(2290,{why:'{r|failing}{d|  e2e/chromium · 2 retries}',when:'18m'}),A(4818,{why:'{r|conflict}{d|  with main after #4815}',when:'25m'})],true);
  grp('waiting',[A(4821,{why:'{y|review}{d|  @mara · 1 of 2}',when:'2h'}),A(809,{why:'{y|ci}{d|  6/9 running · ~4m left}',when:'30m'}),A(377,{armed:1,why:'{y|ci}{d|  4/9 running, then review}',when:'12m'}),A(145,{armed:1,why:'{y|merge train}{d|  position 2 of 3}',when:'1h'}),A(4809,{ci:'run',why:'{y|ci}{d|  required check sbom queued}',when:'5d'})]);
- grp('merged since 09:14',[A(2288,{merged:1,why:'{d|merged · squash}',when:'22m'}),A(812,{merged:1,why:'{d|merged · squash}',when:'41m'}),A(1199,{merged:1,why:'{d|merged · squash}',when:'1h'}),A(4815,{merged:1,why:'{d|merged · rebase}',when:'1h'})]);
+ grp('merged since 09:14',[A(2288,{merged:1,pl:'run',why:'{d|merged · squash}',when:'22m'}),A(812,{merged:1,pl:'run',why:'{d|merged · squash}',when:'41m'}),A(1199,{merged:1,pl:'ok',why:'{d|merged · squash}',when:'1h'}),A(4815,{merged:1,pl:'fail',why:'{d|merged · rebase}',when:'1h'})]);
  while(L.length<38) L.push([]);
  L.push(status(W,{mode:'NORMAL',section:'Auto-merge armed',pos:'1/7'}));
  L.push(M('{a|◆} {f|4 merged since 09:14}{d|   ·   2 need attention   ·   5 still waiting}'));
+ return L.map(l=>fit(l,W,false));
+}
+
+// The Merged section: each merged PR by what its merge commit's pipeline
+// did on the base branch. Failures stay until :clear; the rest leave after 24h.
+function mergedScreen(){
+ const W=120,L=[tabs(5,W,{right:'is:merged merged:7d'}),[]];
+ const grp=(t,rows,first)=>{L.push([sp(2),S(t,'fg',{b:1}),S('  '+rows.length,'dim')]);rows.forEach((p,i)=>L.push(rowArm({...p,merged:1,armed:0},W-1,{sel:first&&i===0,lit:1})));L.push([]);};
+ grp('failed',[A(4815,{pl:'fail',why:'{r|failed}{d|  deploy-production}',when:'1h'})],true);
+ grp('running',[A(2288,{pl:'run',why:'{y|running}{d|  5/7 · deploy-staging}',when:'22m'}),A(812,{pl:'run',why:'{y|running}{d|  2/4 · build}',when:'41m'})]);
+ grp('done',[A(1199,{pl:'ok',why:'{g|passed}{d|  6/6}',when:'1h'}),A(4811,{pl:'ok',why:'{g|passed}{d|  11/11}',when:'3h'}),A(60,{why:'{d|no pipeline}',when:'5h'})]);
+ while(L.length<38) L.push([]);
+ L.push(status(W,{mode:'NORMAL',section:'Merged',pos:'1/6'}));
+ L.push(M('{r|✗} {f|1 failed}{d|   ·   2 running   ·   3 done}'));
  return L.map(l=>fit(l,W,false));
 }
 
@@ -349,6 +364,7 @@ function build(mode){
  out.sDetail=F(detailScreen());
  out.sHelp=F(helpScreen());
  out.sArmed=F(armedScreen());
+ out.sMerged=F(mergedScreen());
  const al=alts(); out.altA=F(al.a); out.altB=F(al.b); out.altC=F(al.c);
 
  const R4=[P[0],P[1],P[2],P[3]];

@@ -1,4 +1,4 @@
-  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96                is:open   sort: updated 
+  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96    Merged 6    is:open   sort: updated 
                                                                                                                         
              # title                                                 repo               author    rev    +/−        age 
   gh ○   #4823 Rate limit per API key instead of per IP              acme/api           mara      0/1   +140 −31    20m 

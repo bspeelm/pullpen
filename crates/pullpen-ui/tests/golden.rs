@@ -414,9 +414,11 @@ fn armed_app() -> App {
         p.auto_merge = Some(AutoMerge { method: MergeMethod::Squash, armed_by: "ash".into(), armed_at: ago(at) });
         p
     };
+    let landed = fx::merged_prs();
     let merged = |mut p: Pr, at: &str, method| {
         p.auto_merge = None;
         p.state = PrState::Merged { at: ago(at), method };
+        p.post_merge = landed.iter().find(|l| l.id == p.id).and_then(|l| l.post_merge.clone());
         p
     };
     let mut p809 = armed(pr(809), "30m");
@@ -461,4 +463,11 @@ fn armed_app() -> App {
 #[test]
 fn s_armed() {
     check("sArmed", &armed_app().lines(120, 40), 120, Tier::True, Glyphs::Unicode);
+}
+
+#[test]
+fn s_merged() {
+    let mut a = app();
+    a.active = 5;
+    check("sMerged", &a.lines(120, 40), 120, Tier::True, Glyphs::Unicode);
 }

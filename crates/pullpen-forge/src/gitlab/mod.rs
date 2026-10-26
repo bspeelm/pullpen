@@ -7,7 +7,7 @@ use std::sync::Mutex;
 use async_trait::async_trait;
 use pullpen_core::diff::FileDiff;
 use pullpen_core::query::{Is, Query, Term};
-use pullpen_core::time::{Timestamp, parse_rfc3339};
+use pullpen_core::time::{Timestamp, parse_rfc3339, rfc3339};
 use pullpen_core::*;
 use serde_json::{Map, Value, json};
 
@@ -107,6 +107,9 @@ impl GitLab {
                 }
                 Term::Base(b) => {
                     args.insert("targetBranches".into(), json!([b]));
+                }
+                Term::MergedWithin(secs) => {
+                    args.insert("mergedAfter".into(), json!(rfc3339(Timestamp(Timestamp::now().0 - secs))));
                 }
                 Term::Text(t) => text.push(t.clone()),
                 _ => {}
@@ -271,6 +274,42 @@ impl GitLab {
             url: s(n, "/webUrl").into(),
             repo_default_method: default,
             repo_allowed_methods: allowed,
+            post_merge: None,
+        }
+    }
+
+    /// Each merged MR's pipeline on its merge commit and target branch (the
+    /// MR's own pipeline can share the SHA). Asked a few at a time: GitLab
+    /// refuses a query over 250 complexity, which twenty MRs exceed. Without
+    /// it a row still shows, as merged with no pipeline, so a failure is
+    /// logged rather than failing the section.
+    async fn post_merge(&self, prs: &mut [Pr], landed: &[(PrId, String)]) {
+        let landed: Vec<(&PrId, &String, String)> = landed
+            .iter()
+            .filter_map(|(id, sha)| prs.iter().find(|p| &p.id == id).map(|p| (id, sha, p.base.clone())))
+            .collect();
+        for chunk in landed.chunks(8) {
+            let (mut decl, mut body, mut vars) = (Vec::new(), String::new(), Map::new());
+            for (i, (id, sha, base)) in chunk.iter().enumerate() {
+                decl.push(format!("$r{i}: ID!, $s{i}: String!, $b{i}: String!"));
+                body += &format!(
+                    " p{i}: project(fullPath: $r{i}) {{ pipelines(sha: $s{i}, ref: $b{i}, first: 1) {{ nodes {{ status path jobs(first: 50) {{ nodes {{ name status }} }} }} }} }}"
+                );
+                vars.insert(format!("r{i}"), json!(id.repo));
+                vars.insert(format!("s{i}"), json!(sha));
+                vars.insert(format!("b{i}"), json!(base));
+            }
+            let query = format!("query({}) {{{body} }}", decl.join(", "));
+            let d = match self.gql(&query, Value::Object(vars)).await {
+                Ok(d) => d,
+                Err(e) => return tracing::warn!(host = %self.host, error = %e, "post-merge pipelines"),
+            };
+            for (i, (id, ..)) in chunk.iter().enumerate() {
+                let Some(pl) = d.pointer(&format!("/p{i}/pipelines/nodes/0")) else { continue };
+                if let Some(p) = prs.iter_mut().find(|p| &p.id == *id) {
+                    p.post_merge = Some(pipeline(pl, &self.base));
+                }
+            }
         }
     }
 
@@ -283,6 +322,27 @@ impl GitLab {
             body["merge_when_pipeline_succeeds"] = json!(true);
         }
         send(&self.host, self.rest(reqwest::Method::PUT, id, "/merge").json(&body)).await.map(|_| ())
+    }
+}
+
+/// A GitLab pipeline as pullpen reports one. A canceled pipeline deployed
+/// nothing, so it counts as failed; one stopped at a manual job is still
+/// running, since what it would deploy has not been.
+fn pipeline(p: &Value, base: &str) -> Pipeline {
+    let jobs = p.pointer("/jobs/nodes").and_then(Value::as_array).cloned().unwrap_or_default();
+    let first = |st: &[&str]| jobs.iter().find(|j| st.contains(&s(j, "/status"))).map(|j| s(j, "/name").to_string());
+    let (state, job) = match s(p, "/status") {
+        "SUCCESS" | "SKIPPED" => (PipelineState::Passed, None),
+        "FAILED" | "CANCELED" => (PipelineState::Failed, first(&["FAILED", "CANCELED"])),
+        "MANUAL" => (PipelineState::Running, first(&["MANUAL"]).map(|j| format!("{j} (manual)"))),
+        _ => (PipelineState::Running, first(&["RUNNING", "PENDING", "CREATED"])),
+    };
+    Pipeline {
+        state,
+        passed: jobs.iter().filter(|j| s(j, "/status") == "SUCCESS").count() as u32,
+        total: jobs.len() as u32,
+        job: job.unwrap_or_default(),
+        url: format!("{base}{}", s(p, "/path")),
     }
 }
 
@@ -305,6 +365,7 @@ fn arg_type(k: &str) -> &'static str {
         "state" => "MergeRequestState",
         "draft" => "Boolean",
         "labels" | "targetBranches" | "approvedBy" => "[String!]",
+        "mergedAfter" => "Time",
         _ => "String",
     }
 }
@@ -351,6 +412,7 @@ impl ForgeTrait for GitLab {
         let (mut seen, mut prs, mut total) = (HashSet::new(), Vec::new(), 0);
         let mut missing_roots = Vec::new();
         let mut last_err: Option<Error> = None;
+        let mut landed = Vec::new();
         for (root, args) in &plan {
             // One group that does not exist should not hide the others.
             let (nodes, count) = match self.run_root(root, args, limit).await {
@@ -365,6 +427,12 @@ impl ForgeTrait for GitLab {
             total += count;
             for n in &nodes {
                 let pr = self.to_pr(n);
+                // A fast-forward merge makes no merge commit: the head is
+                // what landed on the base branch.
+                let sha = [s(n, "/mergeCommitSha"), s(n, "/diffHeadSha")].into_iter().find(|x| !x.is_empty());
+                if let (true, Some(sha)) = (pr.merged(), sha) {
+                    landed.push((pr.id.clone(), sha.to_string()));
+                }
                 // The instance-wide list has no text search; match titles here.
                 let text_ok =
                     !matches!(root, Root::Instance) || text.iter().all(|t| pr.title.to_lowercase().contains(t));
@@ -375,6 +443,7 @@ impl ForgeTrait for GitLab {
         }
         prs.sort_by_key(|p| std::cmp::Reverse(p.updated_at));
         prs.truncate(limit);
+        self.post_merge(&mut prs, &landed).await;
         // A union of several searches overlaps, so its counts would add up
         // to more PRs than exist; the deduplicated rows are the honest total.
         if missing_roots.len() == plan.len() && last_err.is_some() {

@@ -327,3 +327,32 @@ async fn update_merges_the_base_in_through_the_update_branch_endpoint() {
         .await;
     gh(&server).update(&id()).await.unwrap();
 }
+
+#[tokio::test]
+async fn a_merged_pr_carries_its_merge_commits_checks_as_the_pipeline() {
+    let server = MockServer::start().await;
+    let mut n = node();
+    n["state"] = json!("MERGED");
+    n["mergedAt"] = json!("2026-10-02T00:00:00Z");
+    n["mergeCommit"] = json!({ "oid": "abc123", "statusCheckRollup": { "state": "FAILURE", "contexts": { "nodes": [
+        { "__typename": "CheckRun", "name": "build", "status": "COMPLETED", "conclusion": "SUCCESS" },
+        { "__typename": "CheckRun", "name": "deploy-production", "status": "COMPLETED", "conclusion": "FAILURE" },
+        { "__typename": "StatusContext", "context": "smoke", "state": "PENDING" }
+    ] } } });
+    Mock::given(method("POST"))
+        .and(body_string_contains("is:pr is:merged merged:>="))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "search": {
+            "issueCount": 1, "pageInfo": { "hasNextPage": false }, "nodes": [n]
+        } } })))
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(body_partial_json(json!({ "variables": { "ids": ["PR_n7"] } })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(details()))
+        .mount(&server)
+        .await;
+    let page = gh(&server).search(&Query::parse("is:merged merged:7d"), "me", 50).await.unwrap();
+    let pl = page.prs[0].post_merge.as_ref().unwrap();
+    assert_eq!((pl.state, pl.passed, pl.total, pl.job.as_str()), (PipelineState::Failed, 1, 3, "deploy-production"));
+    assert_eq!(pl.url, "https://github.com/o/r/commit/abc123");
+}

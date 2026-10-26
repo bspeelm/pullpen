@@ -34,7 +34,7 @@ names; `↑` `↓` walk history, filtered by what you have typed.
 | `:refresh [all]` | fetch this section, or all |
 | `:section <name>` | switch section |
 | `:messages` | the last 200 results and errors |
-| `:clear` | drop merged rows from the armed view |
+| `:clear` | drop merged rows from the armed view; in the Merged section, every finished row |
 | `:q` `:qa` | back, or quit |
 
 Without a number, a command acts on the selected row, or on every marked row.

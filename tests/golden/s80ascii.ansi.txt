@@ -1,4 +1,4 @@
-{default}  {brightblack}Mine 6{default}   {brightblack}Review 4{default}   {cyan b}Agent{cyan} 23{default}   {brightblack}Armed 7{default}   {brightblack}All 96{default}                               
+{default}  {brightblack}Mine 6{default}   {brightblack}Review 4{default}   {cyan b}Agent{cyan} 23{default}   {brightblack}Armed 7{default}   {brightblack}All 96{default}   {brightblack}Merged 6{default}                    
 {default}                                                                                
 {default}         {brightblack}    #{default} {brightblack}title{default}                     {brightblack}repo{default}               {brightblack}author{default}    {brightblack}rev{default}  {brightblack} age{default} 
 {cyan b}> {brightblack b}gh {yellow b}o{default b} {cyan b}*{default b} #4821 Migrate invoices to led~  {brightblack b}acme/api{default b}         ^ {brightblack b}claude{default b}    {yellow b}1/2{default b}  {brightblack b}  3h{default} 

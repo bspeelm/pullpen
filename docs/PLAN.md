@@ -245,7 +245,8 @@ Header row uses faint lowercase labels (`#  title  repo  author  rev  +/−  age
 
 1. **List** — tabs, header, rows, optional preview (right, 46 cells: title, meta line, verdict line, 4 facts `checks / reviews / conflicts / auto-merge`, branch, size, wrapped description, activity).
 2. **Detail** — breadcrumb row (`Section › gh repo #n` left; `1 of 23   updated 12m ago` right), title, meta line, **verdict row** (` READY `/` WAITING `/` BLOCKED ` filled label + sentence), 2×2 fact grid, then two panes split 56/rest: overview (description, checks list with `+ 7 more passed  zo to expand`, conversation) │ diff (file header with `file 2/14 +120 −12`, hunks with old/new line numbers in faint, `+` ok `-` err). `h`/`l` focus; focused pane heading accent. `d` zooms diff full width.
-3. **Armed section** — rows grouped `needs attention` / `waiting` / `merged since HH:MM`; each row's right side is the *why* (`failing  e2e/chromium · 2 retries`, `review  @mara · 1 of 2`, `ci  6/9 running · ~4m left`, `merge train  position 2 of 3`, `merged · squash`). Merged rows dim, stay for the session, `:clear` drops them. Command line shows the summary: `◆ 4 merged since 09:14 · 2 need attention · 5 still waiting`.
+3. **Armed section** — rows grouped `needs attention` / `waiting` / `merged since HH:MM`; each row's right side is the *why* (`failing  e2e/chromium · 2 retries`, `review  @mara · 1 of 2`, `ci  6/9 running · ~4m left`, `merge train  position 2 of 3`, `merged · squash`). Merged rows dim, stay for the session, `:clear` drops them; their glyph is their merge commit's pipeline. Command line shows the summary: `◆ 4 merged since 09:14 · 2 need attention · 5 still waiting`.
+   **Merged section** (ADR-017) — the same layout, grouped `failed` / `running` / `done` by the merge commit's pipeline, the failing or running job on the right, summary `✗ 1 failed · 2 running · 3 done`. Rows leave 24h after merging, failures only on `:clear`; `o` opens the pipeline.
 4. **Help overlay (?)** — base screen faded to faint; 96-wide surface block at x=12, y=5, no border; three-column key tables; typing filters; `?`/Esc closes.
 5. **Wildmenu** — completion list overlays upward over the list rows above the command line, surface bg, selected item sel bg.
 
@@ -281,7 +282,7 @@ Query grammar (forge-neutral, translated per forge; unknown terms are free text 
 
 Translation splits each query in two. Terms a forge's search understands go to the server; the rest (`is:armed`, `is:agent`, `is:ready`, `is:failing`, `is:conflict`, `ci:*`) are evaluated on the fetched `Pr`s. A query made only of client-side terms fetches a superset (`involves:@me` on GitHub, `scope=all` within configured groups on GitLab). GitHub search returns at most 1,000 results; a section that hits the cap says so on the status line. A query that names no person, repo, org or group would mean every PR on the forge, so it is scoped: on GitHub by the forge's `scope` (default `involves:@me`), on GitLab to its configured `groups`, or, with none, to the union of PRs you authored, review or are assigned.
 
-`/` filter inside a section uses the same grammar plus free text. Defaults ship: Mine, Needs my review, Agent-opened, Auto-merge armed, All.
+`/` filter inside a section uses the same grammar plus free text. Defaults ship: Mine, Needs my review, Agent-opened, Auto-merge armed, All, Merged (`is:merged merged:7d`, view `merged`, ADR-017). `merged:<age>` limits to PRs merged within that long, like `7d` or `24h`.
 
 ### 6.2 Keymap (design §09) — implement as a table, generate `docs/keymap.md` and the `?` overlay from it
 
@@ -311,7 +312,7 @@ Translation splits each query in two. Terms a forge's search understands go to t
 | `:refresh [all]` | |
 | `:section <name>` | Completes names and short names. |
 | `:messages` | Last 200 results/errors. |
-| `:clear` | Drop merged rows from the armed view. |
+| `:clear` | Drop merged rows from the armed view; in the Merged section, drop every finished row, remembered across sessions. |
 | `:q` / `:qa` | Back-or-quit / quit from anywhere. |
 
 **Targets:** omitted → selected row, or all marked rows if any. `#812` or `!812` resolves within the section; ambiguous across repos → completion asks for `repo#812`. Bare integer → displayed row index. With marks present the confirm prompt shows the count (`Arm auto-merge on **6 PRs** with squash?`).

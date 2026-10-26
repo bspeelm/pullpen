@@ -42,3 +42,9 @@ fn globs() {
     assert!(!glob_match("acme/*", "platform/api"));
     assert!(glob_match("exact", "exact"));
 }
+
+#[test]
+fn merged_takes_a_window_and_keeps_anything_else_as_text() {
+    assert_eq!(Query::parse("merged:7d").terms, vec![Term::MergedWithin(7 * 86_400)]);
+    assert_eq!(Query::parse("merged:soon").terms, vec![Term::Text("merged:soon".into())]);
+}

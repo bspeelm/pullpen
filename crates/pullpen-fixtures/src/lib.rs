@@ -178,6 +178,7 @@ fn expand(x: &Raw) -> Pr {
         url: format!("https://{host}/{}/{sep}/{}", x.r, x.n),
         repo_default_method: MergeMethod::Squash,
         repo_allowed_methods: vec![MergeMethod::Squash, MergeMethod::Merge, MergeMethod::Rebase],
+        post_merge: None,
     }
 }
 
@@ -212,6 +213,30 @@ pub fn all_prs() -> Vec<Pr> {
 
 pub fn by_number(n: u64) -> Option<Pr> {
     all_prs().into_iter().find(|p| p.id.number == n)
+}
+
+/// tui.js `mergedScreen`: PRs merged in the last few hours, with what their
+/// merge commit's pipeline did, newest merge first within each group.
+pub fn merged_prs() -> Vec<Pr> {
+    let pl =
+        |state, passed, total, job: &str| Some(Pipeline { state, passed, total, job: job.into(), url: String::new() });
+    let rows = [
+        (4815, "1h", pl(PipelineState::Failed, 8, 9, "deploy-production")),
+        (2288, "22m", pl(PipelineState::Running, 5, 7, "deploy-staging")),
+        (812, "41m", pl(PipelineState::Running, 2, 4, "build")),
+        (1199, "1h", pl(PipelineState::Passed, 6, 6, "")),
+        (4811, "3h", pl(PipelineState::Passed, 11, 11, "")),
+        (60, "5h", None),
+    ];
+    rows.into_iter()
+        .filter_map(|(n, at, post_merge)| {
+            let mut p = by_number(n)?;
+            p.auto_merge = None;
+            p.state = PrState::Merged { at: ago(at), method: MergeMethod::Squash };
+            p.post_merge = post_merge;
+            Some(p)
+        })
+        .collect()
 }
 
 /// A section with its rows, and the total the forge reported, which can
@@ -264,6 +289,7 @@ pub fn sections() -> Vec<FixtureSection> {
         section("Agent-opened", "Agent", "author:@agents", View::List, true, agent_prs(), 23),
         section("Auto-merge armed", "Armed", "is:armed", View::Armed, true, armed.clone(), armed.len()),
         section("All", "All", "is:open", View::List, false, all_prs(), 96),
+        section("Merged", "Merged", "is:merged merged:7d", View::Merged, false, merged_prs(), 6),
     ]
 }
 

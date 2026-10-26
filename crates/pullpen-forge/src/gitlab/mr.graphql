@@ -1,5 +1,5 @@
 fragment mr on MergeRequest {
-  iid title webUrl draft createdAt updatedAt sourceBranch targetBranch state mergedAt
+  iid title webUrl draft createdAt updatedAt sourceBranch targetBranch state mergedAt mergeCommitSha diffHeadSha
   author { username bot }
   diffStatsSummary { additions deletions fileCount }
   headPipeline { status }

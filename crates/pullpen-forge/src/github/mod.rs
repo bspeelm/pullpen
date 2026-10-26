@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use async_trait::async_trait;
 use pullpen_core::diff::FileDiff;
 use pullpen_core::query::{Is, Query, Term};
-use pullpen_core::time::{Timestamp, parse_rfc3339};
+use pullpen_core::time::{Timestamp, parse_rfc3339, rfc3339};
 use pullpen_core::*;
 use serde_json::{Value, json};
 
@@ -125,6 +125,7 @@ impl GitHub {
                 Term::Org(o) | Term::Group(o) => format!("org:{o}"),
                 Term::Label(l) => format!("label:\"{l}\""),
                 Term::Base(b) => format!("base:{b}"),
+                Term::MergedWithin(s) => format!("merged:>={}", rfc3339(Timestamp(Timestamp::now().0 - s))),
                 Term::Text(t) => t.clone(),
                 _ => continue,
             });
@@ -198,6 +199,46 @@ fn method(s: &str) -> Option<MergeMethod> {
 
 fn s<'a>(v: &'a Value, p: &str) -> &'a str {
     v.pointer(p).and_then(Value::as_str).unwrap_or("")
+}
+
+/// One check run or status context, as a state.
+fn check_state(n: &Value) -> CheckState {
+    match (n["__typename"] == "CheckRun", s(n, "/status"), s(n, "/conclusion"), s(n, "/state")) {
+        (true, "COMPLETED", "SUCCESS" | "NEUTRAL" | "SKIPPED", _) | (false, _, _, "SUCCESS") => CheckState::Passed,
+        (true, "COMPLETED", _, _) | (false, _, _, "FAILURE" | "ERROR") => CheckState::Failed,
+        (true, "QUEUED", _, _) => CheckState::Queued,
+        _ => CheckState::Running,
+    }
+}
+
+/// The merge commit's checks, which on GitHub are its pipeline: the
+/// workflows a push to the base branch starts, deploys among them.
+fn pipeline(commit: &Value, url: String) -> Option<Pipeline> {
+    let rollup = commit.pointer("/statusCheckRollup").filter(|r| !r.is_null())?;
+    let nodes = rollup.pointer("/contexts/nodes").and_then(Value::as_array).cloned().unwrap_or_default();
+    let named = |want: CheckState| {
+        nodes
+            .iter()
+            .find(|n| check_state(n) == want)
+            .map(|n| if n["__typename"] == "CheckRun" { s(n, "/name") } else { s(n, "/context") }.to_string())
+    };
+    let state = match s(rollup, "/state") {
+        "SUCCESS" => PipelineState::Passed,
+        "FAILURE" | "ERROR" => PipelineState::Failed,
+        _ => PipelineState::Running,
+    };
+    let job = match state {
+        PipelineState::Failed => named(CheckState::Failed),
+        PipelineState::Running => named(CheckState::Running).or_else(|| named(CheckState::Queued)),
+        PipelineState::Passed => None,
+    };
+    Some(Pipeline {
+        state,
+        passed: nodes.iter().filter(|n| check_state(n) == CheckState::Passed).count() as u32,
+        total: nodes.len() as u32,
+        job: job.unwrap_or_default(),
+        url,
+    })
 }
 
 fn time(v: &Value, p: &str) -> Timestamp {
@@ -347,6 +388,10 @@ impl GitHub {
             url: s(n, "/url").into(),
             repo_default_method: default,
             repo_allowed_methods: allowed,
+            post_merge: n.pointer("/mergeCommit").filter(|c| !c.is_null()).and_then(|c| {
+                let web = s(n, "/url").rsplit_once("/pull/").map_or("", |(w, _)| w);
+                pipeline(c, format!("{web}/commit/{}", s(c, "/oid")))
+            }),
         }
     }
 }
@@ -362,14 +407,7 @@ impl GitHub {
             .flatten()
         {
             let run = n["__typename"] == "CheckRun";
-            let state = match (run, s(n, "/status"), s(n, "/conclusion"), s(n, "/state")) {
-                (true, "COMPLETED", "SUCCESS" | "NEUTRAL" | "SKIPPED", _) | (false, _, _, "SUCCESS") => {
-                    CheckState::Passed
-                }
-                (true, "COMPLETED", _, _) | (false, _, _, "FAILURE" | "ERROR") => CheckState::Failed,
-                (true, "QUEUED", _, _) => CheckState::Queued,
-                _ => CheckState::Running,
-            };
+            let state = check_state(n);
             let (from, to) = (time(n, "/startedAt"), time(n, "/completedAt"));
             if from.0 > 0 {
                 first = first.min(from.0);

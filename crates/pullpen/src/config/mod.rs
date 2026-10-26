@@ -194,12 +194,13 @@ pub struct SectionCfg {
     pub counts: Option<bool>,
 }
 
-const DEFAULT_SECTIONS: [(&str, &str, &str, &str); 5] = [
+const DEFAULT_SECTIONS: [(&str, &str, &str, &str); 6] = [
     ("Mine", "Mine", "is:open author:@me", "list"),
     ("Needs my review", "Review", "is:open review-requested:@me", "list"),
     ("Agent-opened", "Agent", "is:open is:agent", "list"),
     ("Auto-merge armed", "Armed", "is:armed", "armed"),
     ("All", "All", "is:open", "list"),
+    ("Merged", "Merged", "is:merged merged:7d", "merged"),
 ];
 
 /// The home directory: $HOME, or on Windows, where it is usually unset,
@@ -279,14 +280,20 @@ impl Config {
         cfgs.into_iter()
             .map(|c| Section {
                 short: c.short.clone().unwrap_or_else(|| c.name.clone()),
-                counts: c.counts.unwrap_or(c.query.trim() != "is:open"),
+                // A catch-all list counts nothing; nor do merged PRs, whose
+                // failing pipelines are not PRs anyone can still fix by merging.
+                counts: c.counts.unwrap_or(c.query.trim() != "is:open" && c.view.as_deref() != Some("merged")),
                 sort: match c.sort.as_deref() {
                     Some("created") => Sort::Created,
                     Some("age") => Sort::Age,
                     Some("repo") => Sort::Repo,
                     _ => Sort::Updated,
                 },
-                view: if c.view.as_deref() == Some("armed") { View::Armed } else { View::List },
+                view: match c.view.as_deref() {
+                    Some("armed") => View::Armed,
+                    Some("merged") => View::Merged,
+                    _ => View::List,
+                },
                 name: c.name,
                 query: c.query,
             })

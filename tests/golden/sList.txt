@@ -1,4 +1,4 @@
-  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96                         author:@agents 
+  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96    Merged 6             author:@agents 
                                                                                                                         
              # title                      repo               rev   age │ Migrate invoices to ledger v2                  
 ▌ gh ○ ◆ #4821 Migrate invoices to ledg…  acme/api         ◇ 1/2    3h │ gh  acme/api #4821   ◇ claude   3h             

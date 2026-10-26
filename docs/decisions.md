@@ -290,3 +290,48 @@ on each change, and the release ships `pullpen_windows_amd64.zip` and
 `pullpen_windows_arm64.zip`. `make check` stays POSIX shell: the budgets do
 not depend on the platform and the Linux job holds them. Interactive use in
 Windows Terminal is unverified until someone runs it.
+
+## ADR-017 — A Merged section shows what each merge's pipeline did
+
+Merging was the end of pullpen's job, but often not the end of the change: a
+push to the base branch runs CI again, and that run is usually where deploys
+live. The maintainer needs to tell from pullpen whether a deployment went
+through, so a sixth default section, **Merged**, shows recently merged PRs
+by what their merge commit's pipeline did.
+
+**What counts as the pipeline.** Every check on the merge commit: on GitHub
+its status-check rollup, read in the same search query; on GitLab the
+pipeline for the merge commit's SHA (the head's, after a fast-forward), in
+one more query per page of results. This is not the forge's deployment
+records, whose use varies by repository; a deploy job in the pipeline is
+covered either way. `o` on a row opens the pipeline.
+
+**How long a row stays.** The query is `is:merged merged:7d`. A row leaves
+24 hours after its merge, except a failure, which stays until `:clear`,
+because time away is when a failed deploy most needs to still be showing.
+`:clear` drops every finished row and remembers them, in `cleared.json` in
+the state directory, so they do not return with the next sync.
+
+**How it looks.** The armed view's grouped layout, with the groups `failed`,
+`running` and `done`, the job that failed or is running in the right-hand
+column, and a summary on the command line. A merged row anywhere shows its
+pipeline in its glyph: ○ running, ✓ passed, ✗ failed. A pipeline seen running
+rings the bell when it finishes. The design changed first (ADR-002): a
+`mergedScreen`, the sixth tab, and pipeline glyphs on the armed view's
+merged rows; the armed view's tab text shortened to fit six tabs.
+
+**What it cost.** About 330 lines of code, which took it past the 9,000-line
+cap; ADR-018 raises it.
+
+## ADR-018 — The code cap rises to 10,000
+
+ADR-013 set 9,000 lines with room for the publishing work. What came after
+was the maintainer's: `u` to update a branch (ADR-015), Windows (ADR-016),
+and the Merged section (ADR-017), which with its fixes from running it
+against live forges took the code to 9,004 lines. Each was asked for, and
+none is padding: the last trim available, folding two view checks into one,
+was already made.
+
+The cap rises to 10,000 lines. That is about 1,000 lines of room, roughly
+three features the size of the Merged section, and the next raise needs its
+own record again, measured as this one is.

@@ -2,10 +2,10 @@
 //! grouped by what they need, each with the reason on the right.
 
 use pullpen_core::time::{Timestamp, age};
-use pullpen_core::{Mergeable, Pr, PrState, Readiness};
+use pullpen_core::{Mergeable, PipelineState, Pr, PrState, Readiness};
 
 use super::Ctx;
-use super::list::{gutter, pad_start, state_glyph};
+use super::list::{glyph, gutter, pad_start};
 use crate::palette::Tok;
 use crate::span::{Line, fit, markup, s, sp, with_bg};
 
@@ -83,20 +83,52 @@ pub fn why(p: &Pr, g: Group, disarmed: bool, others: &[Pr]) -> String {
     }
 }
 
+/// The Merged view's groups (ADR-017), by what the merge commit's
+/// pipeline did on the base branch.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Landed {
+    Failed,
+    Running,
+    Done,
+}
+
+pub fn landed(p: &Pr) -> Landed {
+    match p.post_merge.as_ref().map(|x| x.state) {
+        Some(PipelineState::Failed) => Landed::Failed,
+        Some(PipelineState::Running) => Landed::Running,
+        _ => Landed::Done,
+    }
+}
+
+/// The Merged view's reason column, as markup.
+pub fn landed_why(p: &Pr) -> String {
+    let e = super::detail::esc;
+    let Some(pl) = &p.post_merge else { return "{d|no pipeline}".into() };
+    let count = format!("{}/{}", pl.passed, pl.total);
+    match (pl.state, pl.job.as_str()) {
+        (PipelineState::Failed, "") => format!("{{r|failed}}{{d|  {count}}}"),
+        (PipelineState::Failed, job) => format!("{{r|failed}}{{d|  {}}}", e(job)),
+        (PipelineState::Running, "") => format!("{{y|running}}{{d|  {count}}}"),
+        (PipelineState::Running, job) => format!("{{y|running}}{{d|  {count} · {}}}", e(job)),
+        (PipelineState::Passed, _) => format!("{{g|passed}}{{d|  {count}}}"),
+    }
+}
+
 const RW: usize = 34;
 
-/// tui.js `rowArm`.
-pub fn row(p: &Pr, w: usize, sel: bool, why: &str, when: Timestamp, ctx: &Ctx) -> Line {
+/// tui.js `rowArm`. `lit` keeps a merged PR's title bright, for the Merged
+/// view, where every row is merged and dimming them all would say nothing.
+pub fn row(p: &Pr, w: usize, sel: bool, why: &str, when: Timestamp, lit: bool, ctx: &Ctx) -> Line {
     let tw = w.saturating_sub(2 + 3 + 2 + 2 + 6 + 12 + RW + 5);
     let merged = p.merged();
-    let mut title = s(&p.title, if merged { Tok::Dim } else { Tok::Fg });
+    let mut title = s(&p.title, if merged && !lit { Tok::Dim } else { Tok::Fg });
     if sel {
         title = title.bold();
     }
     let mut l = vec![
         gutter(sel, false),
         s(format!("{} ", ctx.glyphs.forge(p.id.forge)), Tok::Dim),
-        state_glyph(ctx.readiness(p)),
+        glyph(p, ctx.readiness(p)),
         sp(1),
         if merged { sp(1) } else { s("◆", Tok::Acc) },
         sp(1),
@@ -104,7 +136,9 @@ pub fn row(p: &Pr, w: usize, sel: bool, why: &str, when: Timestamp, ctx: &Ctx) -
     ];
     l.extend(fit(&[title], tw.saturating_sub(2), true));
     l.push(sp(2));
-    l.extend(fit(&[s(p.id.repo_name(), Tok::Dim)], 12, true));
+    // One cell is kept clear, so a long name cannot run into the reason.
+    l.extend(fit(&[s(p.id.repo_name(), Tok::Dim)], 11, true));
+    l.push(sp(1));
     l.extend(fit(&markup(why), RW, true));
     l.push(s(pad_start(&age(when, ctx.now), 5), Tok::Dim));
     let l = fit(&l, w, false);
