@@ -176,7 +176,7 @@ impl GitLab {
         let total = loop {
             let d = self.gql(&query, vars.clone()).await?;
             let c =
-                d.pointer(path).ok_or_else(|| Error::Refused("no such project or group, or no access to it".into()))?;
+                d.pointer(path).filter(|v| !v.is_null()).ok_or_else(|| Error::Refused(missing(root, &self.host)))?;
             nodes.extend(c["nodes"].as_array().cloned().unwrap_or_default());
             match &c["pageInfo"] {
                 p if p["hasNextPage"] == true && nodes.len() < limit => vars["after"] = p["endCursor"].clone(),
@@ -282,6 +282,20 @@ impl GitLab {
     }
 }
 
+/// What to say when a group or project is not there, which GitLab reports
+/// by answering with nothing at all.
+fn missing(root: &Root, host: &str) -> String {
+    match root {
+        Root::Group(g) => {
+            format!(
+                "no group {g} on {host}, or no access; a group is a path like my-org, not a username (gitlab.groups)"
+            )
+        }
+        Root::Project(p) => format!("no project {p} on {host}, or no access"),
+        Root::Instance => format!("{host} answered with nothing"),
+    }
+}
+
 fn arg_type(k: &str) -> &'static str {
     match k {
         "state" => "MergeRequestState",
@@ -319,14 +333,35 @@ impl ForgeTrait for GitLab {
         Ok(s(&d, "/currentUser/username").to_string())
     }
 
+    async fn places(&self) -> Result<Vec<String>> {
+        let d = self.gql("query{currentUser{groups(first:100){nodes{fullPath}}}}", json!({})).await?;
+        Ok(d.pointer("/currentUser/groups/nodes")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .map(|g| s(g, "/fullPath").to_string())
+            .collect())
+    }
+
     async fn search(&self, q: &Query, me: &str, limit: usize) -> Result<Page> {
         let plan = self.plan(q, me);
         let several = plan.len() > 1;
         let text: Vec<String> =
             q.terms.iter().filter_map(|t| if let Term::Text(t) = t { Some(t.to_lowercase()) } else { None }).collect();
         let (mut seen, mut prs, mut total) = (HashSet::new(), Vec::new(), 0);
+        let mut missing_roots = Vec::new();
+        let mut last_err: Option<Error> = None;
         for (root, args) in &plan {
-            let (nodes, count) = self.run_root(root, args, limit).await?;
+            // One group that does not exist should not hide the others.
+            let (nodes, count) = match self.run_root(root, args, limit).await {
+                Ok(r) => r,
+                Err(Error::Refused(why)) => {
+                    missing_roots.push(why.clone());
+                    last_err = Some(Error::Refused(why));
+                    continue;
+                }
+                Err(e) => return Err(e),
+            };
             total += count;
             for n in &nodes {
                 let pr = self.to_pr(n);
@@ -342,7 +377,11 @@ impl ForgeTrait for GitLab {
         prs.truncate(limit);
         // A union of several searches overlaps, so its counts would add up
         // to more PRs than exist; the deduplicated rows are the honest total.
-        Ok(Page { total: if several { prs.len() } else { total }, prs, hidden: None })
+        if missing_roots.len() == plan.len() && last_err.is_some() {
+            return Err(Error::Refused(missing_roots.join("; ")));
+        }
+        let hidden = (!missing_roots.is_empty()).then(|| missing_roots.join("; "));
+        Ok(Page { total: if several { prs.len() } else { total }, prs, hidden })
     }
 
     fn capabilities(&self) -> HashMap<String, Capabilities> {

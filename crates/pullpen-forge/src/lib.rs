@@ -71,6 +71,9 @@ pub trait Forge: Send + Sync {
     fn host(&self) -> &str;
     /// The signed-in login, which is what `@me` means.
     async fn viewer(&self) -> Result<String>;
+    /// Where the signed-in user can watch PRs: on GitHub their own account
+    /// and their orgs, on GitLab the groups they belong to.
+    async fn places(&self) -> Result<Vec<String>>;
     /// PRs matching the server-side part of `q`; the caller applies the
     /// client-side terms.
     async fn search(&self, q: &Query, me: &str, limit: usize) -> Result<Page>;

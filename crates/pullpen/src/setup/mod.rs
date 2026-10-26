@@ -10,11 +10,15 @@ use crate::config::{Config, ForgeCfg, Kind, expand};
 use crate::credentials::Credentials;
 use crate::prompt::Io;
 
+/// Who a token belongs to, and where they can watch PRs.
+pub type SignedIn = (String, Vec<String>);
+
 /// What setup needs from outside, so a test can stand in for the network
 /// and for `gh`.
 pub struct Deps<'a> {
-    /// Asks the forge who a token belongs to: the login, or why not.
-    pub verify: &'a mut dyn FnMut(Forge, &str, &str) -> Result<String, String>,
+    /// Asks the forge who a token belongs to: the login and where they can
+    /// watch PRs (their orgs, or their groups), or why not.
+    pub verify: &'a mut dyn FnMut(Forge, &str, &str) -> Result<SignedIn, String>,
     /// A token from the forge's own CLI login, if there is one.
     pub cli: &'a dyn Fn(Forge, &str) -> Option<String>,
     pub env: &'a dyn Fn(&str) -> Option<String>,
@@ -33,7 +37,13 @@ const NAMES: [(Forge, &str, &str, &str, &str); 2] = [
 ];
 
 /// Signs in to one forge. `Ok(None)` means the user chose to skip it.
-fn sign_in(io: &mut Io, d: &mut Deps, f: Forge, host: &str, creds: &mut Credentials) -> io::Result<Option<String>> {
+fn sign_in(
+    io: &mut Io,
+    d: &mut Deps,
+    f: Forge,
+    host: &str,
+    creds: &mut Credentials,
+) -> io::Result<Option<Vec<String>>> {
     let (_, name, _, cli, scopes) = NAMES.iter().find(|n| n.0 == f).copied().unwrap_or(NAMES[0]);
     let var = if f == Forge::GitHub { "GITHUB_TOKEN" } else { "GITLAB_TOKEN" };
     let pvar = format!("PULLPEN_{var}");
@@ -44,12 +54,18 @@ fn sign_in(io: &mut Io, d: &mut Deps, f: Forge, host: &str, creds: &mut Credenti
         ))?;
         return check(io, d, f, host, &t).map(|r| r.ok());
     }
+    if let Some(t) = creds.get(host).map(String::from)
+        && io.yes(&format!("  Keep the token pullpen already has for {host}"), true)?
+        && let Ok(places) = check(io, d, f, host, &t)?
+    {
+        return Ok(Some(places));
+    }
     if let Some(t) = (d.cli)(f, host)
         && io.yes(&format!("  Use your {cli} login for {host}"), true)?
-        && let Ok(login) = check(io, d, f, host, &t)?
+        && let Ok(places) = check(io, d, f, host, &t)?
     {
         creds.remove(host);
-        return Ok(Some(login));
+        return Ok(Some(places));
     }
     loop {
         match f {
@@ -79,9 +95,9 @@ fn sign_in(io: &mut Io, d: &mut Deps, f: Forge, host: &str, creds: &mut Credenti
         {
             continue;
         }
-        if let Ok(login) = check(io, d, f, host, &t)? {
+        if let Ok(places) = check(io, d, f, host, &t)? {
             creds.set(host, t);
-            return Ok(Some(login));
+            return Ok(Some(places));
         }
         if !io.yes("  Try another token", true)? {
             return Ok(None);
@@ -89,39 +105,41 @@ fn sign_in(io: &mut Io, d: &mut Deps, f: Forge, host: &str, creds: &mut Credenti
     }
 }
 
-fn check(io: &mut Io, d: &mut Deps, f: Forge, host: &str, token: &str) -> io::Result<Result<String, String>> {
-    let r = (d.verify)(f, host, token);
-    match &r {
-        Ok(login) => io.say(&format!("  ✓ signed in to {host} as {login}"))?,
-        Err(why) => io.say(&format!("  ✗ {host}: {why}"))?,
+fn check(io: &mut Io, d: &mut Deps, f: Forge, host: &str, token: &str) -> io::Result<Result<Vec<String>, String>> {
+    match (d.verify)(f, host, token) {
+        Ok((login, places)) => {
+            io.say(&format!("  ✓ signed in to {host} as {login}"))?;
+            Ok(Ok(places))
+        }
+        Err(why) => {
+            io.say(&format!("  ✗ {host}: {why}"))?;
+            Ok(Err(why))
+        }
     }
-    Ok(r)
 }
 
 pub fn run(io: &mut Io, d: &mut Deps, mut cfg: Config, mut creds: Credentials) -> io::Result<(Config, Credentials)> {
     io.say("pullpen setup. Enter takes the value in [brackets]; run it again any time.\n")?;
+    // One question per forge, defaulting to what is configured: adding
+    // GitLab must not cost you GitHub, which a pick-one question did.
+    let first_run = cfg.forge.is_empty();
     let had = |k: Kind| cfg.forge.iter().any(|f| f.kind == k);
-    let start = match (had(Kind::Github), had(Kind::Gitlab)) {
-        (_, true) if had(Kind::Github) => 2,
-        (false, true) => 1,
-        _ => 0,
-    };
-    let which = io.pick("Which forges do you use", &["GitHub", "GitLab", "both"], start)?;
     let mut forges = Vec::new();
     for (f, name, default_host, _, _) in NAMES {
-        if which != 2 && which != (f as usize) {
+        let default = if first_run { f == Forge::GitHub } else { had(kind_of(f)) };
+        if !io.yes(&format!("Use {name}"), default)? {
             continue;
         }
         let old = cfg.forge.iter().find(|x| x.kind == kind_of(f)).cloned();
         io.say(&format!("\n{name}"))?;
         let host = io.line("  host", old.as_ref().map_or(default_host, |o| o.host()))?;
-        if sign_in(io, d, f, &host, &mut creds)?.is_none() {
+        let Some(places) = sign_in(io, d, f, &host, &mut creds)? else {
             io.say(&format!("  skipped {host}; `pullpen setup` again adds it"))?;
             continue;
-        }
+        };
         let mut fc = ForgeCfg {
             kind: kind_of(f),
-            host: (host != default_host).then_some(host),
+            host: (host != default_host).then(|| host.clone()),
             token_cmd: old.as_ref().and_then(|o| o.token_cmd.clone()),
             scope: None,
             groups: vec![],
@@ -130,7 +148,10 @@ pub fn run(io: &mut Io, d: &mut Deps, mut cfg: Config, mut creds: Credentials) -
             let was = old.and_then(|o| o.scope).unwrap_or_default().replace("org:", "").replace("repo:", "");
             io.say("  Which PRs should lists like All and Agent-opened include?")?;
             io.say("  Blank: only PRs that involve you (you opened, review, are assigned or mentioned).")?;
-            io.say("  Or name orgs, users or owner/repo to include every PR there, e.g.  acme  acme/api")?;
+            io.say("  Or name orgs, users or owner/repo to include every PR there.")?;
+            if !places.is_empty() {
+                io.say(&format!("  You can watch: {}", places.join("  ")))?;
+            }
             let a = io.line("  Watch", &was)?;
             let terms: Vec<String> = a
                 .split_whitespace()
@@ -142,10 +163,25 @@ pub fn run(io: &mut Io, d: &mut Deps, mut cfg: Config, mut creds: Credentials) -
             let a = {
                 io.say("  Which merge requests should lists like All and Agent-opened include?")?;
                 io.say("  Blank: only ones that involve you (you opened, review or are assigned).")?;
-                io.say("  Or name groups to include every merge request in them, e.g.  platform  platform/infra")?;
+                io.say("  Or name groups to include every merge request in them.")?;
+                match places.is_empty() {
+                    true => io.say(&format!("  You belong to no groups on {host}, so blank is the useful answer."))?,
+                    false => io.say(&format!("  Your groups: {}", places.join("  ")))?,
+                }
                 io.line("  Watch", &was)?
             };
-            fc.groups = a.split_whitespace().map(String::from).collect();
+            // A group you do not belong to shows nothing, which looks like a
+            // bug later; say so now, while the answer can still change.
+            fc.groups.clear();
+            for g in a.split_whitespace() {
+                let known = places.iter().any(|p| p.eq_ignore_ascii_case(g));
+                if known
+                    || io
+                        .yes(&format!("  {g} is not one of your groups and will show nothing; keep it anyway"), false)?
+                {
+                    fc.groups.push(g.to_string());
+                }
+            }
         }
         forges.push(fc);
     }

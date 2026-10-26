@@ -124,7 +124,10 @@ pub async fn graphql_partial(
             Ok((d.clone(), why))
         }
         (None, Some(why)) => Err(Error::Refused(why)),
-        (None, None) => Err(Error::Decode("GraphQL answered with neither data nor errors".into())),
+        // Every field null and no error: GitLab's answer for a group or
+        // project that does not exist. The caller knows what it asked for,
+        // so it says what was not found.
+        (None, None) => Ok((body.get("data").cloned().unwrap_or(Value::Null), None)),
     }
 }
 

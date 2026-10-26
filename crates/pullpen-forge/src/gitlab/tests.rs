@@ -182,3 +182,25 @@ async fn the_diff_is_assembled_from_the_diffs_endpoint() {
     let files = gl(&server, &[]).diff(&id()).await.unwrap();
     assert_eq!((files[0].path.as_str(), files[0].additions), ("go.mod", 1));
 }
+
+#[tokio::test]
+async fn a_group_that_does_not_exist_is_named_and_the_others_still_show() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(body_partial_json(json!({ "variables": { "path": "a5434" } })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "x": null } })))
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(body_partial_json(json!({ "variables": { "path": "platform" } })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "x": { "mergeRequests": {
+            "count": 1, "pageInfo": { "hasNextPage": false, "endCursor": null }, "nodes": [node()]
+        } } } })))
+        .mount(&server)
+        .await;
+    let page = gl(&server, &["a5434", "platform"]).search(&Query::parse("is:open"), "me", 50).await.unwrap();
+    assert_eq!(page.prs.len(), 1, "the group that exists still shows");
+    assert!(page.hidden.unwrap().starts_with("no group a5434 on gitlab.com"));
+    let alone = gl(&server, &["a5434"]).search(&Query::parse("is:open"), "me", 50).await.err().unwrap();
+    assert!(alone.to_string().contains("not a username"), "{alone}");
+}

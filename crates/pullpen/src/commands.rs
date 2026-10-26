@@ -7,7 +7,7 @@ use std::process::Command;
 
 use anyhow::{Context, Result};
 use pullpen_core::Forge;
-use pullpen_forge::{Agents, Forge as _, auth};
+use pullpen_forge::{Agents, auth};
 
 use crate::cli::SettingsAction;
 use crate::config::Config;
@@ -22,16 +22,19 @@ pub fn interactive() -> bool {
 
 /// Asks the forge whose token this is: its answer is the only proof a
 /// token works.
-fn verify(f: Forge, host: &str, token: &str) -> Result<String, String> {
+fn verify(f: Forge, host: &str, token: &str) -> Result<(String, Vec<String>), String> {
     let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().map_err(|e| e.to_string())?;
     let t = token.to_string();
     rt.block_on(async move {
-        match f {
-            Forge::GitHub => pullpen_forge::github::GitHub::new(host, t, Agents::default(), "", false).viewer().await,
-            Forge::GitLab => {
-                pullpen_forge::gitlab::GitLab::new(host, t, Agents::default(), vec![], false).viewer().await
-            }
-        }
+        let forge: Box<dyn pullpen_forge::Forge> = match f {
+            Forge::GitHub => Box::new(pullpen_forge::github::GitHub::new(host, t, Agents::default(), "", false)),
+            Forge::GitLab => Box::new(pullpen_forge::gitlab::GitLab::new(host, t, Agents::default(), vec![], false)),
+        };
+        let login = forge.viewer().await?;
+        // Knowing where someone can watch is a help, not a requirement; a
+        // token that cannot list groups still signs in.
+        let places = forge.places().await.unwrap_or_default();
+        Ok::<_, pullpen_forge::Error>((login, places))
     })
     .map_err(|e| e.to_string())
 }
