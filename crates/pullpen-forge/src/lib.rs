@@ -11,7 +11,7 @@ use async_trait::async_trait;
 use pullpen_core::diff::FileDiff;
 use pullpen_core::query::Query;
 use pullpen_core::time::Timestamp;
-use pullpen_core::{Action, Capabilities, Forge as Kind, Job, MergeMethod, Pr, PrDetail, PrId};
+use pullpen_core::{Action, Capabilities, Forge as Kind, Job, MergeMethod, PipelineState, Pr, PrDetail, PrId};
 
 #[derive(Debug, thiserror::Error, Clone, PartialEq, Eq)]
 pub enum Error {
@@ -100,6 +100,28 @@ pub trait Forge: Send + Sync {
     /// Description, checks and timeline, for the preview and detail view.
     async fn detail(&self, id: &PrId) -> Result<PrDetail>;
     async fn diff(&self, id: &PrId) -> Result<Vec<FileDiff>>;
+}
+
+/// Each (repo, base branch) that a merge failed on, once: whether the branch
+/// passes now decides if that failure still needs anyone (ADR-019).
+pub fn failed_branches(prs: &[Pr]) -> Vec<(String, String)> {
+    let mut out: Vec<(String, String)> = Vec::new();
+    for p in prs.iter().filter(|p| p.post_merge.as_ref().is_some_and(|x| x.state == PipelineState::Failed)) {
+        let key = (p.id.repo.clone(), p.base.clone());
+        if !out.contains(&key) {
+            out.push(key);
+        }
+    }
+    out
+}
+
+/// Records what a base branch's newest pipeline did on each failed row of it.
+pub fn set_branch(prs: &mut [Pr], (repo, base): &(String, String), state: PipelineState) {
+    for p in prs.iter_mut().filter(|p| &p.id.repo == repo && &p.base == base) {
+        if let Some(pl) = p.post_merge.as_mut().filter(|x| x.state == PipelineState::Failed) {
+            pl.branch = Some(state);
+        }
+    }
 }
 
 /// `1m 52s`, `38s`, `1h 4m`: how long a check took.

@@ -71,12 +71,13 @@ pub fn state_glyph(r: Readiness) -> Span {
 }
 
 /// The state glyph, or for a merged PR its pipeline's: ○ running, ✓
-/// passed, ✗ failed (ADR-017).
+/// passed, ✗ failed, dim ✗ failed but fixed since (ADR-017, ADR-019).
 pub fn glyph(p: &Pr, r: Readiness) -> Span {
-    match p.post_merge.as_ref().filter(|_| p.merged()).map(|x| x.state) {
-        Some(PipelineState::Running) => s("○", Tok::Warn),
-        Some(PipelineState::Passed) => s("✓", Tok::Ok),
-        Some(PipelineState::Failed) => s("✗", Tok::Err),
+    match p.post_merge.as_ref().filter(|_| p.merged()).map(|x| (x.state, x.branch)) {
+        Some((PipelineState::Running, _)) => s("○", Tok::Warn),
+        Some((PipelineState::Passed, _)) => s("✓", Tok::Ok),
+        Some((PipelineState::Failed, Some(PipelineState::Passed))) => s("✗", Tok::Dim),
+        Some((PipelineState::Failed, _)) => s("✗", Tok::Err),
         None => state_glyph(r),
     }
 }

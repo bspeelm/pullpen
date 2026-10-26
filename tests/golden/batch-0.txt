@@ -11,5 +11,5 @@
   gh ✓   #4815 Remove deprecated v1 webhooks handler                 acme/api         ◇ claude    2/2    +12 −540    2d 
 • gl ✗    #143 Pin redis chart to 19.6.x                             platform/charts  ◇ renovate  0/1     +2 −2      3d 
 ▌ gh ○    #375 Terraform: split vpc module by region                 acme/infra       ◇ codex     0/1   +610 −402    3d 
- CONFIRM   Agent-opened  13/23   5 marked                             ◆ 7 armed   ✗ 3 failing   synced 40s   gh ✓  gl ✓ 
+ CONFIRM   Agent-opened  13/23   5 marked                ◆ 7 armed   ✗ 3 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
 Arm auto-merge on 5 PRs with squash?   y/Enter yes   m merge   r rebase   n/Esc cancel                                  

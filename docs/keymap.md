@@ -29,6 +29,7 @@ The same table drives the `?` overlay.
 | `o` | open in browser |
 | `x` | close… |
 | `u` | update branch |
+| `D` | dismiss failure |
 | `r` | refresh |
 
 ## sections & views

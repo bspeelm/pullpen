@@ -1,4 +1,4 @@
-  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96    Merged 6             author:@agents 
+  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96    Merged 1             author:@agents 
                                                                                                                         
              # title                      repo               rev   age │ Migrate invoices to ledger v2                  
 ▌ gh ○ ◆ #4821 Migrate invoices to ledg…  acme/api         ◇ 1/2    3h │ gh  acme/api #4821   ◇ claude   3h             
@@ -15,15 +15,16 @@
   gl ✗    #1   Esc        clear, cancel      o          open in browser    ?          this help                         
   gh ○    #3   Space      mark row           x          close…             q          back / quit           r v2        
   gh ✓ ◆ #11   V          mark range         u          update branch                                       uns as an   
-  gl ○    #8   Enter      open detail        r          refresh                                             0 with a    
-  gh ○   #22                                                                                                anly after  
-  gh ✓ ◆ #48   detail view                   command line                  confirm prompt                               
-  gl ○     #   h l        focus pane         Tab S-Tab  complete           y Enter    confirm                           
-  gh ✓     #   n b        next / prev file   ↑ ↓        history            n Esc      cancel                            
-  gh ✗    #3   F          all files          ^r #       insert selected    s m r      pick method                    2h 
-  gh ○   #22   ]c [c      next / prev hunk   Enter      run                                                          2h 
-  gl ✓    #1   zo zc      expand / fold      Esc        cancel                                                       3h 
-  gh ○   #47   q Esc      back to list                                                                               3h 
+  gl ○    #8   Enter      open detail        D          dismiss failure                                     0 with a    
+  gh ○   #22                                 r          refresh                                             anly after  
+  gh ✓ ◆ #48                                                                                                            
+  gl ○     #   detail view                   command line                  confirm prompt                               
+  gh ✓     #   h l        focus pane         Tab S-Tab  complete           y Enter    confirm                           
+  gh ✗    #3   n b        next / prev file   ↑ ↓        history            n Esc      cancel                         2h 
+  gh ○   #22   F          all files          ^r #       insert selected    s m r      pick method                    2h 
+  gl ✓    #1   ]c [c      next / prev hunk   Enter      run                                                          3h 
+  gh ○   #47   zo zc      expand / fold      Esc        cancel                                                       3h 
+               q Esc      back to list                                                                                  
                                                                                                                         
                Every key has a : command. M and x confirm on the command line, never in a dialog.                       
                                                                                                                         
@@ -35,6 +36,5 @@
                                                                        │                                                
                                                                        │                                                
                                                                        │                                                
-                                                                       │                                                
- NORMAL   Agent-opened  1/23                                          ◆ 7 armed   ✗ 3 failing   synced 40s   gh ✓  gl ✓ 
+ NORMAL   Agent-opened  1/23                             ◆ 7 armed   ✗ 3 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
                                                                                                                         

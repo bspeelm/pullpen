@@ -351,8 +351,16 @@ async fn a_merged_pr_carries_its_merge_commits_checks_as_the_pipeline() {
         .respond_with(ResponseTemplate::new(200).set_body_json(details()))
         .mount(&server)
         .await;
+    Mock::given(method("POST"))
+        .and(body_partial_json(json!({ "variables": { "o0": "o", "n0": "r", "q0": "refs/heads/main" } })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "b0": { "ref": { "target": {
+            "statusCheckRollup": { "state": "SUCCESS" } } } } } })))
+        .expect(1)
+        .mount(&server)
+        .await;
     let page = gh(&server).search(&Query::parse("is:merged merged:7d"), "me", 50).await.unwrap();
     let pl = page.prs[0].post_merge.as_ref().unwrap();
     assert_eq!((pl.state, pl.passed, pl.total, pl.job.as_str()), (PipelineState::Failed, 1, 3, "deploy-production"));
     assert_eq!(pl.url, "https://github.com/o/r/commit/abc123");
+    assert_eq!(pl.branch, Some(PipelineState::Passed), "main's head passes, so a later merge fixed it");
 }

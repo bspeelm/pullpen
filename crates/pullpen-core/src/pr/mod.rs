@@ -173,6 +173,10 @@ pub struct Pipeline {
     /// The first failed job if it failed, else the first still running.
     pub job: String,
     pub url: String,
+    /// The newest pipeline on the base branch, asked only after a failure:
+    /// passing means a later change fixed what this one broke (ADR-019).
+    #[serde(default)]
+    pub branch: Option<PipelineState>,
 }
 
 impl Pr {

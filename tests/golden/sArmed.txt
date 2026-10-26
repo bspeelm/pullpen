@@ -1,4 +1,4 @@
-  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96    Merged 6   is:armed + recent merges 
+  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96    Merged 1   is:armed + recent merges 
                                                                                                                         
   needs attention  2                                                                                                    
 ▌ gh ✗ ◆ #2290 Fix hydration mismatch on settings page when local…  web         failing  e2e/chromium · 2 retries   18m 
@@ -36,5 +36,5 @@
                                                                                                                         
                                                                                                                         
                                                                                                                         
- NORMAL   Auto-merge armed  1/7                                       ◆ 7 armed   ✗ 3 failing   synced 40s   gh ✓  gl ✓ 
+ NORMAL   Auto-merge armed  1/7                          ◆ 7 armed   ✗ 3 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
 ◆ 4 merged since 09:14   ·   2 need attention   ·   5 still waiting                                                     

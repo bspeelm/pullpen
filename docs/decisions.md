@@ -335,3 +335,28 @@ was already made.
 The cap rises to 10,000 lines. That is about 1,000 lines of room, roughly
 three features the size of the Merged section, and the next raise needs its
 own record again, measured as this one is.
+
+## ADR-019 — A failure needs attention only while its branch is still failing
+
+ADR-017 kept every failed post-merge pipeline until `:clear`. In use, the
+failed group filled with failures that later merges had already fixed, and
+the maintainer could not tell what needed them from what was stale.
+
+**The rule.** For each base branch a merge failed on, pullpen asks for the
+newest pipeline on that branch: on GitHub the checks on the branch's head
+commit, on GitLab the newest pipeline for the ref. One lookup per repository
+and branch, only for failures. While it fails, or cannot be read, the
+failure **needs attention**: `main failing  deploy-production`. Once it
+passes, the failure is history: it moves to done as `fixed  main passes
+now`, with a dim ✗, and leaves a day after its merge like everything else.
+This judges the branch, not the change: a later merge that fixed the build
+also shipped this one.
+
+**Resolving by hand.** `D` and `:dismiss` drop the selected or marked rows
+and remember them, for a failure you have decided to live with.
+
+**Knowing without looking.** The Merged tab counts only what needs
+attention, the status line adds `✗ 1 broken` while any base branch is
+failing, and the bell rings when a branch starts failing after a merge and
+again when it passes. The design changed first (ADR-002): the group, the
+reason, the dim glyph, `D` in the help overlay and the status line's count.

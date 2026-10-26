@@ -218,15 +218,18 @@ pub fn by_number(n: u64) -> Option<Pr> {
 /// tui.js `mergedScreen`: PRs merged in the last few hours, with what their
 /// merge commit's pipeline did, newest merge first within each group.
 pub fn merged_prs() -> Vec<Pr> {
-    let pl =
-        |state, passed, total, job: &str| Some(Pipeline { state, passed, total, job: job.into(), url: String::new() });
+    use PipelineState::*;
+    let pl = |state, passed, total, job: &str, branch| {
+        Some(Pipeline { state, passed, total, job: job.into(), url: String::new(), branch })
+    };
     let rows = [
-        (4815, "1h", pl(PipelineState::Failed, 8, 9, "deploy-production")),
-        (2288, "22m", pl(PipelineState::Running, 5, 7, "deploy-staging")),
-        (812, "41m", pl(PipelineState::Running, 2, 4, "build")),
-        (1199, "1h", pl(PipelineState::Passed, 6, 6, "")),
-        (4811, "3h", pl(PipelineState::Passed, 11, 11, "")),
+        (4815, "1h", pl(Failed, 8, 9, "deploy-production", Some(Failed))),
+        (2288, "22m", pl(Running, 5, 7, "deploy-staging", None)),
+        (812, "41m", pl(Running, 2, 4, "build", None)),
+        (1199, "1h", pl(Passed, 6, 6, "", None)),
+        (4811, "3h", pl(Passed, 11, 11, "", None)),
         (60, "5h", None),
+        (4802, "6h", pl(Failed, 3, 4, "test", Some(Passed))),
     ];
     rows.into_iter()
         .filter_map(|(n, at, post_merge)| {
@@ -289,7 +292,7 @@ pub fn sections() -> Vec<FixtureSection> {
         section("Agent-opened", "Agent", "author:@agents", View::List, true, agent_prs(), 23),
         section("Auto-merge armed", "Armed", "is:armed", View::Armed, true, armed.clone(), armed.len()),
         section("All", "All", "is:open", View::List, false, all_prs(), 96),
-        section("Merged", "Merged", "is:merged merged:7d", View::Merged, false, merged_prs(), 6),
+        section("Merged", "Merged", "is:merged merged:7d", View::Merged, false, merged_prs(), 1),
     ]
 }
 

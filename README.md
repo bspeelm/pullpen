@@ -95,8 +95,8 @@ unless you set another; `s`, `m` or `r` at the prompt picks one for that merge.
 If a PR is only waiting, `M` offers to arm auto-merge instead. If the forge
 would refuse, pullpen refuses first and says why. `A` arms or disarms.
 After a merge, the Merged section shows what the base branch's pipeline did,
-so you can see a deploy go through or fail; a failure stays until you clear
-it.
+so you can see a deploy go through or fail. A failure needs attention until
+its branch passes again, and the status line says so from any tab.
 [Merging and auto-merge](https://github.com/bspeelm/pullpen/wiki/Merging-and-auto-merge) ·
 [the armed view](https://github.com/bspeelm/pullpen/wiki/The-armed-view) ·
 [the merged view](https://github.com/bspeelm/pullpen/wiki/The-merged-view)

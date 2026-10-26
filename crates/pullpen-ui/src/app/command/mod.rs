@@ -16,6 +16,7 @@ pub enum Cmd {
     Refresh,
     Section,
     Update,
+    Dismiss,
     Messages,
     Clear,
     Quit,
@@ -50,6 +51,7 @@ pub const COMMANDS: &[CmdInfo] = &[
     c("refresh", Cmd::Refresh, "refetch the section, or all"),
     c("section", Cmd::Section, "switch section"),
     c("update", Cmd::Update, "bring the branch up to date with its base"),
+    c("dismiss", Cmd::Dismiss, "resolve a failure after a merge by hand"),
 ];
 
 pub const ALIASES: &[(&str, Cmd)] = &[("am", Cmd::Automerge)];

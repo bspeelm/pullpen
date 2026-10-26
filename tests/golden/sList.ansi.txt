@@ -1,4 +1,4 @@
-{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {acc b}Agent-opened{acc} 23{fg}    {dim}Auto-merge armed{faint} 7{fg}    {dim}All{faint} 96{fg}    {dim}Merged{faint} 6{fg}             {faint}author:@agents{fg} 
+{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {acc b}Agent-opened{acc} 23{fg}    {dim}Auto-merge armed{faint} 7{fg}    {dim}All{faint} 96{fg}    {dim}Merged{faint} 1{fg}             {faint}author:@agents{fg} 
 {fg}                                                                                                                        
 {fg}         {faint}    #{fg} {faint}title{fg}                      {faint}repo{fg}               {faint}rev{fg}  {faint} age │ {fg b}Migrate invoices to ledger v2{fg}                  
 {acc bg=sel}▌ {dim bg=sel}gh {warn bg=sel}○{fg bg=sel} {acc bg=sel}◆{fg bg=sel} #4821 {fg bg=sel b}Migrate invoices to ledg…{fg bg=sel}  {dim bg=sel}acme/api{fg bg=sel}         ◇ {warn bg=sel}1/2{fg bg=sel}  {dim bg=sel}  3h{faint} │ {dim}gh  acme/api #4821   {fg}◇ claude{dim}   3h{fg}             
@@ -36,5 +36,5 @@
 {fg}                                                                      {faint} │ {fg}                                               
 {fg}                                                                      {faint} │ {fg}                                               
 {fg}                                                                      {faint} │ {fg}                                               
-{bg bg=acc b} NORMAL {fg bg=surf}  Agent-opened  {dim bg=surf}1/23{fg bg=surf}                                          {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
+{bg bg=acc b} NORMAL {fg bg=surf}  Agent-opened  {dim bg=surf}1/23{fg bg=surf}                             {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
 {fg}                                                                                                                        
