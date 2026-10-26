@@ -281,3 +281,36 @@ fn a_canceled_pipeline_failed_and_a_manual_one_is_still_running() {
     assert_eq!(p("MANUAL", "MANUAL").state, PipelineState::Running);
     assert_eq!(p("MANUAL", "MANUAL").job, "deploy (manual)");
 }
+
+#[tokio::test]
+async fn a_failed_pipeline_asks_whether_the_target_branch_passes_now() {
+    let server = MockServer::start().await;
+    let mut n = node();
+    n["state"] = json!("merged");
+    n["mergeCommitSha"] = json!("abc123");
+    Mock::given(method("POST"))
+        .and(body_string_contains("mergedAfter: $mergedAfter"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "x": { "mergeRequests": {
+            "count": 1, "pageInfo": { "hasNextPage": false }, "nodes": [n]
+        } } } })))
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(body_partial_json(json!({ "variables": { "s0": "abc123" } })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "p0": { "pipelines": { "nodes": [ {
+            "status": "FAILED", "path": "/p/-/pipelines/9", "jobs": { "nodes": [ { "name": "deploy", "status": "FAILED" } ] }
+        } ] } } } })))
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(body_string_contains("pipelines(ref: $b0, first: 1)"))
+        .and(body_partial_json(json!({ "variables": { "r0": "platform/runner", "b0": "main" } })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "p0": { "pipelines": { "nodes": [
+            { "status": "FAILED" } ] } } } })))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let page = gl(&server, &["platform"]).search(&Query::parse("is:merged merged:7d"), "me", 50).await.unwrap();
+    let pl = page.prs[0].post_merge.as_ref().unwrap();
+    assert_eq!((pl.state, pl.branch), (PipelineState::Failed, Some(PipelineState::Failed)), "main is still broken");
+}

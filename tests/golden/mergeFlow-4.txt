@@ -2,5 +2,5 @@
   gl ✓    #812 Bump go toolchain to 1.25.3                           platform/runner  ◇ renovate  1/1     +6 −6     41m 
   gh ✗ ◆ #2290 Fix hydration mismatch on settings page when locale…  acme/web         ◇ codex     0/1    +38 −12     5h 
 ▌ gh ○    #377 Rotate staging TLS certs via cert-manager             acme/infra       ◇ claude    0/1    +54 −20    12m 
- CONFIRM   Agent-opened                                               ◆ 7 armed   ✗ 3 failing   synced 40s   gh ✓  gl ✓ 
+ CONFIRM   Agent-opened                                  ◆ 7 armed   ✗ 3 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
 #377 isn't ready: CI 4/9 running, 1 review required. Arm auto-merge instead?   y/A arm   n/Esc cancel                   

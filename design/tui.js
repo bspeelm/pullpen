@@ -77,7 +77,7 @@ const ALL=(()=>{const o=[];let i=0,j=0;while(i<P.length||j<H.length){if(j<H.leng
 const byN=n=>P.find(p=>p.n===n)||H.find(p=>p.n===n);
 
 // ---------- row A (default)
-const PL={run:S('○','warn'),ok:S('✓','ok'),fail:S('✗','err')};
+const PL={run:S('○','warn'),ok:S('✓','ok'),fail:S('✗','err'),fixed:S('✗','dim')};
 function stateG(p){ if(p.merged) return PL[p.pl]||S('●','dim'); if(p.draft) return S('◌','dim'); if(p.conflict) return S('≠','err'); if(p.ci==='fail') return S('✗','err'); if(p.ci==='run'||p.rv[0]<p.rv[1]) return S('○','warn'); return S('✓','ok'); }
 function revS(p){const [h,n]=p.rv; if(!n) return S('–','faint'); return S(h+'/'+n,h>=n?'ok':'warn');}
 function cols(w){
@@ -118,7 +118,7 @@ function headA(w){
 }
 
 // ---------- chrome
-const SECS=[['Mine','Mine',6],['Needs my review','Review',4],['Agent-opened','Agent',23],['Auto-merge armed','Armed',7],['All','All',96],['Merged','Merged',6]];
+const SECS=[['Mine','Mine',6],['Needs my review','Review',4],['Agent-opened','Agent',23],['Auto-merge armed','Armed',7],['All','All',96],['Merged','Merged',1]];
 function tabs(active,W,o={}){
  const l=[sp(2)];
  SECS.forEach((s,i)=>{const nm=o.short?s[1]:s[0];
@@ -129,10 +129,10 @@ function tabs(active,W,o={}){
 function status(W,o){
  const left=[S(' '+o.mode+' ','bg',{k:o.modeK||'acc',b:1}),sp(2),S(o.section,'fg'),sp(2),S(o.pos||'','dim')];
  if(o.extra) left.push(sp(3),...o.extra);
- const r=[]; const ar=o.armed??7, fl=o.failing??3;
+ const r=[]; const ar=o.armed??7, fl=o.failing??3, br=o.broken??1;
  if(o.err) r.push(S('E ','err',{b:1}),S(o.err,'err'),sp(3));
- if(o.narrow) r.push(S('◆','acc'),S(''+ar,'dim'),sp(1),S('✗','err'),S(''+fl,'dim'),sp(3));
- else r.push(S('◆ ','acc'),S(ar+' armed','dim'),sp(3),S('✗ ','err'),S(fl+' failing','dim'),sp(3));
+ if(o.narrow) r.push(S('◆','acc'),S(''+ar,'dim'),sp(1),S('✗','err'),S(''+fl,'dim'),...(br?[sp(1),S('✗','err'),S(br+' broken','dim')]:[]),sp(3));
+ else r.push(S('◆ ','acc'),S(ar+' armed','dim'),sp(3),S('✗ ','err'),S(fl+' failing','dim'),sp(3),...(br?[S('✗ ','err'),S(br+' broken','dim'),sp(3)]:[]));
  if(!o.err) r.push(S(o.sync||'synced 40s','dim'),sp(3));
  r.push(S('gh','dim'),S(' ✓','ok'),sp(2),S('gl','dim'),o.err?S(' ✗','err'):S(' ✓','ok'),sp(1));
  return withBg(lr(left,r,W),'surf');
@@ -259,7 +259,7 @@ function helpScreen(){
  const pl=[pad([]),pad(lr(M('{B|keys}'),M('{d|? or Esc to close}'),PW-6)),pad([])];
  pl.push(...block(['move','act on selection','sections & views'],[
   [['j k','down / up'],['gg G','top / bottom'],['^d ^u','half page'],['/','filter list'],['n N','next / prev match'],['Esc','clear, cancel'],['Space','mark row'],['V','mark range'],['Enter','open detail']],
-  [['M','merge…'],['A','arm / disarm auto'],['a','approve'],['c','comment'],['d','open diff'],['o','open in browser'],['x','close…'],['u','update branch'],['r','refresh']],
+  [['M','merge…'],['A','arm / disarm auto'],['a','approve'],['c','comment'],['d','open diff'],['o','open in browser'],['x','close…'],['u','update branch'],['D','dismiss failure'],['r','refresh']],
   [['h l','prev / next section'],['Tab S-Tab','next / prev section'],['1–6','go to section'],['p','toggle preview'],[':','command line'],['?','this help'],['q','back / quit']]]));
  pl.push(pad([]));
  pl.push(...block(['detail view','command line','confirm prompt'],[
@@ -300,16 +300,18 @@ function armedScreen(){
 }
 
 // The Merged section: each merged PR by what its merge commit's pipeline
-// did on the base branch. Failures stay until :clear; the rest leave after 24h.
+// did on the base branch. A failure needs attention while the branch is still
+// failing, and stays until D or :clear; one a later merge fixed is done, and
+// leaves after 24h with the rest.
 function mergedScreen(){
  const W=120,L=[tabs(5,W,{right:'is:merged merged:7d'}),[]];
  const grp=(t,rows,first)=>{L.push([sp(2),S(t,'fg',{b:1}),S('  '+rows.length,'dim')]);rows.forEach((p,i)=>L.push(rowArm({...p,merged:1,armed:0},W-1,{sel:first&&i===0,lit:1})));L.push([]);};
- grp('failed',[A(4815,{pl:'fail',why:'{r|failed}{d|  deploy-production}',when:'1h'})],true);
+ grp('needs attention',[A(4815,{pl:'fail',why:'{r|main failing}{d|  deploy-production}',when:'1h'})],true);
  grp('running',[A(2288,{pl:'run',why:'{y|running}{d|  5/7 · deploy-staging}',when:'22m'}),A(812,{pl:'run',why:'{y|running}{d|  2/4 · build}',when:'41m'})]);
- grp('done',[A(1199,{pl:'ok',why:'{g|passed}{d|  6/6}',when:'1h'}),A(4811,{pl:'ok',why:'{g|passed}{d|  11/11}',when:'3h'}),A(60,{why:'{d|no pipeline}',when:'5h'})]);
+ grp('done',[A(1199,{pl:'ok',why:'{g|passed}{d|  6/6}',when:'1h'}),A(4811,{pl:'ok',why:'{g|passed}{d|  11/11}',when:'3h'}),A(60,{why:'{d|no pipeline}',when:'5h'}),A(4802,{pl:'fixed',why:'{g|fixed}{d|  main passes now}',when:'6h'})]);
  while(L.length<38) L.push([]);
- L.push(status(W,{mode:'NORMAL',section:'Merged',pos:'1/6'}));
- L.push(M('{r|✗} {f|1 failed}{d|   ·   2 running   ·   3 done}'));
+ L.push(status(W,{mode:'NORMAL',section:'Merged',pos:'1/7'}));
+ L.push(M('{r|✗} {f|1 needs attention}{d|   ·   2 running   ·   4 done}'));
  return L.map(l=>fit(l,W,false));
 }
 

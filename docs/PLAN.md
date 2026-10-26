@@ -246,7 +246,7 @@ Header row uses faint lowercase labels (`#  title  repo  author  rev  +/−  age
 1. **List** — tabs, header, rows, optional preview (right, 46 cells: title, meta line, verdict line, 4 facts `checks / reviews / conflicts / auto-merge`, branch, size, wrapped description, activity).
 2. **Detail** — breadcrumb row (`Section › gh repo #n` left; `1 of 23   updated 12m ago` right), title, meta line, **verdict row** (` READY `/` WAITING `/` BLOCKED ` filled label + sentence), 2×2 fact grid, then two panes split 56/rest: overview (description, checks list with `+ 7 more passed  zo to expand`, conversation) │ diff (file header with `file 2/14 +120 −12`, hunks with old/new line numbers in faint, `+` ok `-` err). `h`/`l` focus; focused pane heading accent. `d` zooms diff full width.
 3. **Armed section** — rows grouped `needs attention` / `waiting` / `merged since HH:MM`; each row's right side is the *why* (`failing  e2e/chromium · 2 retries`, `review  @mara · 1 of 2`, `ci  6/9 running · ~4m left`, `merge train  position 2 of 3`, `merged · squash`). Merged rows dim, stay for the session, `:clear` drops them; their glyph is their merge commit's pipeline. Command line shows the summary: `◆ 4 merged since 09:14 · 2 need attention · 5 still waiting`.
-   **Merged section** (ADR-017) — the same layout, grouped `failed` / `running` / `done` by the merge commit's pipeline, the failing or running job on the right, summary `✗ 1 failed · 2 running · 3 done`. Rows leave 24h after merging, failures only on `:clear`; `o` opens the pipeline.
+   **Merged section** (ADR-017, ADR-019) — the same layout, grouped `needs attention` / `running` / `done` by the merge commit's pipeline, the failing or running job on the right, summary `✗ 1 needs attention · 2 running · 4 done`. A failure needs attention while its base branch's newest pipeline still fails (`main failing  deploy-production`); once that passes it is done (`fixed  main passes now`, dim ✗). Rows leave 24h after merging, ones needing attention only on `D` or `:clear`; `o` opens the pipeline. The tab counts what needs attention; the status line adds `✗ 1 broken`.
 4. **Help overlay (?)** — base screen faded to faint; 96-wide surface block at x=12, y=5, no border; three-column key tables; typing filters; `?`/Esc closes.
 5. **Wildmenu** — completion list overlays upward over the list rows above the command line, surface bg, selected item sel bg.
 
@@ -288,7 +288,7 @@ Translation splits each query in two. Terms a forge's search understands go to t
 
 **Normal, everywhere:** `:` command line · `?` help · `q` back (quits from list) · `Esc` clear filter/marks/message · `h l` prev/next section (list) or pane focus (detail) · `Tab S-Tab` next/prev section · `1–9` section by position · `r R` refresh section/all · `^l` redraw.
 
-**List:** `j k` · `gg G` · `^d ^u` · `/` filter, `n N` next/prev match · `Space` mark, `V` mark range · `Enter` detail · `p` toggle preview · `M` merge (confirm) · `x` close (confirm) · `u` update branch (ADR-015) · `A` arm/disarm · `a` approve · `c` comment · `d` diff · `o` browser.
+**List:** `j k` · `gg G` · `^d ^u` · `/` filter, `n N` next/prev match · `Space` mark, `V` mark range · `Enter` detail · `p` toggle preview · `M` merge (confirm) · `x` close (confirm) · `u` update branch (ADR-015) · `D` dismiss a merged failure (ADR-019) · `A` arm/disarm · `a` approve · `c` comment · `d` diff · `o` browser.
 
 **Detail:** `j k ^d ^u gg G` scroll focused pane · `h l` focus overview/diff · `n b` next/prev file (`]f [f` too), `F` the file list (ADR-014) · `]c [c` next/prev hunk · `zo zc` expand/fold · `d` zoom diff · `M A a c o x u` as in list · `q Esc` back, cursor kept.
 
@@ -313,6 +313,7 @@ Translation splits each query in two. Terms a forge's search understands go to t
 | `:section <name>` | Completes names and short names. |
 | `:messages` | Last 200 results/errors. |
 | `:clear` | Drop merged rows from the armed view; in the Merged section, drop every finished row, remembered across sessions. |
+| `:dismiss [target]` | In the Merged section, resolve a failure by hand: the row leaves and stays gone (`D`, ADR-019). |
 | `:q` / `:qa` | Back-or-quit / quit from anywhere. |
 
 **Targets:** omitted → selected row, or all marked rows if any. `#812` or `!812` resolves within the section; ambiguous across repos → completion asks for `repo#812`. Bare integer → displayed row index. With marks present the confirm prompt shows the count (`Arm auto-merge on **6 PRs** with squash?`).

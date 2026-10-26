@@ -84,18 +84,20 @@ pub fn why(p: &Pr, g: Group, disarmed: bool, others: &[Pr]) -> String {
 }
 
 /// The Merged view's groups (ADR-017), by what the merge commit's
-/// pipeline did on the base branch.
+/// pipeline did on the base branch. A failure needs attention until the
+/// branch passes again (ADR-019).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Landed {
-    Failed,
+    Attention,
     Running,
     Done,
 }
 
 pub fn landed(p: &Pr) -> Landed {
-    match p.post_merge.as_ref().map(|x| x.state) {
-        Some(PipelineState::Failed) => Landed::Failed,
-        Some(PipelineState::Running) => Landed::Running,
+    match p.post_merge.as_ref().map(|x| (x.state, x.branch)) {
+        Some((PipelineState::Failed, Some(PipelineState::Passed))) => Landed::Done,
+        Some((PipelineState::Failed, _)) => Landed::Attention,
+        Some((PipelineState::Running, _)) => Landed::Running,
         _ => Landed::Done,
     }
 }
@@ -105,7 +107,14 @@ pub fn landed_why(p: &Pr) -> String {
     let e = super::detail::esc;
     let Some(pl) = &p.post_merge else { return "{d|no pipeline}".into() };
     let count = format!("{}/{}", pl.passed, pl.total);
+    let base = e(&p.base);
     match (pl.state, pl.job.as_str()) {
+        _ if landed(p) == Landed::Done && pl.state == PipelineState::Failed => {
+            format!("{{g|fixed}}{{d|  {base} passes now}}")
+        }
+        (PipelineState::Failed, job) if pl.branch == Some(PipelineState::Failed) => {
+            format!("{{r|{base} failing}}{{d|  {}}}", e(job))
+        }
         (PipelineState::Failed, "") => format!("{{r|failed}}{{d|  {count}}}"),
         (PipelineState::Failed, job) => format!("{{r|failed}}{{d|  {}}}", e(job)),
         (PipelineState::Running, "") => format!("{{y|running}}{{d|  {count}}}"),

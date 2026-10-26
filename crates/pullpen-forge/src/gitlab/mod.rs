@@ -12,7 +12,7 @@ use pullpen_core::*;
 use serde_json::{Map, Value, json};
 
 use crate::http::{self, encode_path, graphql, send};
-use crate::{Agents, Error, Forge as ForgeTrait, Page, Result, duration};
+use crate::{Agents, Error, Forge as ForgeTrait, Page, Result, duration, failed_branches, set_branch};
 
 const FRAGMENT: &str = include_str!("mr.graphql");
 const DETAIL: &str = include_str!("detail.graphql");
@@ -313,6 +313,31 @@ impl GitLab {
         }
     }
 
+    /// The newest pipeline on each target branch a merge failed on, logged
+    /// rather than failing the section when it cannot be read.
+    async fn branch_heads(&self, prs: &mut [Pr]) {
+        for chunk in failed_branches(prs).chunks(20) {
+            let (mut decl, mut body, mut vars) = (Vec::new(), String::new(), Map::new());
+            for (i, (repo, base)) in chunk.iter().enumerate() {
+                decl.push(format!("$r{i}: ID!, $b{i}: String!"));
+                body += &format!(
+                    " p{i}: project(fullPath: $r{i}) {{ pipelines(ref: $b{i}, first: 1) {{ nodes {{ status }} }} }}"
+                );
+                vars.insert(format!("r{i}"), json!(repo));
+                vars.insert(format!("b{i}"), json!(base));
+            }
+            let d = match self.gql(&format!("query({}) {{{body} }}", decl.join(", ")), Value::Object(vars)).await {
+                Ok(d) => d,
+                Err(e) => return tracing::warn!(host = %self.host, error = %e, "target branch pipelines"),
+            };
+            for (i, key) in chunk.iter().enumerate() {
+                if let Some(st) = d.pointer(&format!("/p{i}/pipelines/nodes/0/status")).and_then(Value::as_str) {
+                    set_branch(prs, key, status(st));
+                }
+            }
+        }
+    }
+
     async fn merge_with(&self, id: &PrId, m: MergeMethod, auto: bool) -> Result<()> {
         let mut body = json!({ "squash": m == MergeMethod::Squash, "should_remove_source_branch": self.delete_branch });
         if auto {
@@ -325,17 +350,27 @@ impl GitLab {
     }
 }
 
+/// A pipeline status as pullpen counts it: see `pipeline`.
+fn status(s: &str) -> PipelineState {
+    match s {
+        "SUCCESS" | "SKIPPED" => PipelineState::Passed,
+        "FAILED" | "CANCELED" => PipelineState::Failed,
+        _ => PipelineState::Running,
+    }
+}
+
 /// A GitLab pipeline as pullpen reports one. A canceled pipeline deployed
 /// nothing, so it counts as failed; one stopped at a manual job is still
 /// running, since what it would deploy has not been.
 fn pipeline(p: &Value, base: &str) -> Pipeline {
     let jobs = p.pointer("/jobs/nodes").and_then(Value::as_array).cloned().unwrap_or_default();
     let first = |st: &[&str]| jobs.iter().find(|j| st.contains(&s(j, "/status"))).map(|j| s(j, "/name").to_string());
-    let (state, job) = match s(p, "/status") {
-        "SUCCESS" | "SKIPPED" => (PipelineState::Passed, None),
-        "FAILED" | "CANCELED" => (PipelineState::Failed, first(&["FAILED", "CANCELED"])),
-        "MANUAL" => (PipelineState::Running, first(&["MANUAL"]).map(|j| format!("{j} (manual)"))),
-        _ => (PipelineState::Running, first(&["RUNNING", "PENDING", "CREATED"])),
+    let state = status(s(p, "/status"));
+    let job = match (state, s(p, "/status")) {
+        (PipelineState::Passed, _) => None,
+        (PipelineState::Failed, _) => first(&["FAILED", "CANCELED"]),
+        (_, "MANUAL") => first(&["MANUAL"]).map(|j| format!("{j} (manual)")),
+        _ => first(&["RUNNING", "PENDING", "CREATED"]),
     };
     Pipeline {
         state,
@@ -343,6 +378,7 @@ fn pipeline(p: &Value, base: &str) -> Pipeline {
         total: jobs.len() as u32,
         job: job.unwrap_or_default(),
         url: format!("{base}{}", s(p, "/path")),
+        branch: None,
     }
 }
 
@@ -444,6 +480,7 @@ impl ForgeTrait for GitLab {
         prs.sort_by_key(|p| std::cmp::Reverse(p.updated_at));
         prs.truncate(limit);
         self.post_merge(&mut prs, &landed).await;
+        self.branch_heads(&mut prs).await;
         // A union of several searches overlaps, so its counts would add up
         // to more PRs than exist; the deduplicated rows are the honest total.
         if missing_roots.len() == plan.len() && last_err.is_some() {

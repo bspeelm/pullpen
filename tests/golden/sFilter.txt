@@ -1,4 +1,4 @@
-  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96    Merged 6    is:open   sort: updated 
+  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96    Merged 1    is:open   sort: updated 
                                                                                                                         
              # title                                                 repo               author    rev    +/−        age 
   gh ○   #4823 Rate limit per API key instead of per IP              acme/api           mara      0/1   +140 −31    20m 
@@ -36,5 +36,5 @@
   gl ✓    #139 Bump ingress-nginx to 4.13.1                          platform/charts  ◇ renovate  1/1     +2 −2      1w 
   gl ✓    #801 Shell executor: honor umask from config               platform/runner    lena      1/1    +15 −2      1w 
   gh ○   #4796 Trace context propagation for outbound HTTP           acme/api         ◇ codex     0/1    +95 −18     2w 
- FILTER   All  1/5 matches                                            ◆ 7 armed   ✗ 3 failing   synced 40s   gh ✓  gl ✓ 
+ FILTER   All  1/5 matches                               ◆ 7 armed   ✗ 3 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
 /ledger                                                                    n N jump   Enter hide non-matches   Esc clear

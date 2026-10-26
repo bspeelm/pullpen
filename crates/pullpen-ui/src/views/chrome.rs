@@ -65,6 +65,8 @@ pub struct Status<'a> {
     pub extra: Line,
     pub armed: usize,
     pub failing: usize,
+    /// Base branches still failing after a merge (ADR-019).
+    pub broken: usize,
     /// Below 100 columns the counts drop their words.
     pub narrow: bool,
     /// A background error. It replaces the sync segment and flips the
@@ -93,10 +95,17 @@ pub fn status(w: usize, o: &Status) -> Line {
     }
     if o.narrow {
         r.extend([s("◆", Tok::Acc), s(o.armed.to_string(), Tok::Dim), sp(1)]);
-        r.extend([s("✗", Tok::Err), s(o.failing.to_string(), Tok::Dim), sp(3)]);
+        r.extend([s("✗", Tok::Err), s(o.failing.to_string(), Tok::Dim)]);
+        if o.broken > 0 {
+            r.extend([sp(1), s("✗", Tok::Err), s(format!("{} broken", o.broken), Tok::Dim)]);
+        }
+        r.push(sp(3));
     } else {
         r.extend([s("◆ ", Tok::Acc), s(format!("{} armed", o.armed), Tok::Dim), sp(3)]);
         r.extend([s("✗ ", Tok::Err), s(format!("{} failing", o.failing), Tok::Dim), sp(3)]);
+        if o.broken > 0 {
+            r.extend([s("✗ ", Tok::Err), s(format!("{} broken", o.broken), Tok::Dim), sp(3)]);
+        }
     }
     if o.err.is_none() {
         r.extend([s(&o.sync, Tok::Dim), sp(3)]);

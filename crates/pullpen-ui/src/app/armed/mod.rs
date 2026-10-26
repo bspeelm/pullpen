@@ -76,7 +76,7 @@ impl App {
                 self.track(i, &mut prs);
                 if self.view_is(i, View::Merged) {
                     self.land(&mut prs);
-                    self.sections[i].total = prs.len();
+                    self.sections[i].total = super::merged::attention(&prs);
                 }
                 self.sections[i].prs = prs;
             }

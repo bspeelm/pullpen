@@ -15,6 +15,7 @@ The ones to know first:
 | `Space` `V` | mark a row, mark a range |
 | `M` `A` `a` `c` `x` | merge, arm, approve, comment, close |
 | `u` | update the branch from its base |
+| `D` | in the Merged section, dismiss a failure |
 | `o` `d` | browser, diff |
 | `:` `?` `q` | command line, help, back |
 

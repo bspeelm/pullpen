@@ -18,9 +18,7 @@ use std::time::Instant;
 
 use pullpen_core::diff::FileDiff;
 use pullpen_core::time::Timestamp;
-use pullpen_core::{
-    Capabilities, Forge, Job, MergeMethod, PipelineState, Pr, PrDetail, PrId, Readiness, Section, View, readiness,
-};
+use pullpen_core::{Capabilities, Forge, Job, MergeMethod, Pr, PrDetail, PrId, Readiness, Section, View, readiness};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 
@@ -180,8 +178,8 @@ pub struct App {
     pub watches: HashMap<PrId, armed::Watch>,
     /// Merged PRs `:clear` dropped, oldest first.
     pub cleared: Vec<PrId>,
-    /// Each merged PR's pipeline state as last seen, to ring when it finishes.
-    pub landings: HashMap<PrId, Option<PipelineState>>,
+    /// Each merged PR's group as last seen, to ring when it changes.
+    pub landings: HashMap<PrId, crate::views::armed::Landed>,
     pub notify: Vec<String>,
     /// When the user last left pullpen, for "merged since".
     pub last_visit: Option<Timestamp>,
@@ -345,6 +343,8 @@ impl App {
             }
             _ if sec.prs.is_empty() => String::new(),
             (_, Some(f)) if f.applied => format!("{}/{}", sec.sel + 1, sec.visible().len()),
+            // Its tab counts only what needs attention; the position is over every row.
+            _ if sec.section.view == View::Merged => format!("{}/{}", sec.sel + 1, sec.prs.len()),
             _ => format!("{}/{}", sec.sel + 1, sec.total),
         };
         let extra =
@@ -366,6 +366,7 @@ impl App {
             extra,
             armed,
             failing,
+            broken: self.broken(),
             narrow,
             err: self.err.clone(),
             sync: self.sync.clone(),
@@ -610,7 +611,7 @@ impl App {
         }
         let total = match () {
             _ if self.view_is(i, View::Armed) => self.armed_count(&prs),
-            _ if self.view_is(i, View::Merged) => prs.len(),
+            _ if self.view_is(i, View::Merged) => merged::attention(&prs),
             _ => total,
         };
         // A PR that changed has a stale detail and diff; a fetch that failed

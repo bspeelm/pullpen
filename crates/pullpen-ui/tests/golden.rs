@@ -35,6 +35,7 @@ fn status(mode: Mode, section: &str, pos: &str) -> Status<'static> {
         extra: vec![],
         armed: 7,
         failing: 3,
+        broken: 1,
         narrow: false,
         err: None,
         sync: "synced 40s".into(),

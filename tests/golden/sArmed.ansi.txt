@@ -1,4 +1,4 @@
-{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Agent-opened{faint} 23{fg}    {acc b}Auto-merge armed{acc} 7{fg}    {dim}All{faint} 96{fg}    {dim}Merged{faint} 6{fg}   {faint}is:armed + recent merges{fg} 
+{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Agent-opened{faint} 23{fg}    {acc b}Auto-merge armed{acc} 7{fg}    {dim}All{faint} 96{fg}    {dim}Merged{faint} 1{fg}   {faint}is:armed + recent merges{fg} 
 {fg}                                                                                                                        
 {fg}  {fg b}needs attention{dim}  2{fg}                                                                                                    
 {acc bg=sel}▌ {dim bg=sel}gh {err bg=sel}✗{fg bg=sel} {acc bg=sel}◆{fg bg=sel} #2290 {fg bg=sel b}Fix hydration mismatch on settings page when local…{fg bg=sel}  {dim bg=sel}web{fg bg=sel}         {err bg=sel}failing{dim bg=sel}  e2e/chromium · 2 retries{fg bg=sel} {dim bg=sel}  18m{fg} 
@@ -36,5 +36,5 @@
 {fg}                                                                                                                        
 {fg}                                                                                                                        
 {fg}                                                                                                                        
-{bg bg=acc b} NORMAL {fg bg=surf}  Auto-merge armed  {dim bg=surf}1/7{fg bg=surf}                                       {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
+{bg bg=acc b} NORMAL {fg bg=surf}  Auto-merge armed  {dim bg=surf}1/7{fg bg=surf}                          {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
 {acc}◆{fg} 4 merged since 09:14{dim}   ·   2 need attention   ·   5 still waiting{fg}                                                     

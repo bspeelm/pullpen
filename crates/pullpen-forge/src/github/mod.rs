@@ -11,7 +11,7 @@ use pullpen_core::*;
 use serde_json::{Value, json};
 
 use crate::http::{self, graphql, send};
-use crate::{Agents, Error, Forge as ForgeTrait, Page, Result, duration};
+use crate::{Agents, Error, Forge as ForgeTrait, Page, Result, duration, failed_branches, set_branch};
 
 const SEARCH: &str = include_str!("search.graphql");
 /// Mergeability and check details, asked for separately and a few PRs at a
@@ -138,6 +138,36 @@ impl GitHub {
         parts.join(" ")
     }
 
+    /// The checks on the head of each base branch a merge failed on. Without
+    /// them the failure still shows, as needing attention, so a failure here
+    /// is logged rather than failing the section.
+    async fn branch_heads(&self, prs: &mut [Pr]) {
+        for chunk in failed_branches(prs).chunks(20) {
+            let (mut decl, mut body, mut vars) = (Vec::new(), String::new(), serde_json::Map::new());
+            for (i, (repo, base)) in chunk.iter().enumerate() {
+                let (owner, name) = repo.split_once('/').unwrap_or((repo, ""));
+                decl.push(format!("$o{i}: String!, $n{i}: String!, $q{i}: String!"));
+                body += &format!(
+                    " b{i}: repository(owner: $o{i}, name: $n{i}) {{ ref(qualifiedName: $q{i}) {{ target {{ ... on Commit {{ statusCheckRollup {{ state }} }} }} }} }}"
+                );
+                vars.insert(format!("o{i}"), json!(owner));
+                vars.insert(format!("n{i}"), json!(name));
+                vars.insert(format!("q{i}"), json!(format!("refs/heads/{base}")));
+            }
+            let d = match self.gql(&format!("query({}) {{{body} }}", decl.join(", ")), Value::Object(vars)).await {
+                Ok(d) => d,
+                Err(e) => return tracing::warn!(host = %self.host, error = %e, "base branch checks"),
+            };
+            for (i, key) in chunk.iter().enumerate() {
+                if let Some(st) =
+                    d.pointer(&format!("/b{i}/ref/target/statusCheckRollup/state")).and_then(Value::as_str)
+                {
+                    set_branch(prs, key, rollup(st));
+                }
+            }
+        }
+    }
+
     async fn node_id(&self, id: &PrId) -> Result<String> {
         let (owner, name) = id.repo.split_once('/').ok_or_else(|| Error::Decode(format!("repo {}", id.repo)))?;
         let q = "query($o:String!,$n:String!,$num:Int!){repository(owner:$o,name:$n){pullRequest(number:$num){id}}}";
@@ -211,6 +241,15 @@ fn check_state(n: &Value) -> CheckState {
     }
 }
 
+/// A status-check rollup's state as a pipeline's.
+fn rollup(state: &str) -> PipelineState {
+    match state {
+        "SUCCESS" => PipelineState::Passed,
+        "FAILURE" | "ERROR" => PipelineState::Failed,
+        _ => PipelineState::Running,
+    }
+}
+
 /// The merge commit's checks, which on GitHub are its pipeline: the
 /// workflows a push to the base branch starts, deploys among them.
 fn pipeline(commit: &Value, url: String) -> Option<Pipeline> {
@@ -222,11 +261,7 @@ fn pipeline(commit: &Value, url: String) -> Option<Pipeline> {
             .find(|n| check_state(n) == want)
             .map(|n| if n["__typename"] == "CheckRun" { s(n, "/name") } else { s(n, "/context") }.to_string())
     };
-    let state = match s(rollup, "/state") {
-        "SUCCESS" => PipelineState::Passed,
-        "FAILURE" | "ERROR" => PipelineState::Failed,
-        _ => PipelineState::Running,
-    };
+    let state = self::rollup(s(rollup, "/state"));
     let job = match state {
         PipelineState::Failed => named(CheckState::Failed),
         PipelineState::Running => named(CheckState::Running).or_else(|| named(CheckState::Queued)),
@@ -238,6 +273,7 @@ fn pipeline(commit: &Value, url: String) -> Option<Pipeline> {
         total: nodes.len() as u32,
         job: job.unwrap_or_default(),
         url,
+        branch: None,
     })
 }
 
@@ -559,6 +595,7 @@ impl ForgeTrait for GitHub {
             let rules = self.rules(s(n, "/repository/nameWithOwner"), s(n, "/baseRefName")).await;
             prs.push(self.to_pr(n, &rules));
         }
+        self.branch_heads(&mut prs).await;
         Ok(Page { prs, total: total.saturating_sub(withheld), hidden })
     }
 
