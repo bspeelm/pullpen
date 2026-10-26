@@ -6,12 +6,14 @@ use std::io;
 
 use pullpen_core::Forge;
 
+use pullpen_forge::Place;
+
 use crate::config::{Config, ForgeCfg, Kind, expand};
 use crate::credentials::Credentials;
 use crate::prompt::Io;
 
 /// Who a token belongs to, and where they can watch PRs.
-pub type SignedIn = (String, Vec<String>);
+pub type SignedIn = (String, Vec<Place>);
 
 /// What setup needs from outside, so a test can stand in for the network
 /// and for `gh`.
@@ -37,13 +39,7 @@ const NAMES: [(Forge, &str, &str, &str, &str); 2] = [
 ];
 
 /// Signs in to one forge. `Ok(None)` means the user chose to skip it.
-fn sign_in(
-    io: &mut Io,
-    d: &mut Deps,
-    f: Forge,
-    host: &str,
-    creds: &mut Credentials,
-) -> io::Result<Option<Vec<String>>> {
+fn sign_in(io: &mut Io, d: &mut Deps, f: Forge, host: &str, creds: &mut Credentials) -> io::Result<Option<Vec<Place>>> {
     let (_, name, _, cli, scopes) = NAMES.iter().find(|n| n.0 == f).copied().unwrap_or(NAMES[0]);
     let var = if f == Forge::GitHub { "GITHUB_TOKEN" } else { "GITLAB_TOKEN" };
     let pvar = format!("PULLPEN_{var}");
@@ -105,7 +101,7 @@ fn sign_in(
     }
 }
 
-fn check(io: &mut Io, d: &mut Deps, f: Forge, host: &str, token: &str) -> io::Result<Result<Vec<String>, String>> {
+fn check(io: &mut Io, d: &mut Deps, f: Forge, host: &str, token: &str) -> io::Result<Result<Vec<Place>, String>> {
     match (d.verify)(f, host, token) {
         Ok((login, places)) => {
             io.say(&format!("  ✓ signed in to {host} as {login}"))?;
@@ -116,6 +112,19 @@ fn check(io: &mut Io, d: &mut Deps, f: Forge, host: &str, token: &str) -> io::Re
             Ok(Err(why))
         }
     }
+}
+
+/// `a5434 (AIP)` where a name differs from its path, else the path.
+fn shown(places: &[Place]) -> String {
+    let one = |p: &Place| {
+        let last = p.path.rsplit('/').next().unwrap_or(&p.path);
+        if p.name.is_empty() || p.name.eq_ignore_ascii_case(last) {
+            p.path.clone()
+        } else {
+            format!("{} ({})", p.path, p.name)
+        }
+    };
+    places.iter().map(one).collect::<Vec<_>>().join("  ")
 }
 
 pub fn run(io: &mut Io, d: &mut Deps, mut cfg: Config, mut creds: Credentials) -> io::Result<(Config, Credentials)> {
@@ -150,7 +159,7 @@ pub fn run(io: &mut Io, d: &mut Deps, mut cfg: Config, mut creds: Credentials) -
             io.say("  Blank: only PRs that involve you (you opened, review, are assigned or mentioned).")?;
             io.say("  Or name orgs, users or owner/repo to include every PR there.")?;
             if !places.is_empty() {
-                io.say(&format!("  You can watch: {}", places.join("  ")))?;
+                io.say(&format!("  You can watch: {}", shown(&places)))?;
             }
             let a = io.line("  Watch", &was)?;
             let terms: Vec<String> = a
@@ -166,7 +175,7 @@ pub fn run(io: &mut Io, d: &mut Deps, mut cfg: Config, mut creds: Credentials) -
                 io.say("  Or name groups to include every merge request in them.")?;
                 match places.is_empty() {
                     true => io.say(&format!("  You belong to no groups on {host}, so blank is the useful answer."))?,
-                    false => io.say(&format!("  Your groups: {}", places.join("  ")))?,
+                    false => io.say(&format!("  Your groups: {}", shown(&places)))?,
                 }
                 io.line("  Watch", &was)?
             };
@@ -174,12 +183,23 @@ pub fn run(io: &mut Io, d: &mut Deps, mut cfg: Config, mut creds: Credentials) -
             // bug later; say so now, while the answer can still change.
             fc.groups.clear();
             for g in a.split_whitespace() {
-                let known = places.iter().any(|p| p.eq_ignore_ascii_case(g));
-                if known
-                    || io
-                        .yes(&format!("  {g} is not one of your groups and will show nothing; keep it anyway"), false)?
-                {
-                    fc.groups.push(g.to_string());
+                // A group's name is what GitLab's pages show, and searches take
+                // its path; either is accepted, and the path is what is kept.
+                match places.iter().find(|p| p.path.eq_ignore_ascii_case(g) || p.name.eq_ignore_ascii_case(g)) {
+                    Some(p) => {
+                        if !p.path.eq_ignore_ascii_case(g) {
+                            io.say(&format!("  {g} is the group at {}; saved as {}", p.path, p.path))?;
+                        }
+                        fc.groups.push(p.path.clone());
+                    }
+                    None if io.yes(
+                        &format!("  {g} is not one of your groups and will show nothing; keep it anyway"),
+                        false,
+                    )? =>
+                    {
+                        fc.groups.push(g.to_string());
+                    }
+                    None => {}
                 }
             }
         }

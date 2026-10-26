@@ -50,6 +50,15 @@ pub struct Page {
     pub hidden: Option<String>,
 }
 
+/// Somewhere PRs can be watched. The path is what searches take; the name
+/// is what the forge's own pages show, which on GitLab can differ (a group
+/// at `a5434` named "AIP").
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Place {
+    pub path: String,
+    pub name: String,
+}
+
 /// Who counts as an agent: these logins, plus any login ending in `[bot]`
 /// and any account the forge itself marks as a bot (PLAN.md §3).
 #[derive(Clone, Debug, Default)]
@@ -73,7 +82,7 @@ pub trait Forge: Send + Sync {
     async fn viewer(&self) -> Result<String>;
     /// Where the signed-in user can watch PRs: on GitHub their own account
     /// and their orgs, on GitLab the groups they belong to.
-    async fn places(&self) -> Result<Vec<String>>;
+    async fn places(&self) -> Result<Vec<Place>>;
     /// PRs matching the server-side part of `q`; the caller applies the
     /// client-side terms.
     async fn search(&self, q: &Query, me: &str, limit: usize) -> Result<Page>;

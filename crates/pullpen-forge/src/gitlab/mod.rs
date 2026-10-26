@@ -333,14 +333,10 @@ impl ForgeTrait for GitLab {
         Ok(s(&d, "/currentUser/username").to_string())
     }
 
-    async fn places(&self) -> Result<Vec<String>> {
-        let d = self.gql("query{currentUser{groups(first:100){nodes{fullPath}}}}", json!({})).await?;
-        Ok(d.pointer("/currentUser/groups/nodes")
-            .and_then(Value::as_array)
-            .into_iter()
-            .flatten()
-            .map(|g| s(g, "/fullPath").to_string())
-            .collect())
+    async fn places(&self) -> Result<Vec<crate::Place>> {
+        let d = self.gql("query{currentUser{groups(first:100){nodes{fullPath name}}}}", json!({})).await?;
+        let groups = d.pointer("/currentUser/groups/nodes").and_then(Value::as_array).into_iter().flatten();
+        Ok(groups.map(|g| crate::Place { path: s(g, "/fullPath").into(), name: s(g, "/name").into() }).collect())
     }
 
     async fn search(&self, q: &Query, me: &str, limit: usize) -> Result<Page> {

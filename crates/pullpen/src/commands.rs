@@ -22,7 +22,7 @@ pub fn interactive() -> bool {
 
 /// Asks the forge whose token this is: its answer is the only proof a
 /// token works.
-fn verify(f: Forge, host: &str, token: &str) -> Result<(String, Vec<String>), String> {
+fn verify(f: Forge, host: &str, token: &str) -> Result<setup::SignedIn, String> {
     let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().map_err(|e| e.to_string())?;
     let t = token.to_string();
     rt.block_on(async move {

@@ -476,17 +476,16 @@ impl ForgeTrait for GitHub {
         Ok(s(&d, "/viewer/login").to_string())
     }
 
-    async fn places(&self) -> Result<Vec<String>> {
+    async fn places(&self) -> Result<Vec<crate::Place>> {
         let d = self.gql("query{viewer{login organizations(first:100){nodes{login}}}}", json!({})).await?;
-        let mut out = vec![s(&d, "/viewer/login").to_string()];
-        out.extend(
+        let logins = std::iter::once(s(&d, "/viewer/login")).chain(
             d.pointer("/viewer/organizations/nodes")
                 .and_then(Value::as_array)
                 .into_iter()
                 .flatten()
-                .map(|o| s(o, "/login").to_string()),
+                .map(|o| s(o, "/login")),
         );
-        Ok(out)
+        Ok(logins.map(|l| crate::Place { path: l.into(), name: l.into() }).collect())
     }
 
     async fn search(&self, q: &Query, _me: &str, limit: usize) -> Result<Page> {

@@ -2,6 +2,7 @@ use std::io::Cursor;
 
 use super::*;
 use crate::config::ForgeCfg;
+use pullpen_forge::Place;
 
 fn run_with(script: &str, cfg: Config, gh_login: bool, verify_ok: bool) -> (Config, Credentials, String) {
     let mut input = Cursor::new(script.as_bytes().to_vec());
@@ -9,7 +10,13 @@ fn run_with(script: &str, cfg: Config, gh_login: bool, verify_ok: bool) -> (Conf
     let mut secret = || Ok("glpat_typed".to_string());
     let mut verify = |_: Forge, _: &str, t: &str| {
         if verify_ok {
-            Ok((format!("me({})", &t[..4]), vec!["platform".to_string()]))
+            Ok((
+                format!("me({})", &t[..4]),
+                vec![
+                    Place { path: "a5434".into(), name: "AIP".into() },
+                    Place { path: "platform".into(), name: "platform".into() },
+                ],
+            ))
         } else {
             Err("401 Unauthorized".to_string())
         }
@@ -96,9 +103,10 @@ fn adding_gitlab_keeps_github() {
 fn gitlab_lists_your_groups_and_questions_one_you_are_not_in() {
     // GitHub no; GitLab yes; host; typed token; groups: one real, one not,
     // decline the stranger; merge ×4; clones no.
-    let script = "n\ny\n\nplatform a5434\nn\n\n\n\n\nn\n";
+    let script = "n\ny\n\nAIP platform strangers\nn\n\n\n\n\nn\n";
     let (c, _, out) = run_with(script, Config::default(), false, true);
-    assert!(out.contains("Your groups: platform"));
-    assert!(out.contains("a5434 is not one of your groups"));
-    assert_eq!(c.forge[0].groups, vec!["platform".to_string()]);
+    assert!(out.contains("Your groups: a5434 (AIP)  platform"));
+    assert!(out.contains("AIP is the group at a5434; saved as a5434"), "a name typed is a path saved");
+    assert!(out.contains("strangers is not one of your groups"));
+    assert_eq!(c.forge[0].groups, vec!["a5434".to_string(), "platform".to_string()]);
 }
