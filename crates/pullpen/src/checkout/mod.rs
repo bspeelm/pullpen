@@ -74,6 +74,8 @@ fn remote_for(dir: &Path, repo: &str) -> Option<String> {
     out.lines().find_map(|l| {
         let mut f = l.split_whitespace();
         let (name, url) = (f.next()?, f.next()?);
+        // A remote can be a Windows path, C:\src\acme\api.git.
+        let url = url.replace('\\', "/");
         let path = url.trim_end_matches('/').trim_end_matches(".git");
         (path.ends_with(&format!("/{repo}")) || path.ends_with(&format!(":{repo}"))).then(|| name.to_string())
     })
