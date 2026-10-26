@@ -1132,7 +1132,9 @@ name = "pullpen-ui"
 version = "0.0.0"
 dependencies = [
  "pullpen-core",
+ "pullpen-fixtures",
  "ratatui",
+ "unicode-width",
 ]
 
 [[package]]

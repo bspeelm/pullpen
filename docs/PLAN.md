@@ -353,7 +353,7 @@ Workspace, crates, `make check` (fmt, clippy -D warnings, tests, budgets; ADR-00
 **Exit:** `cargo run -- --fixtures` opens a blank TUI and `q` exits cleanly, terminal restored on panic (install a panic hook that leaves raw mode).
 
 ### M1 — Render core
-Spans/fit/lr/overlay/markup; palette tiers + detection; glyph tiers; each frame wrapped in synchronized output (mode 2026); Kitty keyboard protocol where offered, so Tab and ^i differ; PR numbers as OSC 8 links; styled underline for matches where supported; `cols(w)`; `rowA`/`headA`; tabs; status line; command line row; list view with preview; filter rendering; 80×24 and ASCII/16-color paths.
+Spans/fit/lr/overlay/markup; palette tiers + detection; glyph tiers; each frame wrapped in synchronized output (mode 2026); Kitty keyboard protocol where offered, so Tab and ^i differ; `cols(w)`; `rowA`/`headA`; tabs; status line; command line row; list view with preview; filter rendering; 80×24 and ASCII/16-color paths.
 **Exit:** golden snapshots `sList`, `sFilter`, `s80`, `s80ascii`, `cmd[idle]` pass byte-for-byte. Resize is live.
 
 ### M2 — Input and modes
@@ -377,7 +377,7 @@ Armed view grouping (needs attention / waiting / merged since), *why* column, `:
 **Exit:** `sArmed` golden passes; a fixture sync sequence (armed → ci running → merged) produces the right groups and exactly one notification.
 
 ### M7 — Polish and release
-`NO_COLOR`; mouse (click row, double-click opens detail, click tab, wheel); `[keys]` remapping; `config.example.toml` and README with a 30-second GIF (vhs); `cargo-dist` release with linux/macos binaries, every artifact and `checksums.txt` attested by `actions/attest-build-provenance`; release in two steps (`make release` opens the version-bump PR, `make release-tag` tags the merged commit); Homebrew tap formula, with Copr and AUR as their own issues; `pullpen --version`, `pullpen config check`.
+`NO_COLOR`; PR numbers as OSC 8 links; styled underline for matches where supported; mouse (click row, double-click opens detail, click tab, wheel); `[keys]` remapping; `config.example.toml` and README with a 30-second GIF (vhs); `cargo-dist` release with linux/macos binaries, every artifact and `checksums.txt` attested by `actions/attest-build-provenance`; release in two steps (`make release` opens the version-bump PR, `make release-tag` tags the merged commit); Homebrew tap formula, with Copr and AUR as their own issues; `pullpen --version`, `pullpen config check`.
 **Exit:** fresh machine with only `gh auth login` done: `brew install <tap>/pullpen && pullpen` works.
 
 ---
