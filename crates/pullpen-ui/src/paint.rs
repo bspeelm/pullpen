@@ -37,20 +37,23 @@ impl Theme {
 }
 
 /// Paints `lines` from the top of `area`, one per row, clipped to its width.
-/// Rows beyond `lines` are left untouched.
+/// A short line is padded with plain spaces, as tui.js pads a row it left
+/// empty. Rows beyond `lines` are left untouched.
 pub fn paint(lines: &[Line], buf: &mut Buffer, area: Rect, theme: &Theme) {
+    let pad = theme.style(Tok::Fg, None, false, false);
+    let right = area.x + area.width;
     for (dy, line) in lines.iter().enumerate().take(area.height as usize) {
         let y = area.y + dy as u16;
         let mut x = area.x;
         for span in line {
             let st = theme.style(span.fg, span.bg, span.bold, span.underline);
-            for c in span.text.chars() {
-                if x >= area.x + area.width {
-                    break;
-                }
+            for c in span.text.chars().take((right - x) as usize) {
                 buf[(x, y)].set_char(theme.glyphs.map(c)).set_style(st);
                 x += 1;
             }
+        }
+        for x in x..right {
+            buf[(x, y)].set_char(' ').set_style(pad);
         }
     }
 }

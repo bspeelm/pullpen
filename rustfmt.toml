@@ -1,0 +1,5 @@
+# The views are long chains of short spans, which rustfmt's default width
+# breaks one per line. This setting also changes what the code budget counts
+# (ADR-004 says so), so it changes only by a record.
+max_width = 120
+use_small_heuristics = "Max"

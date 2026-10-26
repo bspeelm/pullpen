@@ -1134,6 +1134,7 @@ dependencies = [
  "pullpen-core",
  "pullpen-fixtures",
  "ratatui",
+ "strsim",
  "unicode-width",
 ]
 

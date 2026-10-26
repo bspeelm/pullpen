@@ -82,7 +82,8 @@ any document quotes them differently.
 Code and comments are counted separately, as in bothy's ADR-010 and ADR-021.
 A single combined figure punishes a comment explaining *why* exactly as hard
 as it punishes sprawl. Code means the non-test `.rs` files under
-`crates/*/src`. Unit tests live in a sibling `tests.rs`, never inline, so the
+`crates/*/src`, as formatted by `rustfmt.toml`: a narrower format would
+report more lines for the same code, so the format changes only by a record. Unit tests live in a sibling `tests.rs`, never inline, so the
 counter can tell code from tests by filename alone.
 
 Prose means every markdown file outside `design/` and `docs/history/`. It is
@@ -121,3 +122,19 @@ make it better at its job.
 The log must redact the `Authorization` header. The forge milestone (M3) is
 not done until a test asserts that a known token never appears in any file
 pullpen writes.
+
+## ADR-007 — The batch strip marks rows the design's own rule can act on
+
+The design's batch example marked #812, #145, #96, #1203, #4815 and #375,
+and its result showed #812 merging at once ("already green") while #145, #96
+and #4815 were armed and left waiting. Its note says the rule: rows already
+green merge immediately. But #145, #96 and #4815 are green in the same
+fixtures; the rows show ✓. No one rule produces that screen.
+
+The rule is the useful half. Arming a PR that could merge now only makes the
+user wait for a merge nobody is blocking, and GitHub refuses to enable
+auto-merge on a PR whose state is already clean. So the example changed and
+the rule did not: the marks in `design/tui.js` are now #812, #377, #143,
+#1203 and #375, of which only #812 is green, and the counts and message follow
+(5 marked, 4 armed, 11 armed in total). The goldens were regenerated from the
+edited design, as ADR-002 says changes to the look must be.

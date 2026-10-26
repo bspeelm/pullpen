@@ -24,18 +24,8 @@ pub enum Tok {
 }
 
 impl Tok {
-    pub const ALL: [Tok; 10] = [
-        Tok::Bg,
-        Tok::Surf,
-        Tok::Sel,
-        Tok::Fg,
-        Tok::Dim,
-        Tok::Faint,
-        Tok::Acc,
-        Tok::Ok,
-        Tok::Warn,
-        Tok::Err,
-    ];
+    pub const ALL: [Tok; 10] =
+        [Tok::Bg, Tok::Surf, Tok::Sel, Tok::Fg, Tok::Dim, Tok::Faint, Tok::Acc, Tok::Ok, Tok::Warn, Tok::Err];
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -29,11 +29,7 @@ pub fn tabs(tabs: &[Tab], active: usize, w: usize, short: bool, right: &str) -> 
             l.push(sp(if short { 3 } else { 4 }));
         }
     }
-    let r = if right.is_empty() {
-        vec![]
-    } else {
-        vec![s(right, Tok::Faint), sp(1)]
-    };
+    let r = if right.is_empty() { vec![] } else { vec![s(right, Tok::Faint), sp(1)] };
     lr(&l, &r, w)
 }
 
@@ -58,11 +54,7 @@ impl Mode {
     /// The mode block is accent, or warn while a confirmation is pending; it
     /// is never red (design §10).
     fn block(self) -> Tok {
-        if self == Mode::Confirm {
-            Tok::Warn
-        } else {
-            Tok::Acc
-        }
+        if self == Mode::Confirm { Tok::Warn } else { Tok::Acc }
     }
 }
 
@@ -85,9 +77,7 @@ pub struct Status<'a> {
 /// tui.js `status`: where you are on the left, the world on the right.
 pub fn status(w: usize, o: &Status) -> Line {
     let mut left = vec![
-        Span::new(format!(" {} ", o.mode.word()), Tok::Bg)
-            .bold()
-            .on(o.mode.block()),
+        Span::new(format!(" {} ", o.mode.word()), Tok::Bg).bold().on(o.mode.block()),
         sp(2),
         s(o.section, Tok::Fg),
         sp(2),
@@ -105,16 +95,8 @@ pub fn status(w: usize, o: &Status) -> Line {
         r.extend([s("◆", Tok::Acc), s(o.armed.to_string(), Tok::Dim), sp(1)]);
         r.extend([s("✗", Tok::Err), s(o.failing.to_string(), Tok::Dim), sp(3)]);
     } else {
-        r.extend([
-            s("◆ ", Tok::Acc),
-            s(format!("{} armed", o.armed), Tok::Dim),
-            sp(3),
-        ]);
-        r.extend([
-            s("✗ ", Tok::Err),
-            s(format!("{} failing", o.failing), Tok::Dim),
-            sp(3),
-        ]);
+        r.extend([s("◆ ", Tok::Acc), s(format!("{} armed", o.armed), Tok::Dim), sp(3)]);
+        r.extend([s("✗ ", Tok::Err), s(format!("{} failing", o.failing), Tok::Dim), sp(3)]);
     }
     if o.err.is_none() {
         r.extend([s(&o.sync, Tok::Dim), sp(3)]);
@@ -125,11 +107,7 @@ pub fn status(w: usize, o: &Status) -> Line {
         }
         r.push(s(f.tag(), Tok::Dim));
         let down = o.err.as_ref().is_some_and(|(ef, _)| ef == f);
-        r.push(if down {
-            s(" ✗", Tok::Err)
-        } else {
-            s(" ✓", Tok::Ok)
-        });
+        r.push(if down { s(" ✗", Tok::Err) } else { s(" ✓", Tok::Ok) });
     }
     r.push(sp(1));
     with_bg(lr(&left, &r, w), Tok::Surf)

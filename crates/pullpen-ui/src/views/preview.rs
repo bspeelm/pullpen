@@ -25,25 +25,13 @@ pub fn verdict_word(v: &Verdict) -> Line {
 pub fn facts(pr: &Pr) -> [(String, &'static str, String, String); 4] {
     let c = &pr.checks;
     let checks = if let Some(f) = c.failed.first() {
-        (
-            "{r|✗}".into(),
-            format!("{} failing", f.name),
-            f.detail.clone(),
-        )
+        ("{r|✗}".into(), format!("{} failing", f.name), f.detail.clone())
     } else if c.running > 0 || c.required_passed < c.required_total {
-        (
-            "{y|○}".into(),
-            format!("{}/{} running", c.required_passed, c.required_total),
-            String::new(),
-        )
+        ("{y|○}".into(), format!("{}/{} running", c.required_passed, c.required_total), String::new())
     } else if c.required_total == 0 {
         ("{g|✓}".into(), "none required".into(), String::new())
     } else {
-        (
-            "{g|✓}".into(),
-            format!("{}/{} passed", c.required_passed, c.required_total),
-            String::new(),
-        )
+        ("{g|✓}".into(), format!("{}/{} passed", c.required_passed, c.required_total), String::new())
     };
     let r = &pr.reviews;
     let reviews = if r.changes_requested {
@@ -54,14 +42,7 @@ pub fn facts(pr: &Pr) -> [(String, &'static str, String, String); 4] {
         let note = if r.pending.is_empty() {
             String::new()
         } else {
-            format!(
-                "{} pending",
-                r.pending
-                    .iter()
-                    .map(|p| format!("@{p}"))
-                    .collect::<Vec<_>>()
-                    .join(" ")
-            )
+            format!("{} pending", r.pending.iter().map(|p| format!("@{p}")).collect::<Vec<_>>().join(" "))
         };
         let g = if r.short() { "{y|○}" } else { "{g|✓}" };
         (g.into(), format!("{} of {}", r.have, r.need), note)
@@ -73,11 +54,7 @@ pub fn facts(pr: &Pr) -> [(String, &'static str, String, String); 4] {
         Mergeable::Unknown => ("{y|○}".into(), "checking".into(), String::new()),
     };
     let auto = match &pr.auto_merge {
-        Some(a) => (
-            "{a|◆}".into(),
-            "armed".into(),
-            format!("{} · @{}", a.method.word(), a.armed_by),
-        ),
+        Some(a) => ("{a|◆}".into(), "armed".into(), format!("{} · @{}", a.method.word(), a.armed_by)),
         None => ("{d|·}".into(), "off".into(), "A arms".into()),
     };
     [
@@ -95,17 +72,8 @@ fn esc(t: &str) -> String {
 }
 
 fn fact_line(f: &(String, &'static str, String, String)) -> Line {
-    let note = if f.3.is_empty() {
-        String::new()
-    } else {
-        format!("{{d|   {}}}", esc(&f.3))
-    };
-    markup(&format!(
-        "{} {{d|{:<12}}}{{f|{}}}{note}",
-        f.0,
-        f.1,
-        esc(&f.2)
-    ))
+    let note = if f.3.is_empty() { String::new() } else { format!("{{d|   {}}}", esc(&f.3)) };
+    markup(&format!("{} {{d|{:<12}}}{{f|{}}}{note}", f.0, f.1, esc(&f.2)))
 }
 
 /// The first paragraph, cut after the last sentence that ends within
@@ -135,11 +103,7 @@ pub fn description(text: &str, w: usize) -> Vec<String> {
 }
 
 fn who(name: &str, agent: bool) -> String {
-    if agent {
-        format!("◇ {}", esc(name))
-    } else {
-        esc(name)
-    }
+    if agent { format!("◇ {}", esc(name)) } else { esc(name) }
 }
 
 fn activity_line(a: &pullpen_core::Activity, w: usize, ctx: &Ctx) -> Line {
@@ -154,10 +118,7 @@ fn activity_line(a: &pullpen_core::Activity, w: usize, ctx: &Ctx) -> Line {
         ActivityKind::Commented => ("{d|·}", " commented".to_string()),
     };
     lr(
-        &markup(&format!(
-            "{g} {{f|{}}}{{d|{what}}}",
-            who(&a.who, a.is_agent)
-        )),
+        &markup(&format!("{g} {{f|{}}}{{d|{what}}}", who(&a.who, a.is_agent))),
         &markup(&format!("{{d|{}}}", age(a.at, ctx.now))),
         w,
     )
@@ -183,22 +144,11 @@ pub fn preview(pr: &Pr, d: &PrDetail, w: usize, ctx: &Ctx) -> Vec<Line> {
     out.push(vec![]);
     out.extend(facts(pr).iter().map(fact_line));
     out.push(vec![]);
-    out.push(markup(&format!(
-        "{{d|{} → {}}}",
-        esc(&pr.head),
-        esc(&pr.base)
-    )));
-    out.push(markup(&format!(
-        "{{d|+{} −{} · {} files}}",
-        pr.additions, pr.deletions, pr.files
-    )));
+    out.push(markup(&format!("{{d|{} → {}}}", esc(&pr.head), esc(&pr.base))));
+    out.push(markup(&format!("{{d|+{} −{} · {} files}}", pr.additions, pr.deletions, pr.files)));
     if !d.description.is_empty() {
         out.push(vec![]);
-        out.extend(
-            description(&d.description, w)
-                .into_iter()
-                .map(|t| vec![s(t, Tok::Fg)]),
-        );
+        out.extend(description(&d.description, w).into_iter().map(|t| vec![s(t, Tok::Fg)]));
     }
     if !d.activity.is_empty() {
         out.push(vec![]);

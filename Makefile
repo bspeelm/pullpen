@@ -19,7 +19,7 @@ SOURCES   := $(shell find crates -path '*/src/*' -name '*.rs' -not -name 'tests.
 LIVE_DOCS := $(shell find . -name '*.md' -not -path './target/*' -not -path './.git/*' \
                      -not -path './design/*' -not -path './docs/history/*')
 
-.PHONY: all build test lint fmt budgets golden check clean
+.PHONY: all build test lint fmt budgets golden keymap check clean
 
 all: check
 
@@ -40,6 +40,10 @@ lint:
 # else does, because the tests read the committed output.
 golden:
 	node scripts/gen-golden.mjs
+
+# Regenerates docs/keymap.md from the keymap table.
+keymap:
+	PULLPEN_BLESS=1 cargo test -q -p pullpen-ui --lib keymap::tests::docs_keymap_md
 
 budgets: build
 	@size=$$(wc -c < $(BINARY)); \

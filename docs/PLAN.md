@@ -291,7 +291,7 @@ Translation splits each query in two. Terms a forge's search understands go to t
 
 **Command & confirm:** `Tab S-Tab` complete/cycle · `↑ ↓` history (prefix-filtered) · `^r #` insert selected PR ref · `^w ^u` delete word/line · `Enter Esc` run/cancel · confirm: `y Enter` yes, `n Esc` no, `s m r` yes-with-method, **any other key cancels and is discarded**.
 
-Multi-key sequences (`gg`, `]f`, `zo`) use a pending-key buffer with 500ms timeout. Keys are remappable under `[keys]` in config; defaults are the above.
+`Space` marks the row and moves down, as ranger does; `V` marks every row from the last mark to the cursor. Multi-key sequences (`gg`, `]f`, `zo`) use a pending-key buffer with 500ms timeout. Keys are remappable under `[keys]` in config; defaults are the above.
 
 ### 6.3 Commands (design §07)
 

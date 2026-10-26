@@ -26,15 +26,7 @@ pub struct Cols {
 /// tui.js `cols(w)`: drop or shrink columns in a fixed order until the title
 /// has at least 24 cells (design §11).
 pub fn cols(w: usize) -> Cols {
-    let mut c = Cols {
-        forge: 3,
-        repo: 17,
-        author: 12,
-        rev: 5,
-        size: 12,
-        age: 4,
-        title: 0,
-    };
+    let mut c = Cols { forge: 3, repo: 17, author: 12, rev: 5, size: 12, age: 4, title: 0 };
     let sum = |c: &Cols| 12 + c.forge + c.repo + c.author + c.rev + c.size + c.age;
     let steps: [fn(&mut Cols); 7] = [
         |c| c.size = 0,
@@ -80,11 +72,7 @@ pub fn state_glyph(r: Readiness) -> Span {
 
 fn rev(p: &Pr) -> Span {
     let (h, n) = (p.reviews.have, p.reviews.need);
-    if n == 0 {
-        s("–", Tok::Faint)
-    } else {
-        s(format!("{h}/{n}"), if h >= n { Tok::Ok } else { Tok::Warn })
-    }
+    if n == 0 { s("–", Tok::Faint) } else { s(format!("{h}/{n}"), if h >= n { Tok::Ok } else { Tok::Warn }) }
 }
 
 pub fn gutter(sel: bool, mark: bool) -> Span {
@@ -107,33 +95,19 @@ pub fn title_segs(title: &str, hl: Option<&str>, fg: Tok) -> Line {
         return vec![s(title, fg)];
     };
     let j = i + hl.len();
-    vec![
-        s(&title[..i], fg),
-        s(&title[i..j], Tok::Acc).underline(),
-        s(&title[j..], fg),
-    ]
+    vec![s(&title[..i], fg), s(&title[i..j], Tok::Acc).underline(), s(&title[j..], fg)]
 }
 
 pub fn pad_start(text: &str, w: usize) -> String {
-    format!(
-        "{}{text}",
-        " ".repeat(w.saturating_sub(text.chars().count()))
-    )
+    format!("{}{text}", " ".repeat(w.saturating_sub(text.chars().count())))
 }
 
 pub fn pad_end(text: &str, w: usize) -> String {
-    format!(
-        "{text}{}",
-        " ".repeat(w.saturating_sub(text.chars().count()))
-    )
+    format!("{text}{}", " ".repeat(w.saturating_sub(text.chars().count())))
 }
 
 pub fn agent_mark(p: &Pr) -> Span {
-    if p.author.is_agent {
-        s("◇ ", Tok::Fg)
-    } else {
-        sp(2)
-    }
+    if p.author.is_agent { s("◇ ", Tok::Fg) } else { sp(2) }
 }
 
 /// tui.js `rowA`.
@@ -150,42 +124,21 @@ pub fn row(p: &Pr, w: usize, o: &RowOpts, ctx: &Ctx) -> Line {
     l.push(sp(1));
     l.push(if p.armed() { s("◆", Tok::Acc) } else { sp(1) });
     l.push(sp(1));
-    l.push(s(
-        pad_start(&format!("#{}", p.id.number), 5) + " ",
-        if o.sel { Tok::Fg } else { Tok::Dim },
-    ));
-    let tf = if p.draft || p.merged() {
-        Tok::Dim
-    } else {
-        Tok::Fg
-    };
+    l.push(s(pad_start(&format!("#{}", p.id.number), 5) + " ", if o.sel { Tok::Fg } else { Tok::Dim }));
+    let tf = if p.draft || p.merged() { Tok::Dim } else { Tok::Fg };
     let title: Line = title_segs(&p.title, o.hl, tf)
         .into_iter()
-        .map(|sp| {
-            if o.sel && sp.fg == Tok::Fg {
-                sp.bold()
-            } else {
-                sp
-            }
-        })
+        .map(|sp| if o.sel && sp.fg == Tok::Fg { sp.bold() } else { sp })
         .collect();
     l.extend(fit(&title, c.title.saturating_sub(2), true));
     l.push(sp(2));
     if c.repo > 0 {
-        let r = if c.repo == 11 {
-            p.id.repo_name()
-        } else {
-            &p.id.repo
-        };
+        let r = if c.repo == 11 { p.id.repo_name() } else { &p.id.repo };
         l.extend(fit(&[s(r, Tok::Dim)], c.repo - 1, true));
         l.push(sp(1));
     }
     if c.author == 12 {
-        l.extend(fit(
-            &[agent_mark(p), s(&p.author.login, Tok::Dim)],
-            11,
-            true,
-        ));
+        l.extend(fit(&[agent_mark(p), s(&p.author.login, Tok::Dim)], 11, true));
         l.push(sp(1));
     } else if c.author == 2 {
         l.push(agent_mark(p));
@@ -195,11 +148,8 @@ pub fn row(p: &Pr, w: usize, o: &RowOpts, ctx: &Ctx) -> Line {
         l.push(sp(1));
     }
     if c.size > 0 {
-        let size = format!(
-            "{} {} ",
-            pad_start(&format!("+{}", p.additions), 5),
-            pad_end(&format!("−{}", p.deletions), 5)
-        );
+        let size =
+            format!("{} {} ", pad_start(&format!("+{}", p.additions), 5), pad_end(&format!("−{}", p.deletions), 5));
         l.push(s(size, Tok::Dim));
     }
     if c.age > 0 {
@@ -225,11 +175,7 @@ pub fn header(w: usize) -> Line {
     l.push(sp(4));
     l.push(s("    #", Tok::Faint));
     l.push(sp(1));
-    l.extend(fit(
-        &[s("title", Tok::Faint)],
-        c.title.saturating_sub(2),
-        true,
-    ));
+    l.extend(fit(&[s("title", Tok::Faint)], c.title.saturating_sub(2), true));
     l.push(sp(2));
     if c.repo > 0 {
         l.extend(fit(&[s("repo", Tok::Faint)], c.repo, true));
@@ -263,11 +209,10 @@ pub struct ListScreen<'a> {
     pub short: bool,
     pub right: &'a str,
     pub prs: &'a [Pr],
-    pub sel: usize,
-    /// First row shown; the caller keeps `sel` inside the window.
+    /// One per row of `prs`.
+    pub opts: &'a [RowOpts<'a>],
+    /// First row shown; the caller keeps the selection inside the window.
     pub offset: usize,
-    pub marks: &'a [u64],
-    pub hl: Option<&'a str>,
     pub preview: Option<Vec<Line>>,
     pub status: Status<'a>,
     pub cmd: Line,
@@ -281,37 +226,12 @@ pub fn body_rows(h: usize) -> usize {
 /// tui.js `listScreen`.
 pub fn list_screen(o: &ListScreen, ctx: &Ctx) -> Vec<Line> {
     let (w, h) = (o.w, o.h);
-    let mut out = vec![
-        tabs(o.tabs, o.active, w, o.short, o.right),
-        fit(&[], w, false),
-    ];
+    let mut out = vec![tabs(o.tabs, o.active, w, o.short, o.right), Vec::new()];
     let body_h = h.saturating_sub(4);
-    let lw = if o.preview.is_some() {
-        w.saturating_sub(PREVIEW_W + 4)
-    } else {
-        w.saturating_sub(1)
-    };
+    let lw = if o.preview.is_some() { w.saturating_sub(PREVIEW_W + 4) } else { w.saturating_sub(1) };
     let mut rows = vec![header(lw)];
-    for (i, p) in o
-        .prs
-        .iter()
-        .enumerate()
-        .skip(o.offset)
-        .take(body_h.saturating_sub(1))
-    {
-        let matches = o.hl.is_none_or(|hl| {
-            p.title
-                .to_ascii_lowercase()
-                .contains(&hl.to_ascii_lowercase())
-        });
-        let ro = RowOpts {
-            sel: i == o.sel,
-            mark: o.marks.contains(&p.id.number),
-            hl: o.hl,
-            dim_all: !matches,
-            spin: None,
-        };
-        rows.push(row(p, lw, &ro, ctx));
+    for (p, ro) in o.prs.iter().zip(o.opts).skip(o.offset).take(body_h.saturating_sub(1)) {
+        rows.push(row(p, lw, ro, ctx));
     }
     for i in 0..body_h {
         let r = rows.get(i).cloned().unwrap_or_default();
@@ -333,19 +253,8 @@ pub fn list_screen(o: &ListScreen, ctx: &Ctx) -> Vec<Line> {
 
 /// The row strips the design uses for the merge, batch and command-line
 /// examples (tui.js `strip`): rows at `w - 1`, then status and command line.
-pub fn strip(
-    prs: &[Pr],
-    opts: &[RowOpts],
-    w: usize,
-    status_o: &Status,
-    cmd: &Line,
-    ctx: &Ctx,
-) -> Vec<Line> {
-    let mut out: Vec<Line> = prs
-        .iter()
-        .zip(opts)
-        .map(|(p, o)| fit(&row(p, w - 1, o, ctx), w, false))
-        .collect();
+pub fn strip(prs: &[Pr], opts: &[RowOpts], w: usize, status_o: &Status, cmd: &Line, ctx: &Ctx) -> Vec<Line> {
+    let mut out: Vec<Line> = prs.iter().zip(opts).map(|(p, o)| fit(&row(p, w - 1, o, ctx), w, false)).collect();
     out.push(status(w, status_o));
     out.push(fit(cmd, w, true));
     out

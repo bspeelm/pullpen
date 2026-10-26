@@ -4,10 +4,7 @@ use std::path::PathBuf;
 use super::Dirs;
 
 fn resolve(vars: &[(&str, &str)]) -> anyhow::Result<Dirs> {
-    let m: HashMap<String, PathBuf> = vars
-        .iter()
-        .map(|(k, v)| (k.to_string(), PathBuf::from(v)))
-        .collect();
+    let m: HashMap<String, PathBuf> = vars.iter().map(|(k, v)| (k.to_string(), PathBuf::from(v))).collect();
     Dirs::resolve(|k| m.get(k).cloned())
 }
 
@@ -21,13 +18,8 @@ fn falls_back_to_home_when_xdg_is_unset() {
 
 #[test]
 fn honours_xdg_variables() {
-    let d = resolve(&[
-        ("HOME", "/h"),
-        ("XDG_CONFIG_HOME", "/c"),
-        ("XDG_CACHE_HOME", "/k"),
-        ("XDG_STATE_HOME", "/s"),
-    ])
-    .unwrap();
+    let d = resolve(&[("HOME", "/h"), ("XDG_CONFIG_HOME", "/c"), ("XDG_CACHE_HOME", "/k"), ("XDG_STATE_HOME", "/s")])
+        .unwrap();
     assert_eq!(d.config, PathBuf::from("/c/pullpen"));
     assert_eq!(d.cache, PathBuf::from("/k/pullpen"));
     assert_eq!(d.state, PathBuf::from("/s/pullpen"));

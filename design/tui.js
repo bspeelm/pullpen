@@ -370,12 +370,12 @@ function build(mode){
   {k:'A · on armed PR',cap:'Disarm',note:'A toggles. Disarming is not destructive, so it does not ask.',
    lines:strip({prs:R4,sel:3,cmd:M('{f|Auto-merge off for #377}{d|   A to re-arm}')})},
  ];
- const MK=[812,145,96,1203,4815,375], R13=P.slice(0,13);
+ const MK=[812,377,143,1203,375], R13=P.slice(0,13);
  out.batch=[
   {k:'Space × 6, then A',cap:'Batch arm',note:'Space marks rows (• in the gutter); V marks a range. With marks present, every action and command targets the marks.',
-   lines:strip({prs:R13,sel:12,marks:MK,st:{mode:'CONFIRM',modeK:'warn',pos:'13/23',extra:[S('6 marked','acc')]},cmd:M('{f|Arm auto-merge on }{B|6 PRs}{f| with }{yB|squash}{f|?}   {d|y/Enter yes   m merge   r rebase   n/Esc cancel}')})},
+   lines:strip({prs:R13,sel:12,marks:MK,st:{mode:'CONFIRM',modeK:'warn',pos:'13/23',extra:[S('5 marked','acc')]},cmd:M('{f|Arm auto-merge on }{B|5 PRs}{f| with }{yB|squash}{f|?}   {d|y/Enter yes   m merge   r rebase   n/Esc cancel}')})},
   {k:'y',cap:'Result',note:'Rows that are already green merge right away. Ineligible rows are skipped and named, never silently dropped.',
-   lines:strip({prs:R13.map(p=>MK.includes(p.n)&&!p.draft?{...p,armed:1}:p),sel:12,spin:812,st:{pos:'13/23',armed:12},cmd:M('{a|◆} {f|Armed 5 PRs}{d|   #812 merging now (already green) · skipped #1203: draft}')})},
+   lines:strip({prs:R13.map(p=>MK.includes(p.n)&&!p.draft?{...p,armed:1}:p),sel:12,spin:812,st:{pos:'13/23',armed:11},cmd:M('{a|◆} {f|Armed 4 PRs}{d|   #812 merging now (already green) · skipped #1203: draft}')})},
  ];
  const R5=P.slice(0,5), CM={mode:'COMMAND'};
  out.cmd=[

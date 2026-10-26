@@ -1,44 +1,49 @@
-//! `--fixtures`: the design's data, offline (PLAN.md §8).
+//! `--fixtures`: the design's data and a fake forge, offline (PLAN.md §8).
 
-use std::collections::HashMap;
+use std::sync::mpsc::Sender;
+use std::thread;
+use std::time::Duration;
 
-use pullpen_core::Forge;
+use pullpen_core::{Action, Job, JobResult, Outcome};
 use pullpen_fixtures as fx;
-use pullpen_ui::app::{App, SectionState, UiConfig};
+use pullpen_ui::app::{App, SectionState};
 use pullpen_ui::paint::Theme;
-use pullpen_ui::views::chrome::Mode;
 
 pub fn app(theme: Theme) -> App {
-    let sections: Vec<SectionState> = fx::sections()
-        .into_iter()
-        .map(|s| SectionState {
-            section: s.section,
-            prs: s.prs,
-            total: s.total,
-            sel: 0,
-            offset: 0,
-        })
-        .collect();
-    let mut details = HashMap::new();
-    for s in &sections {
+    let sections = fx::sections().into_iter().map(|s| SectionState::new(s.section, s.prs, s.total)).collect();
+    let mut a = App::new(sections, theme, fx::NOW);
+    a.active = 2;
+    a.me = "you".into();
+    a.sync = "fixtures".into();
+    for s in &a.sections {
         for p in &s.prs {
-            details
-                .entry(p.id.clone())
-                .or_insert_with(|| fx::detail(p.id.number));
+            a.details.entry(p.id.clone()).or_insert_with(|| fx::detail(p.id.number));
         }
     }
-    App {
-        sections,
-        active: 2,
-        details,
-        caps: HashMap::new(),
-        forges: vec![Forge::GitHub, Forge::GitLab],
-        theme,
-        ui: UiConfig::default(),
-        mode: Mode::Normal,
-        cmd: vec![],
-        sync: "fixtures".into(),
-        err: None,
-        quit: false,
+    a
+}
+
+/// What the fake forge refuses, so failures can be seen without a forge.
+fn refusal(job: &Job) -> Option<&'static str> {
+    match (job.target.number, &job.action) {
+        (2290, Action::Approve) => {
+            Some("you are the author of this PR's last commit (repo requires independent review)")
+        }
+        (143, Action::Merge { .. }) => Some("required status check \"test\" is failing"),
+        _ => None,
     }
+}
+
+/// Answers a job after a pause long enough to see the spinner.
+pub fn run(job: Job, tx: Sender<JobResult>) {
+    thread::spawn(move || {
+        thread::sleep(Duration::from_millis(700));
+        let outcome = match refusal(&job) {
+            Some(r) => Outcome::Failed { reason: r.into() },
+            None => Outcome::Done,
+        };
+        // The receiver is gone only when the app has quit; the answer has
+        // nowhere to go and nothing to do.
+        let _ = tx.send(JobResult { job, outcome });
+    });
 }

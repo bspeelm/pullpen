@@ -13,6 +13,7 @@ workspace = true
 pullpen-core.workspace = true
 ratatui.workspace = true
 unicode-width.workspace = true
+strsim.workspace = true
 
 [dev-dependencies]
 pullpen-fixtures.workspace = true

@@ -24,14 +24,7 @@ use ratatui::layout::Rect;
 const FORGES: [Forge; 2] = [Forge::GitHub, Forge::GitLab];
 
 fn tabs() -> Vec<Tab> {
-    fx::sections()
-        .into_iter()
-        .map(|s| Tab {
-            name: s.section.name,
-            short: s.section.short,
-            count: s.total,
-        })
-        .collect()
+    fx::sections().into_iter().map(|s| Tab { name: s.section.name, short: s.section.short, count: s.total }).collect()
 }
 
 fn status(mode: Mode, section: &str, pos: &str) -> Status<'static> {
@@ -52,25 +45,16 @@ fn status(mode: Mode, section: &str, pos: &str) -> Status<'static> {
 fn check(name: &str, lines: &[Line], w: u16, tier: Tier, glyphs: Glyphs) {
     let h = lines.len() as u16;
     let mut buf = Buffer::empty(Rect::new(0, 0, w, h));
-    let theme = Theme {
-        palette: Palette::new(tier),
-        glyphs,
-    };
+    let theme = Theme { palette: Palette::new(tier), glyphs };
     let area = buf.area;
     paint(lines, &mut buf, area, &theme);
     let (plain, styled) = serialize(&buf, tier);
     let (gp, gs) = fx::golden(name);
     if plain != gp {
-        panic!(
-            "{name}: text differs from the design\n{}",
-            first_diff(&gp, &plain)
-        );
+        panic!("{name}: text differs from the design\n{}", first_diff(&gp, &plain));
     }
     if styled != gs {
-        panic!(
-            "{name}: style differs from the design\n{}",
-            first_diff(&gs, &styled)
-        );
+        panic!("{name}: style differs from the design\n{}", first_diff(&gs, &styled));
     }
 }
 
@@ -80,19 +64,21 @@ fn first_diff(want: &str, got: &str) -> String {
             return format!("row {i}\n want: {w}\n  got: {g}");
         }
     }
-    format!(
-        "row counts differ: want {}, got {}",
-        want.lines().count(),
-        got.lines().count()
-    )
+    format!("row counts differ: want {}, got {}", want.lines().count(), got.lines().count())
+}
+
+fn opts<'a>(prs: &[Pr], sel: usize, hl: Option<&'a str>) -> Vec<RowOpts<'a>> {
+    prs.iter()
+        .enumerate()
+        .map(|(i, p)| {
+            let dim_all = hl.is_some_and(|h| !p.title.to_lowercase().contains(h));
+            RowOpts { sel: i == sel, hl, dim_all, ..Default::default() }
+        })
+        .collect()
 }
 
 fn ctx(caps: &HashMap<String, pullpen_core::Capabilities>, glyphs: Glyphs) -> Ctx<'_> {
-    Ctx {
-        now: fx::NOW,
-        glyphs,
-        caps,
-    }
+    Ctx { now: fx::NOW, glyphs, caps }
 }
 
 #[test]
@@ -110,21 +96,13 @@ fn s_list() {
         short: false,
         right: "author:@agents",
         prs: &prs,
-        sel: 0,
+        opts: &opts(&prs, 0, None),
         offset: 0,
-        marks: &[],
-        hl: None,
         preview: Some(pv),
         status: status(Mode::Normal, "Agent-opened", "1/23"),
         cmd: vec![],
     };
-    check(
-        "sList",
-        &list_screen(&s, &c),
-        120,
-        Tier::True,
-        Glyphs::Unicode,
-    );
+    check("sList", &list_screen(&s, &c), 120, Tier::True, Glyphs::Unicode);
 }
 
 #[test]
@@ -132,10 +110,7 @@ fn s_filter() {
     let caps = HashMap::new();
     let c = ctx(&caps, Glyphs::Unicode);
     let prs = fx::all_prs();
-    let sel = prs
-        .iter()
-        .position(|p| p.title.to_lowercase().contains("ledger"))
-        .unwrap();
+    let sel = prs.iter().position(|p| p.title.to_lowercase().contains("ledger")).unwrap();
     let t = tabs();
     let s = ListScreen {
         w: 120,
@@ -145,25 +120,13 @@ fn s_filter() {
         short: false,
         right: "is:open   sort: updated",
         prs: &prs,
-        sel,
+        opts: &opts(&prs, sel, Some("ledger")),
         offset: 0,
-        marks: &[],
-        hl: Some("ledger"),
         preview: None,
         status: status(Mode::Filter, "All", "1/5 matches"),
-        cmd: lr(
-            &markup("/ledger{C| }"),
-            &markup("{d|n N jump   Enter hide non-matches   Esc clear}"),
-            120,
-        ),
+        cmd: lr(&markup("/ledger{C| }"), &markup("{d|n N jump   Enter hide non-matches   Esc clear}"), 120),
     };
-    check(
-        "sFilter",
-        &list_screen(&s, &c),
-        120,
-        Tier::True,
-        Glyphs::Unicode,
-    );
+    check("sFilter", &list_screen(&s, &c), 120, Tier::True, Glyphs::Unicode);
 }
 
 fn s80(glyphs: Glyphs) -> Vec<Line> {
@@ -181,10 +144,8 @@ fn s80(glyphs: Glyphs) -> Vec<Line> {
         short: true,
         right: "",
         prs: &prs,
-        sel: 0,
+        opts: &opts(&prs, 0, None),
         offset: 0,
-        marks: &[],
-        hl: None,
         preview: None,
         status: st,
         cmd: vec![],
@@ -194,36 +155,19 @@ fn s80(glyphs: Glyphs) -> Vec<Line> {
 
 #[test]
 fn s_80() {
-    check(
-        "s80",
-        &s80(Glyphs::Unicode),
-        80,
-        Tier::True,
-        Glyphs::Unicode,
-    );
+    check("s80", &s80(Glyphs::Unicode), 80, Tier::True, Glyphs::Unicode);
 }
 
 #[test]
 fn s_80_ascii_sixteen_colours() {
-    check(
-        "s80ascii",
-        &s80(Glyphs::Ascii),
-        80,
-        Tier::C16,
-        Glyphs::Ascii,
-    );
+    check("s80ascii", &s80(Glyphs::Ascii), 80, Tier::C16, Glyphs::Ascii);
 }
 
 /// tui.js `strip`: rows, then status and command line.
 fn strip_of(prs: &[Pr], sel: usize, st: Status, cmd: Line) -> Vec<Line> {
     let caps = HashMap::new();
     let c = ctx(&caps, Glyphs::Unicode);
-    let opts: Vec<RowOpts> = (0..prs.len())
-        .map(|i| RowOpts {
-            sel: i == sel,
-            ..Default::default()
-        })
-        .collect();
+    let opts: Vec<RowOpts> = (0..prs.len()).map(|i| RowOpts { sel: i == sel, ..Default::default() }).collect();
     strip(prs, &opts, 120, &st, &cmd, &c)
 }
 
@@ -232,4 +176,217 @@ fn cmd_idle() {
     let prs: Vec<Pr> = fx::agent_prs().into_iter().take(5).collect();
     let lines = strip_of(&prs, 1, status(Mode::Normal, "Agent-opened", ""), vec![]);
     check("cmd-0", &lines, 120, Tier::True, Glyphs::Unicode);
+}
+
+// ---- the app, driven by keys (M2) ----------------------------------------
+
+use pullpen_core::{JobResult, Outcome};
+use pullpen_ui::app::{App, Effect, SectionState};
+use pullpen_ui::keymap::Key;
+use std::time::Instant;
+
+fn app() -> App {
+    let sections = fx::sections().into_iter().map(|s| SectionState::new(s.section, s.prs, s.total)).collect();
+    let mut a = App::new(sections, Theme { palette: Palette::new(Tier::True), glyphs: Glyphs::Unicode }, fx::NOW);
+    a.active = 2;
+    a.sync = "synced 40s".into();
+    a.me = "ash".into();
+    for s in &a.sections {
+        for p in &s.prs {
+            a.details.insert(p.id.clone(), fx::detail(p.id.number));
+        }
+    }
+    a
+}
+
+fn keys(a: &mut App, ks: &[Key]) -> Vec<Effect> {
+    ks.iter().flat_map(|k| a.key(*k, Instant::now())).collect()
+}
+
+fn typed(a: &mut App, text: &str) {
+    for c in text.chars() {
+        a.key(Key::Char(c), Instant::now());
+    }
+}
+
+fn select(a: &mut App, i: usize) {
+    a.section_mut().sel = i;
+}
+
+/// Answers every job the effects started, except those on `hold`, and the
+/// jobs those answers start in turn.
+fn answer(a: &mut App, mut effects: Vec<Effect>, hold: &[u64], fail: Option<(u64, &str)>) {
+    while let Some(e) = effects.pop() {
+        let Effect::Run(job) = e else { continue };
+        if hold.contains(&job.target.number) {
+            continue;
+        }
+        let outcome = match fail {
+            Some((n, r)) if n == job.target.number => Outcome::Failed { reason: r.into() },
+            _ => Outcome::Done,
+        };
+        effects.extend(a.job_done(JobResult { job, outcome }));
+    }
+}
+
+fn strip_check(name: &str, a: &App, k: usize, pos: Option<&str>) {
+    check(name, &a.strip(k, 120, pos), 120, Tier::True, Glyphs::Unicode);
+}
+
+#[test]
+fn cmd_typing_resolves_the_target_live() {
+    let mut a = app();
+    select(&mut a, 1);
+    keys(&mut a, &[Key::Char(':')]);
+    typed(&mut a, "comment #812 rebased on main, merging after the 2.4 cut");
+    strip_check("cmd-1", &a, 5, Some(""));
+}
+
+#[test]
+fn cmd_completing_a_command() {
+    let mut a = app();
+    select(&mut a, 1);
+    keys(&mut a, &[Key::Char(':'), Key::Char('a'), Key::Tab]);
+    strip_check("cmd-2", &a, 5, Some(""));
+}
+
+#[test]
+fn cmd_completing_a_target() {
+    let mut a = app();
+    select(&mut a, 1);
+    keys(&mut a, &[Key::Char(':')]);
+    typed(&mut a, "merge #48");
+    keys(&mut a, &[Key::Tab]);
+    strip_check("cmd-3", &a, 5, Some(""));
+}
+
+#[test]
+fn cmd_confirming_a_close() {
+    let mut a = app();
+    keys(&mut a, &[Key::Char('x')]);
+    strip_check("cmd-4", &a, 5, Some(""));
+}
+
+#[test]
+fn cmd_a_forge_refusal_stays_on_the_command_line() {
+    let mut a = app();
+    select(&mut a, 2);
+    keys(&mut a, &[Key::Char(':')]);
+    typed(&mut a, "approve #2290");
+    let fx = keys(&mut a, &[Key::Enter]);
+    let why = "you are the author of this PR's last commit (repo requires independent review)";
+    answer(&mut a, fx, &[], Some((2290, why)));
+    strip_check("cmd-5", &a, 5, Some(""));
+}
+
+#[test]
+fn cmd_typo_suggests() {
+    let mut a = app();
+    select(&mut a, 1);
+    keys(&mut a, &[Key::Char(':')]);
+    typed(&mut a, "mrege");
+    keys(&mut a, &[Key::Enter]);
+    strip_check("cmd-6", &a, 5, Some(""));
+}
+
+#[test]
+fn cmd_success() {
+    let mut a = app();
+    select(&mut a, 1);
+    let fx = keys(&mut a, &[Key::Char('a')]);
+    answer(&mut a, fx, &[], None);
+    strip_check("cmd-7", &a, 5, Some(""));
+}
+
+#[test]
+fn cmd_history_walk() {
+    let mut a = app();
+    select(&mut a, 1);
+    a.history = (0..14).map(|i| format!("approve #{i}")).collect();
+    a.history[11] = "comment #812 lgtm, merging after the release".into();
+    keys(&mut a, &[Key::Char(':'), Key::Up, Key::Up, Key::Up]);
+    strip_check("cmd-8", &a, 5, Some(""));
+}
+
+#[test]
+fn cmd_background_error_on_the_status_line() {
+    let mut a = app();
+    select(&mut a, 1);
+    a.err = Some((Forge::GitLab, "gitlab.com 502 · retrying in 8s".into()));
+    strip_check("cmd-9", &a, 5, Some(""));
+}
+
+fn merged_812() -> (App, Vec<Effect>) {
+    let mut a = app();
+    select(&mut a, 1);
+    keys(&mut a, &[Key::Char('M')]);
+    let fx = keys(&mut a, &[Key::Char('y')]);
+    (a, fx)
+}
+
+#[test]
+fn merge_flow() {
+    let mut a = app();
+    select(&mut a, 1);
+    keys(&mut a, &[Key::Char('M')]);
+    strip_check("mergeFlow-0", &a, 4, Some(""));
+
+    let (mut a, fx) = merged_812();
+    a.tick = 2;
+    strip_check("mergeFlow-1", &a, 4, Some(""));
+    answer(&mut a, fx, &[], None);
+    strip_check("mergeFlow-2", &a, 4, None);
+}
+
+#[test]
+fn merge_refused_when_blocked() {
+    let mut a = app();
+    select(&mut a, 2);
+    keys(&mut a, &[Key::Char('M')]);
+    strip_check("mergeFlow-3", &a, 4, Some(""));
+}
+
+#[test]
+fn merge_offers_to_arm_when_waiting() {
+    let mut a = app();
+    select(&mut a, 3);
+    keys(&mut a, &[Key::Char('M')]);
+    strip_check("mergeFlow-4", &a, 4, Some(""));
+}
+
+#[test]
+fn arm_picks_a_method_then_disarm_toggles() {
+    let mut a = app();
+    select(&mut a, 3);
+    keys(&mut a, &[Key::Char('A')]);
+    strip_check("mergeFlow-5", &a, 4, Some(""));
+    let fx = keys(&mut a, &[Key::Char('s')]);
+    answer(&mut a, fx, &[], None);
+    strip_check("mergeFlow-6", &a, 4, Some(""));
+    let fx = keys(&mut a, &[Key::Char('A')]);
+    answer(&mut a, fx, &[], None);
+    strip_check("mergeFlow-7", &a, 4, Some(""));
+}
+
+#[test]
+fn batch_arm() {
+    let mut a = app();
+    for i in [1, 3, 9, 11, 12] {
+        select(&mut a, i);
+        keys(&mut a, &[Key::Char(' ')]);
+    }
+    select(&mut a, 12);
+    keys(&mut a, &[Key::Char('A')]);
+    strip_check("batch-0", &a, 13, None);
+    let fx = keys(&mut a, &[Key::Char('y')]);
+    answer(&mut a, fx, &[812], None);
+    a.tick = 2;
+    strip_check("batch-1", &a, 13, None);
+}
+
+#[test]
+fn s_help() {
+    let mut a = app();
+    keys(&mut a, &[Key::Char('?')]);
+    check("sHelp", &a.lines(120, 40), 120, Tier::True, Glyphs::Unicode);
 }
