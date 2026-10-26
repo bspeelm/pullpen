@@ -10,7 +10,7 @@ use super::chrome::{Status, status};
 use super::list::pad_start;
 use super::words::verdict_long;
 use crate::palette::Tok;
-use crate::span::{Line, Span, fit, lr, markup, s, sp, wrap};
+use crate::span::{Line, Span, fit, lr, markup, s, sp};
 
 const LW: usize = 56;
 const FACT_W: usize = 59;
@@ -154,7 +154,10 @@ fn activity(a: &Activity, ctx: &Ctx) -> Vec<Line> {
     if matches!(a.kind, ActivityKind::Pushed { .. }) {
         out.push(markup(&format!("    {{d|{}}}", esc(&a.body))));
     } else {
-        out.extend(wrap(&a.body.replace('\n', " "), LW - 4).into_iter().map(|t| vec![sp(4), s(t, Tok::Fg)]));
+        out.extend(super::markdown::render(&a.body, LW - 4).into_iter().map(|mut l| {
+            l.insert(0, sp(4));
+            l
+        }));
     }
     out
 }
@@ -162,16 +165,7 @@ fn activity(a: &Activity, ctx: &Ctx) -> Vec<Line> {
 /// The overview pane's rows: description, checks, conversation.
 pub fn overview(d: &PrDetail, expanded: bool, ctx: &Ctx) -> Vec<Line> {
     let mut out = vec![vec![]];
-    for (i, para) in d.description.split("\n\n").filter(|p| !p.trim().is_empty()).enumerate() {
-        if i > 0 {
-            out.push(vec![]);
-        }
-        if para.lines().all(|l| l.starts_with("- ") || l.starts_with("* ")) {
-            out.extend(para.lines().map(|l| markup(&format!("{{d|-}} {}", esc(&l[2..])))));
-        } else {
-            out.extend(wrap(&para.replace('\n', " "), LW).into_iter().map(|t| vec![s(t, Tok::Fg)]));
-        }
-    }
+    out.extend(super::markdown::render(&d.description, LW));
     if !d.checks.is_empty() {
         let mut checks: Vec<&CheckLine> = d.checks.iter().collect();
         // Problems first, so the folded view shows what matters.

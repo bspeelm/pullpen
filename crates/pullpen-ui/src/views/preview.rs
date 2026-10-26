@@ -80,7 +80,7 @@ fn fact_line(f: &(String, &'static str, String, String)) -> Line {
 /// `DESC_LINES` wrapped lines. A first sentence longer than that is cut
 /// at the line limit instead.
 pub fn description(text: &str, w: usize) -> Vec<String> {
-    let para = text.split("\n\n").next().unwrap_or("").replace('\n', " ");
+    let para = super::markdown::first_paragraph(text);
     let all = wrap(para.trim(), w);
     if all.len() <= DESC_LINES {
         return all;

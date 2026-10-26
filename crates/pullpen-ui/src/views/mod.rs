@@ -6,6 +6,7 @@ pub mod chrome;
 pub mod detail;
 pub mod help;
 pub mod list;
+pub mod markdown;
 pub mod preview;
 pub mod words;
 
