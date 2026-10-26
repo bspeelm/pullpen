@@ -6,6 +6,7 @@
 pub mod action;
 pub mod detail;
 pub mod pr;
+pub mod query;
 pub mod section;
 pub mod time;
 pub mod verdict;

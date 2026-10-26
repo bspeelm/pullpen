@@ -2,7 +2,7 @@
 //! it (design §01). Laid out as tui.js `preview4821` lays out its one PR.
 
 use pullpen_core::time::age;
-use pullpen_core::{ActivityKind, Mergeable, Pr, PrDetail, Verdict, verdict};
+use pullpen_core::{ActivityKind, Mergeable, Pr, PrDetail, PrState, Verdict, verdict};
 
 use super::Ctx;
 use super::words::verdict_short;
@@ -138,8 +138,17 @@ pub fn preview(pr: &Pr, d: &PrDetail, w: usize, ctx: &Ctx) -> Vec<Line> {
         )),
         vec![],
     ];
-    let mut vl = verdict_word(&v);
-    vl.extend(markup(&format!("{{d|  {}}}", esc(&verdict_short(pr, &v)))));
+    let vl = match &pr.state {
+        PrState::Merged { at, method } => {
+            markup(&format!("{{d|● merged  {} · {} ago}}", method.word(), age(*at, ctx.now)))
+        }
+        PrState::Closed => markup("{d|● closed without merging}"),
+        PrState::Open => {
+            let mut vl = verdict_word(&v);
+            vl.extend(markup(&format!("{{d|  {}}}", esc(&verdict_short(pr, &v)))));
+            vl
+        }
+    };
     out.push(vl);
     out.push(vec![]);
     out.extend(facts(pr).iter().map(fact_line));

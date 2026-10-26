@@ -18,13 +18,20 @@ pullpen-fixtures = { path = "crates/pullpen-fixtures" }
 anyhow = "1.0.104"
 clap = { version = "4.6.7", features = ["derive"] }
 crossterm = "0.29.0"
-directories = "6.0.0"
 ratatui = "0.30.2"
 tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
 toml = "1.1.8"
 unicode-width = "0.2.2"
 strsim = "0.11.1"
+async-trait = "0.1.92"
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "json", "http2"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "time", "sync"] }
+wiremock = "0.6.5"
+open = "5.4.5"
 
 [workspace.lints.clippy]
 unwrap_used = "warn"

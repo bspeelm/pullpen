@@ -9,7 +9,6 @@ use std::fs;
 use std::io::{Write, stdout};
 use std::path::Path;
 use std::process::Command;
-use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
@@ -19,14 +18,14 @@ use crossterm::event::{
 };
 use crossterm::terminal::{BeginSynchronizedUpdate, EndSynchronizedUpdate, supports_keyboard_enhancement};
 use crossterm::{execute, queue};
-use pullpen_core::{JobResult, PrId};
+use pullpen_core::PrId;
 use pullpen_ui::app::{App, Effect};
-use pullpen_ui::span::markup;
 use pullpen_ui::views::chrome::Mode;
 use ratatui::DefaultTerminal;
 
+use crate::backend::{Backend, Msg};
+use crate::keys;
 use crate::paths::Dirs;
-use crate::{fixtures, keys};
 
 /// How often the loop wakes without input: the spinner's frame rate, and
 /// the resolution of the 500 ms key-sequence timeout.
@@ -61,10 +60,17 @@ impl Term {
     }
 }
 
-pub fn run(app: &mut App, dirs: &Dirs) -> Result<()> {
-    app.history = load_history(&dirs.state.join("history"));
+pub struct Loop<'a> {
+    pub app: &'a mut App,
+    pub backend: &'a mut dyn Backend,
+    pub dirs: &'a Dirs,
+    pub on_focus: bool,
+}
+
+pub fn run(mut l: Loop) -> Result<()> {
+    l.app.history = load_history(&l.dirs.state.join("history"));
     let (mut terminal, mut term) = Term::enter()?;
-    let result = event_loop(&mut terminal, &mut term, app, dirs);
+    let result = event_loop(&mut terminal, &mut term, &mut l);
     term.leave();
     result
 }
@@ -82,78 +88,82 @@ fn draw(terminal: &mut DefaultTerminal, app: &mut App) -> Result<()> {
     Ok(())
 }
 
-fn event_loop(terminal: &mut DefaultTerminal, term: &mut Term, app: &mut App, dirs: &Dirs) -> Result<()> {
+fn event_loop(terminal: &mut DefaultTerminal, term: &mut Term, l: &mut Loop) -> Result<()> {
     // Debug builds only: lets the panic path be exercised by hand
     // (`PULLPEN_TEST_PANIC=1 cargo run -- --fixtures`) without shipping a
     // crash switch in release binaries.
     #[cfg(debug_assertions)]
     if std::env::var_os("PULLPEN_TEST_PANIC").is_some() {
-        draw(terminal, app)?;
+        draw(terminal, l.app)?;
         panic!("PULLPEN_TEST_PANIC is set");
     }
-    let (tx, rx) = mpsc::channel::<JobResult>();
-    while !app.quit {
-        draw(terminal, app)?;
+    while !l.app.quit {
+        l.app.sync = l.backend.sync_label();
+        draw(terminal, l.app)?;
         let mut effects = Vec::new();
         if event::poll(TICK)? {
             match event::read()? {
                 Event::Key(k) if k.kind != KeyEventKind::Release => {
                     if let Some(key) = keys::convert(k) {
-                        effects.extend(app.key(key, Instant::now()));
+                        effects.extend(l.app.key(key, Instant::now()));
                     }
                 }
+                Event::FocusGained if l.on_focus => l.backend.refresh(None),
                 // A resize needs nothing beyond the redraw at the top of the
                 // loop: ratatui re-reads the size on every draw.
                 _ => {}
             }
         } else {
-            app.expire(Instant::now());
-            if !app.jobs.is_empty() {
-                app.tick += 1;
+            l.app.expire(Instant::now());
+            if !l.app.jobs.is_empty() {
+                l.app.tick += 1;
             }
         }
-        while let Ok(r) = rx.try_recv() {
-            effects.extend(app.job_done(r));
+        for m in l.backend.messages() {
+            match m {
+                Msg::Job(r) => effects.extend(l.app.job_done(r)),
+                Msg::Synced { section, prs, total } => l.app.synced(section, prs, total),
+                Msg::Down(f, msg) => l.app.forge_down(f, msg),
+                Msg::Up(f) => l.app.forge_up(f),
+                Msg::Caps(c) => l.app.caps.extend(c),
+            }
         }
         for e in effects {
-            run_effect(e, terminal, term, app, dirs, &tx)?;
+            run_effect(e, terminal, term, l)?;
         }
     }
     Ok(())
 }
 
-fn run_effect(
-    e: Effect,
-    terminal: &mut DefaultTerminal,
-    term: &mut Term,
-    app: &mut App,
-    dirs: &Dirs,
-    tx: &mpsc::Sender<JobResult>,
-) -> Result<()> {
+fn run_effect(e: Effect, terminal: &mut DefaultTerminal, term: &mut Term, l: &mut Loop) -> Result<()> {
     match e {
-        Effect::Run(job) => fixtures::run(job, tx.clone()),
+        Effect::Run(job) => l.backend.run(job),
         Effect::Edit { targets } => {
             term.leave();
-            let text = edit(dirs, &targets);
+            let text = edit(l.dirs, &targets);
             let (t, k) = Term::enter()?;
             *terminal = t;
             *term = k;
             terminal.clear()?;
             match text {
                 Ok(text) => {
-                    for e in app.comment_text(targets, text) {
+                    for e in l.app.comment_text(targets, text) {
                         if let Effect::Run(job) = e {
-                            fixtures::run(job, tx.clone());
+                            l.backend.run(job);
                         }
                     }
                 }
-                Err(err) => app.error(&format!("{err:#}"), Mode::Normal),
+                Err(err) => l.app.error(&format!("{err:#}"), Mode::Normal),
             }
         }
-        Effect::Open(url) => app.say(markup(&format!("{{d|fixtures: would open {url}}}")), Mode::Normal),
-        Effect::Refresh { .. } => app.sync = "synced 0s".into(),
+        Effect::Open(url) => {
+            if let Err(why) = l.backend.open(&url) {
+                l.app.error(&why, Mode::Normal);
+            }
+        }
+        Effect::Refresh { all } => l.backend.refresh(if all { None } else { Some(l.app.active) }),
         Effect::Redraw => terminal.clear()?,
-        Effect::SaveHistory => save_history(&dirs.state.join("history"), &app.history)?,
+        Effect::SaveHistory => save_history(&l.dirs.state.join("history"), &l.app.history)?,
     }
     Ok(())
 }

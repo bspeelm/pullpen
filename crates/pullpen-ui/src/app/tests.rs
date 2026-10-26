@@ -36,3 +36,29 @@ fn the_selection_stays_on_screen() {
     a.scroll_into_view(24);
     assert_eq!(a.section().offset, 0);
 }
+
+#[test]
+fn a_sync_keeps_the_cursor_on_the_same_pr_or_the_same_index() {
+    let mut a = app();
+    a.active = 2;
+    a.section_mut().sel = 2;
+    let mut prs = a.section().prs.clone();
+    prs.remove(0);
+    a.synced(2, prs.clone(), 22);
+    assert_eq!(a.section().selected().unwrap().id.number, 2290, "followed #2290 up one row");
+    let gone = prs.remove(1);
+    assert_eq!(gone.id.number, 2290);
+    a.synced(2, prs, 21);
+    assert_eq!(a.section().sel, 1, "#2290 left, so the same index");
+    assert_eq!(a.section().total, 21);
+}
+
+#[test]
+fn a_forge_error_clears_when_that_forge_recovers() {
+    let mut a = app();
+    a.forge_down(Forge::GitLab, "gitlab.com 502".into());
+    a.forge_up(Forge::GitHub);
+    assert!(a.err.is_some(), "a different forge recovering changes nothing");
+    a.forge_up(Forge::GitLab);
+    assert!(a.err.is_none());
+}

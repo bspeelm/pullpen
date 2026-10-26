@@ -514,6 +514,43 @@ impl App {
         paint(&lines, buf, area, &self.theme);
     }
 
+    /// New rows for a section from a sync. The cursor stays on the same PR
+    /// if it is still there, else at the same index (design §13); marks on
+    /// PRs that left are dropped.
+    pub fn synced(&mut self, i: usize, mut prs: Vec<Pr>, total: usize) {
+        let Some(s) = self.sections.get_mut(i) else { return };
+        let keep = s.selected().map(|p| p.id.clone());
+        // Rows with an action in flight keep their optimistic state until the
+        // forge answers the action itself.
+        for p in &mut prs {
+            if let Some(old) = s.prs.iter().find(|o| o.id == p.id)
+                && self.jobs.iter().any(|j| j.job.target == p.id)
+            {
+                p.auto_merge = old.auto_merge.clone();
+            }
+        }
+        s.prs = prs;
+        s.total = total;
+        s.marks.retain(|m| s.prs.iter().any(|p| p.id == *m));
+        let vis: Vec<PrId> = s.visible().iter().map(|p| p.id.clone()).collect();
+        s.sel = keep.and_then(|id| vis.iter().position(|v| *v == id)).unwrap_or(s.sel).min(vis.len().saturating_sub(1));
+    }
+
+    /// A forge failing in the background: the status line says so until it
+    /// recovers (design §10).
+    pub fn forge_down(&mut self, f: Forge, msg: String) {
+        if self.err.as_ref().is_none_or(|(_, m)| *m != msg) {
+            self.log.push_back(markup(&format!("{{r|E  {}}}", act::esc(&msg))));
+        }
+        self.err = Some((f, msg));
+    }
+
+    pub fn forge_up(&mut self, f: Forge) {
+        if self.err.as_ref().is_some_and(|(e, _)| *e == f) {
+            self.err = None;
+        }
+    }
+
     pub fn say(&mut self, line: Line, mode: Mode) {
         self.log.push_back(line.clone());
         while self.log.len() > LOG_MAX {

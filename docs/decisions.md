@@ -138,3 +138,24 @@ the rule did not: the marks in `design/tui.js` are now #812, #377, #143,
 #1203 and #375, of which only #812 is green, and the counts and message follow
 (5 marked, 4 armed, 11 armed in total). The goldens were regenerated from the
 edited design, as ADR-002 says changes to the look must be.
+
+## ADR-008 — GitLab is read through GraphQL and written through REST
+
+`PLAN.md` chose REST v4 for GitLab, with GraphQL "optional later". Building
+the list showed what that costs: REST's merge request list has no head
+pipeline, no approvals and no line counts, so each row needs three more
+requests, which is 150 calls for a page of 50.
+
+GitLab's GraphQL returns all of it in one query per page: `diffStatsSummary`,
+`headPipeline`, `approvalsRequired`, `approvalsLeft`, `approvedBy`,
+`detailedMergeStatus`, `autoMergeEnabled`, `mergeTrainIndex`. Every field
+pullpen reads was checked against the gitlab.com schema by introspection
+before the client was written, rather than taken from memory.
+
+Writes stay REST (`/merge`, `/approve`, `/notes`,
+`/cancel_merge_when_pipeline_succeeds`), because the REST endpoints are the
+documented, long-stable interface for them and GraphQL's merge mutations lag
+behind.
+
+GitHub was already split the same way, for the same reason: GraphQL for
+reading, REST for the merge, review, comment and close endpoints.

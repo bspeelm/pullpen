@@ -2,8 +2,9 @@
 //! PR on demand, never for a whole section.
 
 use crate::time::Timestamp;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PrDetail {
     pub description: String,
     pub checks: Vec<CheckLine>,
@@ -13,7 +14,7 @@ pub struct PrDetail {
     pub conversation: Vec<Activity>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CheckState {
     Passed,
     Running,
@@ -21,7 +22,7 @@ pub enum CheckState {
     Queued,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CheckLine {
     pub name: String,
     pub state: CheckState,
@@ -30,7 +31,7 @@ pub struct CheckLine {
     pub duration: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActivityKind {
     Approved,
     ChangesRequested,
@@ -41,7 +42,7 @@ pub enum ActivityKind {
     Commented,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Activity {
     pub who: String,
     pub is_agent: bool,

@@ -1,0 +1,13 @@
+fragment mr on MergeRequest {
+  iid title webUrl draft createdAt updatedAt sourceBranch targetBranch state mergedAt
+  author { username bot }
+  diffStatsSummary { additions deletions fileCount }
+  headPipeline { status }
+  approvalsRequired approvalsLeft
+  approvedBy { nodes { username } }
+  reviewers { nodes { username } }
+  conflicts detailedMergeStatus autoMergeEnabled
+  mergeUser { username }
+  mergeTrainIndex mergeTrainsCount squashOnMerge
+  project { fullPath mergeRequestsFfOnlyEnabled squashReadOnly }
+}

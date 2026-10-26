@@ -40,7 +40,7 @@ Each row is settled. The ones with a record are answered by its number: ADR-001 
 | Language / TUI | **Rust**, `ratatui` + `crossterm` | Single static binary, instant startup, cell-level rendering control the design needs. |
 | Async | `tokio` (multi-thread), `reqwest` with `rustls` | Forge calls run in background tasks; UI thread never blocks. |
 | GitHub API | **GraphQL** (`https://api.github.com/graphql`) via `reqwest` + `serde_json` (hand-written queries, no codegen) | Auto-merge (`enablePullRequestAutoMerge`), review decision, status check rollup and mergeability are only sane via GraphQL. REST only for `PATCH`/`PUT` merge and checkout refs. |
-| GitLab API | **REST v4** (`/api/v4`) | MR approvals, pipelines, `merge?auto_merge=true`, merge trains are complete in REST; GraphQL optional later. |
+| GitLab API | **GraphQL** to read (`/api/graphql`), **REST v4** to write (`/api/v4`) | One GraphQL query per page carries pipeline, approvals and diff stats that REST needs three calls per MR for (ADR-008). Writes use the stable REST endpoints. |
 | Auth | In order: `PULLPEN_GITHUB_TOKEN` / `PULLPEN_GITLAB_TOKEN`, then `GITHUB_TOKEN` / `GITLAB_TOKEN`, then `gh auth token` / `glab auth status -t` shell-out, then `config.toml` `token_cmd` | Zero setup for anyone already using gh/glab. Never store tokens ourselves. |
 | Config | TOML at `$XDG_CONFIG_HOME/pullpen/config.toml` | Design says YAML/TOML; TOML is the Rust norm. No config UI. |
 | Cache | `$XDG_CACHE_HOME/pullpen/` — JSON per section, history file, messages log | Instant first paint from cache, then refresh. |
@@ -167,6 +167,8 @@ pub trait Forge: Send + Sync {
 | squash | `squash` | `squash: true` on merge |
 | rebase merge | `rebase` | fast-forward merge method (project setting `merge_method = ff`) |
 
+GitHub's search asks for the cheap fields of up to 30 PRs, then a second `nodes(ids:)` query per 10 asks for mergeability and check details. Computing mergeability is what made a single query slow enough for GitHub to answer 502. A required check that has not reported counts as pending ("Expected"), not absent.
+
 ### 4.2 Errors
 
 Map forge errors to `ActionFailed{reason, hint}` where `hint` is the next useful key, e.g. `#2290 can't merge: e2e/chromium failing · 1 review required` + `d diff   o open in browser`. Rate limits and 5xx become `SyncError` with backoff (1s, 2s, 4s… cap 60s) and surface on the status line, not the command line.
@@ -277,7 +279,7 @@ view  = "armed"            # the grouped lifecycle view
 Query grammar (forge-neutral, translated per forge; unknown terms are free text matched on title):
 `is:open|merged|closed|draft|armed|agent|ready|failing|conflict`, `author:<login|@me|@agents>`, `review-requested:@me`, `reviewed-by:@me`, `repo:<owner/name|glob>`, `org:<name>`, `group:<name>`, `forge:gh|gl`, `ci:pass|fail|running`, `label:<x>`, `base:<branch>`, free text.
 
-Translation splits each query in two. Terms a forge's search understands go to the server; the rest (`is:armed`, `is:agent`, `is:ready`, `is:failing`, `is:conflict`, `ci:*`) are evaluated on the fetched `Pr`s. A query made only of client-side terms fetches a superset (`involves:@me` on GitHub, `scope=all` within configured groups on GitLab). GitHub search returns at most 1,000 results; a section that hits the cap says so on the status line.
+Translation splits each query in two. Terms a forge's search understands go to the server; the rest (`is:armed`, `is:agent`, `is:ready`, `is:failing`, `is:conflict`, `ci:*`) are evaluated on the fetched `Pr`s. A query made only of client-side terms fetches a superset (`involves:@me` on GitHub, `scope=all` within configured groups on GitLab). GitHub search returns at most 1,000 results; a section that hits the cap says so on the status line. A query that names no person, repo, org or group would mean every PR on the forge, so it is scoped: on GitHub by the forge's `scope` (default `involves:@me`), on GitLab to its configured `groups`, or, with none, to the union of PRs you authored, review or are assigned.
 
 `/` filter inside a section uses the same grammar plus free text. Defaults ship: Mine, Needs my review, Agent-opened, Auto-merge armed, All.
 
@@ -389,10 +391,12 @@ Armed view grouping (needs attention / waiting / merged since), *why* column, `:
 kind = "github"
 host = "github.com"
 # token_cmd = "gh auth token"
+# scope = "involves:@me"  # what an unscoped query is narrowed to
 
 [[forge]]
 kind = "gitlab"
 host = "gitlab.com"
+# groups = ["platform"]   # searched when a query names no project, group or person
 # token_cmd = "glab auth status -t 2>&1 | awk '/Token:/{print $2}'"
 
 [ui]
