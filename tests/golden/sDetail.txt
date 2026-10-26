@@ -1,0 +1,40 @@
+  Agent-opened  ›  gh  acme/api  #4821                                                       1 of 23    updated 12m ago 
+                                                                                                                        
+  Migrate invoices to ledger v2                                                                                         
+  ◇ claude   claude/ledger-v2 → main   +412 −88   14 files   opened 3h ago                                              
+                                                                                                                        
+   WAITING    Squash-merges automatically when @mara approves. Nothing else is blocking.                                
+                                                                                                                        
+  ✓  checks      12/12 passed   8m 14s                       ✓  conflicts   none   up to date with main                 
+  ○  reviews     1 of 2 required   jkoh ✓   mara pending     ◆  auto-merge  armed   squash · by ash 2h ago              
+                                                                                                                        
+  overview             description · checks · conversation │ src/ledger/migrate.ts                 file 2/14   +120 −12 
+                                                           │                                                            
+  Moves invoice writes onto the ledger v2 double-entry     │ @@ -38,14 +38,24 @@ migrateInvoices(db, opts)              
+  tables. The backfill runs as an online migration in      │  38  38    const cursor = await loadCheckpoint(db)         
+  batches of 5,000 with a checkpoint table, so it resumes  │  39  39    while (true) {                                  
+  cleanly after a deploy. Reads switch behind the          │  40  40      const batch = await nextBatch(cursor, 5000)   
+  ledger_v2_reads flag, off by default.                    │  41      -   if (!batch.length) break                      
+                                                           │  42      -   for (const inv of batch) await writeLegacy(i… 
+  - add migrate_invoices job and checkpoint table          │      41  +   if (batch.length === 0) {                     
+  - dual-write legacy + ledger until the flag flips        │      42  +     await markComplete(db)                      
+  - remove InvoiceTotalsCache, unused since #4790          │      43  +     break                                       
+                                                           │      44  +   }                                             
+  checks                                         12 passed │      45  +   await db.tx(async (tx) => {                   
+  ✓ build                                           1m 52s │      46  +     for (const inv of batch) {                  
+  ✓ test / unit                                     3m 10s │      47  +       await writeLegacy(tx, inv)                
+  ✓ test / integration                              7m 41s │      48  +       await writeLedger(tx, toEntries(inv))     
+  ✓ lint                                               38s │      49  +     }                                           
+  ✓ migrations / dry-run                            2m 05s │      50  +     await saveCheckpoint(tx, batch.at(-1).id)   
+    + 7 more passed            zo to expand                │      51  +   })                                            
+                                                           │  43  52      metrics.batches.inc()                         
+  conversation                                           4 │  44  53    }                                               
+  ✓ jkoh  approved                                      2h │                                                            
+      Batching looks right. The checkpoint table needs an  │ @@ -88,6 +98,9 @@ function toEntries(inv: Invoice)         
+      index on invoice_id.                                 │  88  98    return [                                        
+  · ◇ claude  pushed 1 commit                           1h │  89  99      debit(inv.accountId, inv.total),              
+      add index on checkpoint(invoice_id)                  │  90 100      credit(LEDGER_REVENUE, inv.net),              
+  ○ mara  review requested by claude                    3h │     101  +   ...inv.taxLines.map((t) =>                    
+                                                           │     102  +     credit(LEDGER_TAX, t.amount)),              
+ NORMAL   #4821  overview                                             ◆ 7 armed   ✗ 3 failing   synced 40s   gh ✓  gl ✓ 
+                                                                                                                        

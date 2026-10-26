@@ -1,0 +1,6 @@
+  gh ○ ◆ #4821 Migrate invoices to ledger v2                         acme/api         ◇ claude    1/2   +412 −88     3h 
+  gl ✓    #812 Bump go toolchain to 1.25.3                           platform/runner  ◇ renovate  1/1     +6 −6     41m 
+  gh ✗ ◆ #2290 Fix hydration mismatch on settings page when locale…  acme/web         ◇ codex     0/1    +38 −12     5h 
+▌ gh ○ ◆  #377 Rotate staging TLS certs via cert-manager             acme/infra       ◇ claude    0/1    +54 −20    12m 
+ NORMAL   Agent-opened                                                ◆ 8 armed   ✗ 3 failing   synced 40s   gh ✓  gl ✓ 
+◆ Armed #377   squash · waiting on CI (4/9) and 1 review from @acme/infra                                               

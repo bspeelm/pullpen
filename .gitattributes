@@ -1,0 +1,4 @@
+# LF everywhere. The goldens are compared byte for byte, and tests/docs.rs
+# reads the Makefile and the docs line by line; autocrlf would have them
+# measuring the checkout rather than the file.
+* text=auto eol=lf

@@ -1,0 +1,79 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Nothing in CI writes to the repository, and the default token is far broader
+# than any of this needs.
+permissions:
+  contents: read
+
+jobs:
+  # Whether anything but markdown changed. The build jobs sit out prose-only
+  # changes; `check` never does, because tests/docs.rs reads the markdown and
+  # would go blind on exactly those changes.
+  #
+  # Jobs are skipped with `if:` rather than the workflow being filtered: a
+  # required check whose workflow never runs leaves the PR pending forever.
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.probe.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: probe
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -euo pipefail
+          # No base to diff against (a new branch, a rewritten history): run
+          # everything, because guessing wrong here skips the build.
+          if ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
+            echo "code=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          changed=$(git diff --name-only "$BASE" HEAD)
+          echo "$changed"
+          if printf '%s\n' "$changed" | grep -qv '\.md$'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Linux and macOS run natively; this is the only place macOS is proven
+  # (ADR-001).
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: make check
+
+  # The goldens are generated from design/tui.js (ADR-002). A design change
+  # committed without regenerating them would leave the tests proving the old
+  # design.
+  golden:
+    needs: scope
+    if: needs.scope.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/gen-golden.mjs
+      - name: goldens match the design
+        run: |
+          git add -N tests/golden
+          git diff --exit-code --stat tests/golden || {
+            echo "::error::tests/golden is stale; run 'make golden' and commit the result"; exit 1; }

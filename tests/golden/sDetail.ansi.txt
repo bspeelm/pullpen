@@ -1,0 +1,40 @@
+{fg}  {dim}Agent-opened{faint}  ›  {dim}gh  acme/api  {fg b}#4821{fg}                                                       {dim}1 of 23{fg}    {dim}updated 12m ago{fg} 
+{fg}                                                                                                                        
+{fg}  {fg b}Migrate invoices to ledger v2{fg}                                                                                         
+{fg}  ◇ claude{dim}   claude/ledger-v2 → main   +412 −88   14 files   opened 3h ago{fg}                                              
+{fg}                                                                                                                        
+{fg}  {bg bg=warn b} WAITING {fg}   Squash-merges automatically when @mara approves. Nothing else is blocking.                                
+{fg}                                                                                                                        
+{fg}  {ok}✓{fg}  {dim}checks      {fg}12/12 passed{dim}   8m 14s{fg}                       {ok}✓{fg}  {dim}conflicts   {fg}none{dim}   up to date with main{fg}                 
+{fg}  {warn}○{fg}  {dim}reviews     {fg}1 of 2 required{dim}   jkoh ✓   mara pending{fg}     {acc}◆{fg}  {dim}auto-merge  {fg}armed{dim}   squash · by ash 2h ago{fg}              
+{fg}                                                                                                                        
+{fg}  {acc b}overview{fg}             {dim}description · checks · conversation{faint} │ {fg b}src/ledger/migrate.ts{fg}                 {dim}file 2/14   {ok}+120{dim} {err}−12{fg} 
+{fg}                                                          {faint} │ {fg}                                                           
+{fg}  Moves invoice writes onto the ledger v2 double-entry    {faint} │ {dim}@@ -38,14 +38,24 @@ migrateInvoices(db, opts){fg}              
+{fg}  tables. The backfill runs as an online migration in     {faint} │  38  38  {fg}  const cursor = await loadCheckpoint(db)         
+{fg}  batches of 5,000 with a checkpoint table, so it resumes {faint} │  39  39  {fg}  while (true) {                                  
+{fg}  cleanly after a deploy. Reads switch behind the         {faint} │  40  40  {fg}    const batch = await nextBatch(cursor, 5000)   
+{fg}  ledger_v2_reads flag, off by default.                   {faint} │  41      {err}-   if (!batch.length) break{fg}                      
+{fg}                                                          {faint} │  42      {err}-   for (const inv of batch) await writeLegacy(i…{fg} 
+{fg}  {dim}-{fg} add migrate_invoices job and checkpoint table         {faint} │      41  {ok}+   if (batch.length === 0) {{fg}                     
+{fg}  {dim}-{fg} dual-write legacy + ledger until the flag flips       {faint} │      42  {ok}+     await markComplete(db){fg}                      
+{fg}  {dim}-{fg} remove InvoiceTotalsCache, unused since #4790         {faint} │      43  {ok}+     break{fg}                                       
+{fg}                                                          {faint} │      44  {ok}+   }{fg}                                             
+{fg}  {dim}checks{fg}                                         {dim}12 passed{faint} │      45  {ok}+   await db.tx(async (tx) => {{fg}                   
+{fg}  {ok}✓{fg} build                                           {dim}1m 52s{faint} │      46  {ok}+     for (const inv of batch) {{fg}                  
+{fg}  {ok}✓{fg} test / unit                                     {dim}3m 10s{faint} │      47  {ok}+       await writeLegacy(tx, inv){fg}                
+{fg}  {ok}✓{fg} test / integration                              {dim}7m 41s{faint} │      48  {ok}+       await writeLedger(tx, toEntries(inv)){fg}     
+{fg}  {ok}✓{fg} lint                                               {dim}38s{faint} │      49  {ok}+     }{fg}                                           
+{fg}  {ok}✓{fg} migrations / dry-run                            {dim}2m 05s{faint} │      50  {ok}+     await saveCheckpoint(tx, batch.at(-1).id){fg}   
+{fg}  {dim}  + 7 more passed            zo to expand{fg}               {faint} │      51  {ok}+   }){fg}                                            
+{fg}                                                          {faint} │  43  52  {fg}    metrics.batches.inc()                         
+{fg}  {dim}conversation{fg}                                           {dim}4{faint} │  44  53  {fg}  }                                               
+{fg}  {ok}✓{fg} jkoh{dim}  approved{fg}                                      {dim}2h{faint} │ {fg}                                                           
+{fg}      Batching looks right. The checkpoint table needs an {faint} │ {dim}@@ -88,6 +98,9 @@ function toEntries(inv: Invoice){fg}         
+{fg}      index on invoice_id.                                {faint} │  88  98  {fg}  return [                                        
+{fg}  {dim}·{fg} ◇ claude{dim}  pushed 1 commit{fg}                           {dim}1h{faint} │  89  99  {fg}    debit(inv.accountId, inv.total),              
+{fg}      {dim}add index on checkpoint(invoice_id){fg}                 {faint} │  90 100  {fg}    credit(LEDGER_REVENUE, inv.net),              
+{fg}  {warn}○{fg} mara{dim}  review requested by claude{fg}                    {dim}3h{faint} │     101  {ok}+   ...inv.taxLines.map((t) =>{fg}                    
+{fg}                                                          {faint} │     102  {ok}+     credit(LEDGER_TAX, t.amount)),{fg}              
+{bg bg=acc b} NORMAL {fg bg=surf}  #4821  {dim bg=surf}overview{fg bg=surf}                                             {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
+{fg}                                                                                                                        

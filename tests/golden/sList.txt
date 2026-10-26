@@ -1,0 +1,40 @@
+  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96                         author:@agents 
+                                                                                                                        
+             # title                      repo               rev   age │ Migrate invoices to ledger v2                  
+▌ gh ○ ◆ #4821 Migrate invoices to ledg…  acme/api         ◇ 1/2    3h │ gh  acme/api #4821   ◇ claude   3h             
+  gl ✓    #812 Bump go toolchain to 1.2…  platform/runner  ◇ 1/1   41m │                                                
+  gh ✗ ◆ #2290 Fix hydration mismatch o…  acme/web         ◇ 0/1    5h │ ○ waiting  squash-merges when @mara approves   
+  gh ○    #377 Rotate staging TLS certs…  acme/infra       ◇ 0/1   12m │                                                
+  gl ✓    #145 Add PodDisruptionBudget…   platform/charts  ◇ 1/1    1h │ ✓ checks      12/12 passed                     
+  gh ≠ ◆ #4818 Add idempotency keys to…   acme/api         ◇ 2/2    1d │ ○ reviews     1 of 2   @mara pending           
+  gh ✓     #96 Cache forge capabilities…  tools/rq         ◇ 1/1    2h │ ✓ conflicts   none   up to date                
+  gh ○ ◆ #2288 chore(deps): update depe…  acme/web         ◇ 0/1    6h │ ◆ auto-merge  armed   squash · @ash            
+  gl ○ ◆  #809 Retry artifact upload on…  platform/runner  ◇ 1/1   30m │                                                
+  gh ◌   #1203 Proration preview endpoi…  acme/billing     ◇ 0/2    2d │ claude/ledger-v2 → main                        
+  gh ✓   #4815 Remove deprecated v1 web…  acme/api         ◇ 2/2    2d │ +412 −88 · 14 files                            
+  gl ✗    #143 Pin redis chart to 19.6.x  platform/charts  ◇ 0/1    3d │                                                
+  gh ○    #375 Terraform: split vpc mod…  acme/infra       ◇ 0/1    3d │ Moves invoice writes onto the ledger v2        
+  gh ✓ ◆ #1199 Ledger: emit backfill pr…  acme/billing     ◇ 1/1    4h │ double-entry tables. The backfill runs as an   
+  gl ○    #806 Drop support for docker-…  platform/runner  ◇ 0/2    4d │ online migration in batches of 5,000 with a    
+  gh ○   #2284 Expose ledger balances i…  acme/web         ◇ 0/1    7h │ checkpoint table, so it resumes cleanly after  
+  gh ✓ ◆ #4809 Bump pgx to v5.7.2         acme/api         ◇ 1/1    5d │ a deploy.                                      
+  gl ○     #58 Document runner autoscal…  platform/docs    ◇ 0/1    5d │                                                
+  gh ✓     #94 Map GitLab approval rule…  tools/rq         ◇ 1/1    6d │ activity                                       
+  gh ✗    #371 Enable VPC flow logs to…   acme/infra       ◇ 0/1    6d │ ✓ jkoh approved                             2h 
+  gh ○   #2279 chore(deps): update depe…  acme/web         ◇ 0/1    1w │ ◆ ash armed auto-merge                      2h 
+  gl ✓    #139 Bump ingress-nginx to 4.…  platform/charts  ◇ 1/1    1w │ · ◇ claude pushed 2 commits                 3h 
+  gh ○   #4796 Trace context propagatio…  acme/api         ◇ 0/1    2w │ ○ mara review requested                     3h 
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+ NORMAL   Agent-opened  1/23                                          ◆ 7 armed   ✗ 3 failing   synced 40s   gh ✓  gl ✓ 
+                                                                                                                        

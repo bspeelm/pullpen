@@ -1,0 +1,36 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/bspeelm/pullpen"
+
+# Versions live here so every crate pins the same one; the list itself is the
+# ceiling in docs/PLAN.md §1 (ADR-005).
+[workspace.dependencies]
+pullpen-core = { path = "crates/pullpen-core" }
+pullpen-forge = { path = "crates/pullpen-forge" }
+pullpen-ui = { path = "crates/pullpen-ui" }
+pullpen-fixtures = { path = "crates/pullpen-fixtures" }
+anyhow = "1.0.104"
+clap = { version = "4.6.7", features = ["derive"] }
+crossterm = "0.29.0"
+directories = "6.0.0"
+ratatui = "0.30.2"
+tracing = "0.1.44"
+tracing-subscriber = "0.3.23"
+toml = "1.1.8"
+
+[workspace.lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+
+# Stripped and thin-LTO'd, because this is the binary the 10 MB budget weighs
+# (ADR-004) and the one that ships.
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1

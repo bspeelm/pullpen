@@ -1,0 +1,15 @@
+{fg}  {dim}gh {warn}○{fg} {acc}◆{fg} {dim}#4821 {fg}Migrate invoices to ledger v2                         {dim}acme/api{fg}         ◇ {dim}claude{fg}    {warn}1/2{fg}  {dim} +412 −88     3h{fg} 
+{acc}• {dim}gl {ok}✓{fg}   {dim} #812 {fg}Bump go toolchain to 1.25.3                           {dim}platform/runner{fg}  ◇ {dim}renovate{fg}  {ok}1/1{fg}  {dim}   +6 −6     41m{fg} 
+{fg}  {dim}gh {err}✗{fg} {acc}◆{fg} {dim}#2290 {fg}Fix hydration mismatch on settings page when locale…  {dim}acme/web{fg}         ◇ {dim}codex{fg}     {warn}0/1{fg}  {dim}  +38 −12     5h{fg} 
+{fg}  {dim}gh {warn}○{fg}   {dim} #377 {fg}Rotate staging TLS certs via cert-manager             {dim}acme/infra{fg}       ◇ {dim}claude{fg}    {warn}0/1{fg}  {dim}  +54 −20    12m{fg} 
+{acc}• {dim}gl {ok}✓{fg}   {dim} #145 {fg}Add PodDisruptionBudget to ingest workers             {dim}platform/charts{fg}  ◇ {dim}claude{fg}    {ok}1/1{fg}  {dim}  +31 −0      1h{fg} 
+{fg}  {dim}gh {err}≠{fg} {acc}◆{fg} {dim}#4818 {fg}Add idempotency keys to POST /payments                {dim}acme/api{fg}         ◇ {dim}codex{fg}     {ok}2/2{fg}  {dim} +220 −41     1d{fg} 
+{acc}• {dim}gh {ok}✓{fg}   {dim}  #96 {fg}Cache forge capabilities per host                     {dim}tools/rq{fg}         ◇ {dim}claude{fg}    {ok}1/1{fg}  {dim}  +73 −15     2h{fg} 
+{fg}  {dim}gh {warn}○{fg} {acc}◆{fg} {dim}#2288 {fg}chore(deps): update dependency vite to v7.1.4         {dim}acme/web{fg}         ◇ {dim}dependab…{fg} {warn}0/1{fg}  {dim}   +3 −3      6h{fg} 
+{fg}  {dim}gl {warn}○{fg} {acc}◆{fg} {dim} #809 {fg}Retry artifact upload on 503 with jittered backoff    {dim}platform/runner{fg}  ◇ {dim}codex{fg}     {ok}1/1{fg}  {dim}  +64 −9     30m{fg} 
+{acc}• {dim}gh ◌{fg}   {dim}#1203 Proration preview endpoint{fg}                            {dim}acme/billing{fg}     ◇ {dim}claude{fg}    {warn}0/2{fg}  {dim} +388 −2      2d{fg} 
+{acc}• {dim}gh {ok}✓{fg}   {dim}#4815 {fg}Remove deprecated v1 webhooks handler                 {dim}acme/api{fg}         ◇ {dim}claude{fg}    {ok}2/2{fg}  {dim}  +12 −540    2d{fg} 
+{fg}  {dim}gl {err}✗{fg}   {dim} #143 {fg}Pin redis chart to 19.6.x                             {dim}platform/charts{fg}  ◇ {dim}renovate{fg}  {warn}0/1{fg}  {dim}   +2 −2      3d{fg} 
+{acc bg=sel}▌ {dim bg=sel}gh {warn bg=sel}○{fg bg=sel}    #375 {fg bg=sel b}Terraform: split vpc module by region{fg bg=sel}                 {dim bg=sel}acme/infra{fg bg=sel}       ◇ {dim bg=sel}codex{fg bg=sel}     {warn bg=sel}0/1{fg bg=sel}  {dim bg=sel} +610 −402    3d{fg} 
+{bg bg=warn b} CONFIRM {fg bg=surf}  Agent-opened  {dim bg=surf}13/23{fg bg=surf}   {acc bg=surf}6 marked{fg bg=surf}                             {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
+{fg}Arm auto-merge on {fg b}6 PRs{fg} with {warn b}squash{fg}?   {dim}y/Enter yes   m merge   r rebase   n/Esc cancel{fg}                                  

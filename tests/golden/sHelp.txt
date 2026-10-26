@@ -1,0 +1,40 @@
+  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96                         author:@agents 
+                                                                                                                        
+             # title                      repo               rev   age │ Migrate invoices to ledger v2                  
+▌ gh ○ ◆ #4821 Migrate invoices to ledg…  acme/api         ◇ 1/2    3h │ gh  acme/api #4821   ◇ claude   3h             
+  gl ✓    #812 Bump go toolchain to 1.2…  platform/runner  ◇ 1/1   41m │                                                
+  gh ✗ ◆ #22                                                                                                 approves   
+  gh ○    #3   keys                                                                     ? or Esc to close               
+  gl ✓    #1                                                                                                            
+  gh ≠ ◆ #48   move                          act on selection              sections & views                 g           
+  gh ✓     #   j k        down / up          M          merge…             h l        prev / next section               
+  gh ○ ◆ #22   gg G       top / bottom       A          arm / disarm auto  Tab S-Tab  next / prev section               
+  gl ○ ◆  #8   ^d ^u      half page          a          approve            1–5        go to section                     
+  gh ◌   #12   /          filter list        c          comment            p          toggle preview                    
+  gh ✓   #48   n N        next / prev match  d          open diff          :          command line                      
+  gl ✗    #1   Esc        clear, cancel      o          open in browser    ?          this help                         
+  gh ○    #3   Space      mark row           x          close…             q          back / quit           r v2        
+  gh ✓ ◆ #11   V          mark range         r          refresh                                             uns as an   
+  gl ○    #8   Enter      open detail                                                                       0 with a    
+  gh ○   #22                                                                                                anly after  
+  gh ✓ ◆ #48   detail view                   command line                  confirm prompt                               
+  gl ○     #   h l        focus pane         Tab S-Tab  complete           y Enter    confirm                           
+  gh ✓     #   ]f [f      next / prev file   ↑ ↓        history            n Esc      cancel                            
+  gh ✗    #3   ]c [c      next / prev hunk   ^r #       insert selected    s m r      pick method                    2h 
+  gh ○   #22   zo zc      expand / fold      Enter      run                                                          2h 
+  gl ✓    #1   q Esc      back to list       Esc        cancel                                                       3h 
+  gh ○   #47                                                                                                         3h 
+               Every key has a : command. M and x confirm on the command line, never in a dialog.                       
+                                                                                                                        
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+                                                                       │                                                
+ NORMAL   Agent-opened  1/23                                          ◆ 7 armed   ✗ 3 failing   synced 40s   gh ✓  gl ✓ 
+                                                                                                                        

@@ -1,0 +1,40 @@
+{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {acc b}Agent-opened{acc} 23{fg}    {dim}Auto-merge armed{faint} 7{fg}    {dim}All{faint} 96{fg}                         {faint}author:@agents{fg} 
+{fg}                                                                                                                        
+{fg}         {faint}    #{fg} {faint}title{fg}                      {faint}repo{fg}               {faint}rev{fg}  {faint} age │ {fg b}Migrate invoices to ledger v2{fg}                  
+{acc bg=sel}▌ {dim bg=sel}gh {warn bg=sel}○{fg bg=sel} {acc bg=sel}◆{fg bg=sel} #4821 {fg bg=sel b}Migrate invoices to ledg…{fg bg=sel}  {dim bg=sel}acme/api{fg bg=sel}         ◇ {warn bg=sel}1/2{fg bg=sel}  {dim bg=sel}  3h{faint} │ {dim}gh  acme/api #4821   {fg}◇ claude{dim}   3h{fg}             
+{fg}  {dim}gl {ok}✓{fg}   {dim} #812 {fg}Bump go toolchain to 1.2…  {dim}platform/runner{fg}  ◇ {ok}1/1{fg}  {dim} 41m{faint} │ {fg}                                               
+{fg}  {dim}gh {err}✗{fg} {acc}◆{fg} {dim}#2290 {fg}Fix hydration mismatch o…  {dim}acme/web{fg}         ◇ {warn}0/1{fg}  {dim}  5h{faint} │ {warn}○ waiting{dim}  squash-merges when @mara approves{fg}   
+{fg}  {dim}gh {warn}○{fg}   {dim} #377 {fg}Rotate staging TLS certs…  {dim}acme/infra{fg}       ◇ {warn}0/1{fg}  {dim} 12m{faint} │ {fg}                                               
+{fg}  {dim}gl {ok}✓{fg}   {dim} #145 {fg}Add PodDisruptionBudget…   {dim}platform/charts{fg}  ◇ {ok}1/1{fg}  {dim}  1h{faint} │ {ok}✓{fg} {dim}checks      {fg}12/12 passed                     
+{fg}  {dim}gh {err}≠{fg} {acc}◆{fg} {dim}#4818 {fg}Add idempotency keys to…   {dim}acme/api{fg}         ◇ {ok}2/2{fg}  {dim}  1d{faint} │ {warn}○{fg} {dim}reviews     {fg}1 of 2{dim}   @mara pending{fg}           
+{fg}  {dim}gh {ok}✓{fg}   {dim}  #96 {fg}Cache forge capabilities…  {dim}tools/rq{fg}         ◇ {ok}1/1{fg}  {dim}  2h{faint} │ {ok}✓{fg} {dim}conflicts   {fg}none{dim}   up to date{fg}                
+{fg}  {dim}gh {warn}○{fg} {acc}◆{fg} {dim}#2288 {fg}chore(deps): update depe…  {dim}acme/web{fg}         ◇ {warn}0/1{fg}  {dim}  6h{faint} │ {acc}◆{fg} {dim}auto-merge  {fg}armed{dim}   squash · @ash{fg}            
+{fg}  {dim}gl {warn}○{fg} {acc}◆{fg} {dim} #809 {fg}Retry artifact upload on…  {dim}platform/runner{fg}  ◇ {ok}1/1{fg}  {dim} 30m{faint} │ {fg}                                               
+{fg}  {dim}gh ◌{fg}   {dim}#1203 Proration preview endpoi…{fg}  {dim}acme/billing{fg}     ◇ {warn}0/2{fg}  {dim}  2d{faint} │ {dim}claude/ledger-v2 → main{fg}                        
+{fg}  {dim}gh {ok}✓{fg}   {dim}#4815 {fg}Remove deprecated v1 web…  {dim}acme/api{fg}         ◇ {ok}2/2{fg}  {dim}  2d{faint} │ {dim}+412 −88 · 14 files{fg}                            
+{fg}  {dim}gl {err}✗{fg}   {dim} #143 {fg}Pin redis chart to 19.6.x  {dim}platform/charts{fg}  ◇ {warn}0/1{fg}  {dim}  3d{faint} │ {fg}                                               
+{fg}  {dim}gh {warn}○{fg}   {dim} #375 {fg}Terraform: split vpc mod…  {dim}acme/infra{fg}       ◇ {warn}0/1{fg}  {dim}  3d{faint} │ {fg}Moves invoice writes onto the ledger v2        
+{fg}  {dim}gh {ok}✓{fg} {acc}◆{fg} {dim}#1199 {fg}Ledger: emit backfill pr…  {dim}acme/billing{fg}     ◇ {ok}1/1{fg}  {dim}  4h{faint} │ {fg}double-entry tables. The backfill runs as an   
+{fg}  {dim}gl {warn}○{fg}   {dim} #806 {fg}Drop support for docker-…  {dim}platform/runner{fg}  ◇ {warn}0/2{fg}  {dim}  4d{faint} │ {fg}online migration in batches of 5,000 with a    
+{fg}  {dim}gh {warn}○{fg}   {dim}#2284 {fg}Expose ledger balances i…  {dim}acme/web{fg}         ◇ {warn}0/1{fg}  {dim}  7h{faint} │ {fg}checkpoint table, so it resumes cleanly after  
+{fg}  {dim}gh {ok}✓{fg} {acc}◆{fg} {dim}#4809 {fg}Bump pgx to v5.7.2         {dim}acme/api{fg}         ◇ {ok}1/1{fg}  {dim}  5d{faint} │ {fg}a deploy.                                      
+{fg}  {dim}gl {warn}○{fg}   {dim}  #58 {fg}Document runner autoscal…  {dim}platform/docs{fg}    ◇ {warn}0/1{fg}  {dim}  5d{faint} │ {fg}                                               
+{fg}  {dim}gh {ok}✓{fg}   {dim}  #94 {fg}Map GitLab approval rule…  {dim}tools/rq{fg}         ◇ {ok}1/1{fg}  {dim}  6d{faint} │ {dim}activity{fg}                                       
+{fg}  {dim}gh {err}✗{fg}   {dim} #371 {fg}Enable VPC flow logs to…   {dim}acme/infra{fg}       ◇ {warn}0/1{fg}  {dim}  6d{faint} │ {ok}✓{fg} jkoh{dim} approved{fg}                             {dim}2h{fg} 
+{fg}  {dim}gh {warn}○{fg}   {dim}#2279 {fg}chore(deps): update depe…  {dim}acme/web{fg}         ◇ {warn}0/1{fg}  {dim}  1w{faint} │ {acc}◆{fg} ash{dim} armed auto-merge{fg}                      {dim}2h{fg} 
+{fg}  {dim}gl {ok}✓{fg}   {dim} #139 {fg}Bump ingress-nginx to 4.…  {dim}platform/charts{fg}  ◇ {ok}1/1{fg}  {dim}  1w{faint} │ {dim}·{fg} ◇ claude{dim} pushed 2 commits{fg}                 {dim}3h{fg} 
+{fg}  {dim}gh {warn}○{fg}   {dim}#4796 {fg}Trace context propagatio…  {dim}acme/api{fg}         ◇ {warn}0/1{fg}  {dim}  2w{faint} │ {warn}○{fg} mara{dim} review requested{fg}                     {dim}3h{fg} 
+{fg}                                                                      {faint} │ {fg}                                               
+{fg}                                                                      {faint} │ {fg}                                               
+{fg}                                                                      {faint} │ {fg}                                               
+{fg}                                                                      {faint} │ {fg}                                               
+{fg}                                                                      {faint} │ {fg}                                               
+{fg}                                                                      {faint} │ {fg}                                               
+{fg}                                                                      {faint} │ {fg}                                               
+{fg}                                                                      {faint} │ {fg}                                               
+{fg}                                                                      {faint} │ {fg}                                               
+{fg}                                                                      {faint} │ {fg}                                               
+{fg}                                                                      {faint} │ {fg}                                               
+{fg}                                                                      {faint} │ {fg}                                               
+{bg bg=acc b} NORMAL {fg bg=surf}  Agent-opened  {dim bg=surf}1/23{fg bg=surf}                                          {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
+{fg}                                                                                                                        

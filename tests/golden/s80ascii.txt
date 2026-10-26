@@ -1,0 +1,24 @@
+  Mine 6   Review 4   Agent 23   Armed 7   All 96                               
+                                                                                
+             # title                     repo               author    rev   age 
+> gh o * #4821 Migrate invoices to led~  acme/api         ^ claude    1/2    3h 
+  gl +    #812 Bump go toolchain to 1.~  platform/runner  ^ renovate  1/1   41m 
+  gh x * #2290 Fix hydration mismatch~   acme/web         ^ codex     0/1    5h 
+  gh o    #377 Rotate staging TLS cert~  acme/infra       ^ claude    0/1   12m 
+  gl +    #145 Add PodDisruptionBudget~  platform/charts  ^ claude    1/1    1h 
+  gh ! * #4818 Add idempotency keys to~  acme/api         ^ codex     2/2    1d 
+  gh +     #96 Cache forge capabilitie~  tools/rq         ^ claude    1/1    2h 
+  gh o * #2288 chore(deps): update dep~  acme/web         ^ dependab~ 0/1    6h 
+  gl o *  #809 Retry artifact upload o~  platform/runner  ^ codex     1/1   30m 
+  gh -   #1203 Proration preview endpo~  acme/billing     ^ claude    0/2    2d 
+  gh +   #4815 Remove deprecated v1 we~  acme/api         ^ claude    2/2    2d 
+  gl x    #143 Pin redis chart to 19.6~  platform/charts  ^ renovate  0/1    3d 
+  gh o    #375 Terraform: split vpc mo~  acme/infra       ^ codex     0/1    3d 
+  gh + * #1199 Ledger: emit backfill p~  acme/billing     ^ claude    1/1    4h 
+  gl o    #806 Drop support for docker~  platform/runner  ^ devin     0/2    4d 
+  gh o   #2284 Expose ledger balances~   acme/web         ^ codex     0/1    7h 
+  gh + * #4809 Bump pgx to v5.7.2        acme/api         ^ renovate  1/1    5d 
+  gl o     #58 Document runner autosca~  platform/docs    ^ claude    0/1    5d 
+  gh +     #94 Map GitLab approval rul~  tools/rq         ^ claude    1/1    6d 
+ NORMAL   Agent  1/23                           *7 x3   synced 40s   gh +  gl + 
+                                                                                

@@ -1,0 +1,27 @@
+[package]
+name = "pullpen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Review, arm and merge pull requests across GitHub and GitLab from one terminal queue"
+publish = false
+
+[dependencies]
+pullpen-core.workspace = true
+pullpen-forge.workspace = true
+pullpen-ui.workspace = true
+pullpen-fixtures.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+crossterm.workspace = true
+directories.workspace = true
+ratatui.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+toml.workspace = true

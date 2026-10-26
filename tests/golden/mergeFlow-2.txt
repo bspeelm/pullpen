@@ -1,0 +1,6 @@
+  gh ○ ◆ #4821 Migrate invoices to ledger v2                         acme/api         ◇ claude    1/2   +412 −88     3h 
+▌ gh ✗ ◆ #2290 Fix hydration mismatch on settings page when locale…  acme/web         ◇ codex     0/1    +38 −12     5h 
+  gh ○    #377 Rotate staging TLS certs via cert-manager             acme/infra       ◇ claude    0/1    +54 −20    12m 
+  gl ✓    #145 Add PodDisruptionBudget to ingest workers             platform/charts  ◇ claude    1/1    +31 −0      1h 
+ NORMAL   Agent-opened  2/22                                          ◆ 7 armed   ✗ 3 failing   synced 40s   gh ✓  gl ✓ 
+✓ Merged #812 into main   squash · source branch deleted                                                                

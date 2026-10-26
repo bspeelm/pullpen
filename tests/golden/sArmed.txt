@@ -1,0 +1,40 @@
+  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96     is:armed + merged since last visit 
+                                                                                                                        
+  needs attention  2                                                                                                    
+▌ gh ✗ ◆ #2290 Fix hydration mismatch on settings page when local…  web         failing  e2e/chromium · 2 retries   18m 
+  gh ≠ ◆ #4818 Add idempotency keys to POST /payments               api         conflict  with main after #4815     25m 
+                                                                                                                        
+  waiting  5                                                                                                            
+  gh ○ ◆ #4821 Migrate invoices to ledger v2                        api         review  @mara · 1 of 2               2h 
+  gl ○ ◆  #809 Retry artifact upload on 503 with jittered backoff   runner      ci  6/9 running · ~4m left          30m 
+  gh ○ ◆  #377 Rotate staging TLS certs via cert-manager            infra       ci  4/9 running, then review        12m 
+  gl ✓ ◆  #145 Add PodDisruptionBudget to ingest workers            charts      merge train  position 2 of 3         1h 
+  gh ✓ ◆ #4809 Bump pgx to v5.7.2                                   api         ci  required check sbom queued       5d 
+                                                                                                                        
+  merged since 09:14  4                                                                                                 
+  gh ●   #2288 chore(deps): update dependency vite to v7.1.4        web         merged · squash                     22m 
+  gl ●    #812 Bump go toolchain to 1.25.3                          runner      merged · squash                     41m 
+  gh ●   #1199 Ledger: emit backfill progress metrics               billing     merged · squash                      1h 
+  gh ●   #4815 Remove deprecated v1 webhooks handler                api         merged · rebase                      1h 
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+ NORMAL   Auto-merge armed  1/7                                       ◆ 7 armed   ✗ 3 failing   synced 40s   gh ✓  gl ✓ 
+◆ 4 merged since 09:14   ·   2 need attention   ·   5 still waiting                                                     

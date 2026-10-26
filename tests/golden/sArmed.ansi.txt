@@ -1,0 +1,40 @@
+{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Agent-opened{faint} 23{fg}    {acc b}Auto-merge armed{acc} 7{fg}    {dim}All{faint} 96{fg}     {faint}is:armed + merged since last visit{fg} 
+{fg}                                                                                                                        
+{fg}  {fg b}needs attention{dim}  2{fg}                                                                                                    
+{acc bg=sel}▌ {dim bg=sel}gh {err bg=sel}✗{fg bg=sel} {acc bg=sel}◆{fg bg=sel} #2290 {fg bg=sel b}Fix hydration mismatch on settings page when local…{fg bg=sel}  {dim bg=sel}web{fg bg=sel}         {err bg=sel}failing{dim bg=sel}  e2e/chromium · 2 retries{fg bg=sel} {dim bg=sel}  18m{fg} 
+{fg}  {dim}gh {err}≠{fg} {acc}◆{fg} {dim}#4818 {fg}Add idempotency keys to POST /payments               {dim}api{fg}         {err}conflict{dim}  with main after #4815{fg}   {dim}  25m{fg} 
+{fg}                                                                                                                        
+{fg}  {fg b}waiting{dim}  5{fg}                                                                                                            
+{fg}  {dim}gh {warn}○{fg} {acc}◆{fg} {dim}#4821 {fg}Migrate invoices to ledger v2                        {dim}api{fg}         {warn}review{dim}  @mara · 1 of 2{fg}            {dim}   2h{fg} 
+{fg}  {dim}gl {warn}○{fg} {acc}◆{fg} {dim} #809 {fg}Retry artifact upload on 503 with jittered backoff   {dim}runner{fg}      {warn}ci{dim}  6/9 running · ~4m left{fg}        {dim}  30m{fg} 
+{fg}  {dim}gh {warn}○{fg} {acc}◆{fg} {dim} #377 {fg}Rotate staging TLS certs via cert-manager            {dim}infra{fg}       {warn}ci{dim}  4/9 running, then review{fg}      {dim}  12m{fg} 
+{fg}  {dim}gl {ok}✓{fg} {acc}◆{fg} {dim} #145 {fg}Add PodDisruptionBudget to ingest workers            {dim}charts{fg}      {warn}merge train{dim}  position 2 of 3{fg}      {dim}   1h{fg} 
+{fg}  {dim}gh {ok}✓{fg} {acc}◆{fg} {dim}#4809 {fg}Bump pgx to v5.7.2                                   {dim}api{fg}         {warn}ci{dim}  required check sbom queued{fg}    {dim}   5d{fg} 
+{fg}                                                                                                                        
+{fg}  {fg b}merged since 09:14{dim}  4{fg}                                                                                                 
+{fg}  {dim}gh ●{fg}   {dim}#2288 chore(deps): update dependency vite to v7.1.4{fg}        {dim}web{fg}         {dim}merged · squash{fg}                   {dim}  22m{fg} 
+{fg}  {dim}gl ●{fg}   {dim} #812 Bump go toolchain to 1.25.3{fg}                          {dim}runner{fg}      {dim}merged · squash{fg}                   {dim}  41m{fg} 
+{fg}  {dim}gh ●{fg}   {dim}#1199 Ledger: emit backfill progress metrics{fg}               {dim}billing{fg}     {dim}merged · squash{fg}                   {dim}   1h{fg} 
+{fg}  {dim}gh ●{fg}   {dim}#4815 Remove deprecated v1 webhooks handler{fg}                {dim}api{fg}         {dim}merged · rebase{fg}                   {dim}   1h{fg} 
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{bg bg=acc b} NORMAL {fg bg=surf}  Auto-merge armed  {dim bg=surf}1/7{fg bg=surf}                                       {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
+{acc}◆{fg} 4 merged since 09:14{dim}   ·   2 need attention   ·   5 still waiting{fg}                                                     

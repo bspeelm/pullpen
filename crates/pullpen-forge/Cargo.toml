@@ -1,0 +1,13 @@
+[package]
+name = "pullpen-forge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+pullpen-core.workspace = true
