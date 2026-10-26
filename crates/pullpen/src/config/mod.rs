@@ -202,10 +202,16 @@ const DEFAULT_SECTIONS: [(&str, &str, &str, &str); 5] = [
     ("All", "All", "is:open", "list"),
 ];
 
-/// `~/x` as a path under $HOME.
+/// The home directory: $HOME, or on Windows, where it is usually unset,
+/// %USERPROFILE%.
+pub fn home() -> Option<std::path::PathBuf> {
+    std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(std::path::PathBuf::from)
+}
+
+/// `~/x` (or `~\x`) as a path under the home directory.
 pub fn expand(p: &str) -> std::path::PathBuf {
-    match (p.strip_prefix("~/"), std::env::var_os("HOME")) {
-        (Some(rest), Some(h)) => std::path::PathBuf::from(h).join(rest),
+    match (p.strip_prefix("~/").or_else(|| p.strip_prefix("~\\")), home()) {
+        (Some(rest), Some(h)) => h.join(rest),
         _ => std::path::PathBuf::from(p),
     }
 }

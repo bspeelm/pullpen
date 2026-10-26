@@ -39,11 +39,16 @@ pub fn token(
         return Ok(t);
     }
     if let Some(cmd) = token_cmd
-        && let Some(t) = output("sh", &["-c", cmd]).map(|o| o.trim().to_string()).filter(|t| !t.is_empty())
+        && let Some(t) = shell(cmd).map(|o| o.trim().to_string()).filter(|t| !t.is_empty())
     {
         return Ok(t);
     }
     Err(Error::Auth(host.into()))
+}
+
+/// `token_cmd` is a shell line, so it runs through the platform's shell.
+fn shell(cmd: &str) -> Option<String> {
+    if cfg!(windows) { output("cmd", &["/C", cmd]) } else { output("sh", &["-c", cmd]) }
 }
 
 /// A command's output, stdout and stderr together, or `None` if it could not

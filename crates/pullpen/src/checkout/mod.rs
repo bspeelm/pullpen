@@ -95,12 +95,8 @@ fn git(dir: &Path, args: &[&str]) -> Result<String, String> {
     }
 }
 
-fn home() -> Option<PathBuf> {
-    std::env::var_os("HOME").map(PathBuf::from)
-}
-
 fn tilde(p: &Path) -> String {
-    match home().and_then(|h| p.strip_prefix(h).ok().map(Path::to_path_buf)) {
+    match crate::config::home().and_then(|h| p.strip_prefix(h).ok().map(Path::to_path_buf)) {
         Some(rest) => format!("~/{}", rest.display()),
         None => p.display().to_string(),
     }

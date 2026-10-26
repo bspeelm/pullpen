@@ -1,7 +1,9 @@
 # Where it runs
 
-**Linux and macOS**, built and tested in CI on both on every change. Windows
-is not built or tested.
+**Linux, macOS and Windows**, built and tested in CI on all three on every
+change; releases carry amd64 and arm64 builds. On Windows, nobody has yet run
+it interactively; use Windows Terminal, which understands the escape codes
+pullpen draws with. A report is welcome.
 
 Any terminal works. Truecolor, 256 colours, 16 colours and `NO_COLOR` are all
 handled, and ASCII glyphs are a setting. Terminals with the Kitty keyboard

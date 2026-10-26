@@ -262,3 +262,31 @@ on the base, and asks once for several. `M` on a PR whose only wait is the
 base refuses and names `u` instead of offering to arm. The design changed
 first, as ADR-002 requires: the help overlay's Act column gained `u`, and
 the goldens were regenerated from it.
+
+## ADR-016 — Windows is supported
+
+Windows was out of scope for v1 (PLAN.md §10). The maintainer requires it,
+and the cost turned out small: crossterm drives the Windows console,
+`.gitattributes` already keeps the goldens LF on a Windows checkout, and the
+key loops already drop the key-release events Windows sends.
+
+**Where files go.** Windows' own folders, since nothing on Windows looks in
+`~/.config`: settings and the stored token in `%APPDATA%\pullpen`, the cache
+and log in `%LOCALAPPDATA%\pullpen\cache` and `\state`. `XDG_*` variables
+still win when set, for shells that set them on purpose.
+
+**The stored token.** On Linux and macOS it is created 0600 and refused if
+others can read it (ADR-012). On Windows it relies on `%APPDATA%`'s ACL,
+which admits only its owner; checking an ACL would take a crate this project
+does not have (ADR-005), and most Windows users will borrow the `gh` or
+`glab` login and store nothing.
+
+**Where it differs.** The editor falls back to Notepad, `token_cmd` runs
+through `cmd /C`, and the armed view's clock reads the time zone from the
+registry rather than `date`.
+
+**What proves it.** A `windows` CI job runs every test and a release build
+on each change, and the release ships `pullpen_windows_amd64.zip` and
+`pullpen_windows_arm64.zip`. `make check` stays POSIX shell: the budgets do
+not depend on the platform and the Linux job holds them. Interactive use in
+Windows Terminal is unverified until someone runs it.

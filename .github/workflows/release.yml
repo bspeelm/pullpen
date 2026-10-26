@@ -47,6 +47,8 @@ jobs:
           # Intel binary as a cross target.
           - { target: x86_64-apple-darwin, os: macos-14, name: darwin_amd64 }
           - { target: aarch64-apple-darwin, os: macos-14, name: darwin_arm64 }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest, name: windows_amd64 }
+          - { target: aarch64-pc-windows-msvc, os: windows-11-arm, name: windows_arm64 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -59,15 +61,24 @@ jobs:
       # No version in the archive name, so /releases/latest/download/ URLs
       # stay stable across releases.
       - name: package
+        if: runner.os != 'Windows'
         run: |
           set -euo pipefail
           mkdir -p dist/pkg
           cp target/${{ matrix.target }}/release/pullpen LICENSE README.md dist/pkg/
           tar -czf dist/pullpen_${{ matrix.name }}.tar.gz -C dist/pkg .
+      # A zip, because that is what Windows opens without extra tools.
+      - name: package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/pkg | Out-Null
+          Copy-Item target/${{ matrix.target }}/release/pullpen.exe, LICENSE, README.md dist/pkg/
+          Compress-Archive -Path dist/pkg/* -DestinationPath dist/pullpen_${{ matrix.name }}.zip
       - uses: actions/upload-artifact@v4
         with:
           name: pullpen_${{ matrix.name }}
-          path: dist/pullpen_${{ matrix.name }}.tar.gz
+          path: dist/pullpen_${{ matrix.name }}.*
 
   release:
     needs: build
@@ -79,7 +90,7 @@ jobs:
         with:
           path: dist
           merge-multiple: true
-      - run: cd dist && sha256sum pullpen_*.tar.gz > checksums.txt
+      - run: cd dist && sha256sum pullpen_*.tar.gz pullpen_*.zip > checksums.txt
       # Everything the release page offers, checksums included: attesting
       # the archives alone would leave the file that vouches for them
       # swappable by whoever could swap them.
@@ -88,6 +99,7 @@ jobs:
         with:
           subject-path: |
             dist/pullpen_*.tar.gz
+            dist/pullpen_*.zip
             dist/checksums.txt
       - name: publish
         env:

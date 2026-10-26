@@ -70,6 +70,21 @@ jobs:
       - run: cargo test --workspace --locked
       - run: cargo build --release --locked && ./target/release/pullpen --version
 
+  # Windows, for the same reason as macOS (ADR-016). make check is POSIX
+  # shell, so this runs the tests and the build it would; the budgets do not
+  # depend on the platform and the Linux job holds them.
+  windows:
+    needs: scope
+    if: needs.scope.outputs.code == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace --locked
+      - run: cargo build --release --locked && ./target/release/pullpen.exe --version
+        shell: bash
+
   # The goldens are generated from design/tui.js (ADR-002). A design change
   # committed without regenerating them would leave the tests proving the old
   # design.

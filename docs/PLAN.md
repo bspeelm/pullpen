@@ -42,8 +42,8 @@ Each row is settled. The ones with a record are answered by its number: ADR-001 
 | GitHub API | **GraphQL** (`https://api.github.com/graphql`) via `reqwest` + `serde_json` (hand-written queries, no codegen) | Auto-merge (`enablePullRequestAutoMerge`), review decision, status check rollup and mergeability are only sane via GraphQL. REST only for `PATCH`/`PUT` merge and checkout refs. |
 | GitLab API | **GraphQL** to read (`/api/graphql`), **REST v4** to write (`/api/v4`) | One GraphQL query per page carries pipeline, approvals and diff stats that REST needs three calls per MR for (ADR-008). Writes use the stable REST endpoints. |
 | Auth | In order: `PULLPEN_GITHUB_TOKEN` / `PULLPEN_GITLAB_TOKEN`, then `GITHUB_TOKEN` / `GITLAB_TOKEN`, then a token `pullpen setup` stored in `credentials.toml` (0600), then `gh auth token` / `glab auth status -t`, then `config.toml` `token_cmd` | Zero setup for anyone already using gh/glab; one question for anyone else (ADR-012). |
-| Config | TOML at `$XDG_CONFIG_HOME/pullpen/config.toml`, written by `pullpen setup` and `pullpen settings` (§6.6) or by hand | Design says YAML/TOML; TOML is the Rust norm. |
-| Cache | `$XDG_CACHE_HOME/pullpen/` — JSON per section, history file, messages log | Instant first paint from cache, then refresh. |
+| Config | TOML at `$XDG_CONFIG_HOME/pullpen/config.toml` (`%APPDATA%\pullpen\config.toml` on Windows, ADR-016), written by `pullpen setup` and `pullpen settings` (§6.6) or by hand | Design says YAML/TOML; TOML is the Rust norm. |
+| Cache | `$XDG_CACHE_HOME/pullpen/` (`%LOCALAPPDATA%\pullpen\cache\` on Windows) — JSON per section, history file, messages log | Instant first paint from cache, then refresh. |
 | Clipboard / browser | `open` crate for `o`; no clipboard in v1 | |
 | Row treatment | **1a columns** (`rowA`) | Chosen in design review. |
 | Vocabulary | "PR" everywhere; GitLab `!812` displayed `#812`; both spellings accepted in commands | Design §01, §07. |
@@ -482,7 +482,7 @@ query = "is:open"
 
 ## 10. Out of scope for v1
 
-Settings UI, onboarding/auth screens, inline review comments on diff lines, creating PRs, Bitbucket/Gitea (keep the `Forge` trait clean so they can come later), row treatments 1b/1c, Windows (crossterm supports it; just untested).
+Settings UI, onboarding/auth screens, inline review comments on diff lines, creating PRs, Bitbucket/Gitea (keep the `Forge` trait clean so they can come later), row treatments 1b/1c. (Windows was here; ADR-016 brought it in.)
 
 ---
 
