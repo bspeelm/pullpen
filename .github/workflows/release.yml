@@ -3,6 +3,10 @@ name: release
 on:
   push:
     tags: ['v*']
+  # A dry run: builds and packages every target, publishes nothing. A tag
+  # cannot be taken back, so the first release should not be the first time
+  # this workflow runs.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -26,6 +30,7 @@ jobs:
       # Cargo.toml holds the one written version; a hand-made tag that
       # disagrees would stamp binaries with a number the source does not have.
       - name: the tag matches Cargo.toml
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           v=$(sed -n '/^\[workspace.package\]/,/^\[/s/^version = "\(.*\)"/\1/p' Cargo.toml)
           test "v$v" = "${GITHUB_REF_NAME}" || { echo "::error::tag ${GITHUB_REF_NAME} but Cargo.toml says $v"; exit 1; }
@@ -38,7 +43,9 @@ jobs:
         include:
           - { target: x86_64-unknown-linux-gnu, os: ubuntu-22.04, name: linux_amd64 }
           - { target: aarch64-unknown-linux-gnu, os: ubuntu-22.04-arm, name: linux_arm64 }
-          - { target: x86_64-apple-darwin, os: macos-13, name: darwin_amd64 }
+          # GitHub has retired its Intel macOS images; Apple silicon builds the
+          # Intel binary as a cross target.
+          - { target: x86_64-apple-darwin, os: macos-14, name: darwin_amd64 }
           - { target: aarch64-apple-darwin, os: macos-14, name: darwin_arm64 }
     runs-on: ${{ matrix.os }}
     steps:
@@ -64,6 +71,7 @@ jobs:
 
   release:
     needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
