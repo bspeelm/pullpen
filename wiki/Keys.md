@@ -18,7 +18,8 @@ The ones to know first:
 | `:` `?` `q` | command line, help, back |
 
 In the detail view, `h` and `l` move between the overview and the diff,
-`]f` `[f` move between files and `]c` `[c` between hunks, `zo` `zc` unfold and
+`n` and `b` move to the next and previous file, `F` lists every file to
+jump to, `]c` `[c` move between hunks, `zo` `zc` unfold and
 fold the checks, and `d` widens the diff.
 
 Single keys can be rebound by name in `config.toml`, under `[keys]`:

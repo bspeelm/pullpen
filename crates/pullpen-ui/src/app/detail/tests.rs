@@ -112,3 +112,36 @@ fn opening_asks_for_the_detail_and_diff_once() {
     a.synced(2, prs, 23);
     assert_eq!(a.wants(), vec![Effect::FetchDiff(id)], "but again after the next sync");
 }
+
+#[test]
+fn n_and_b_step_through_files_and_stop_at_the_ends() {
+    let mut a = opened();
+    keys(&mut a, "b");
+    assert_eq!(d(&a).file, 0, "nothing before the first");
+    keys(&mut a, "nnn");
+    assert_eq!((d(&a).file, d(&a).focus), (3, Pane::Diff));
+    for _ in 0..20 {
+        keys(&mut a, "n");
+    }
+    assert_eq!(d(&a).file, 13, "the last file is a floor");
+    keys(&mut a, "b");
+    assert_eq!(d(&a).file, 12);
+}
+
+#[test]
+fn the_file_list_filters_by_typing_and_opens_with_enter() {
+    let mut a = opened();
+    keys(&mut a, "F");
+    assert!(d(&a).picker.is_some());
+    let text: String = a.lines(120, 40).iter().flatten().map(|s| s.text.clone()).collect();
+    assert!(text.contains("14 of 14 files") && text.contains("src/ledger/migrate.ts"));
+    keys(&mut a, "part1");
+    a.key(Key::Down, Instant::now());
+    a.key(Key::Enter, Instant::now());
+    // "part1" matches part10 to part14; the second of those is part11.
+    assert!(d(&a).picker.is_none());
+    assert_eq!(a.diffs.values().next().unwrap()[d(&a).file].path, "src/ledger/part11.ts");
+    keys(&mut a, "F");
+    a.key(Key::Esc, Instant::now());
+    assert!(d(&a).picker.is_none() && a.detail.is_some(), "Esc closes the list, not the view");
+}

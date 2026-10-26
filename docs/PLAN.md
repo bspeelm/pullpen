@@ -289,7 +289,7 @@ Translation splits each query in two. Terms a forge's search understands go to t
 
 **List:** `j k` · `gg G` · `^d ^u` · `/` filter, `n N` next/prev match · `Space` mark, `V` mark range · `Enter` detail · `p` toggle preview · `M` merge (confirm) · `x` close (confirm) · `A` arm/disarm · `a` approve · `c` comment · `d` diff · `o` browser.
 
-**Detail:** `j k ^d ^u gg G` scroll focused pane · `h l` focus overview/diff · `]f [f` next/prev file · `]c [c` next/prev hunk · `zo zc` expand/fold · `d` zoom diff · `M A a c o x` as in list · `q Esc` back, cursor kept.
+**Detail:** `j k ^d ^u gg G` scroll focused pane · `h l` focus overview/diff · `n b` next/prev file (`]f [f` too), `F` the file list (ADR-014) · `]c [c` next/prev hunk · `zo zc` expand/fold · `d` zoom diff · `M A a c o x` as in list · `q Esc` back, cursor kept.
 
 **Command & confirm:** `Tab S-Tab` complete/cycle · `↑ ↓` history (prefix-filtered) · `^r #` insert selected PR ref · `^w ^u` delete word/line · `Enter Esc` run/cancel · confirm: `y Enter` yes, `n Esc` no, `s m r` yes-with-method, **any other key cancels and is discarded**.
 

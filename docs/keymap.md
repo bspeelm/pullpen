@@ -47,7 +47,8 @@ The same table drives the `?` overlay.
 | key | does |
 |---|---|
 | `h l` | focus pane |
-| `]f [f` | next / prev file |
+| `n b` | next / prev file |
+| `F` | all files |
 | `]c [c` | next / prev hunk |
 | `zo zc` | expand / fold |
 | `q Esc` | back to list |
@@ -76,6 +77,7 @@ The same table drives the `?` overlay.
 |---|---|
 | `R` | refresh every section |
 | `^l` | redraw |
+| `]f [f` | next / prev file, as vim spells it (detail) |
 | `^w ^u` | delete word / line (command line) |
 | `d` | zoom the diff (detail) |
 | `j k ^d ^u gg G` | scroll the focused pane (detail) |

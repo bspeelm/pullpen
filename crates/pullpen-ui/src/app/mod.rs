@@ -381,6 +381,9 @@ impl App {
             Input::Confirm(p) => self.prompt_line(p),
             _ => match &self.message {
                 Some(m) => m.line.clone(),
+                None if self.jobs.is_empty() && self.detail.is_some() => {
+                    markup("{d|n next file   b previous file   F all files   d widen the diff   q back to the list}")
+                }
                 None => self.progress_line(),
             },
         }
@@ -544,7 +547,12 @@ impl App {
             status: self.status(w),
             cmd: self.cmd_line(w),
         };
-        Some(crate::views::detail::detail_screen(&screen, &self.ctx()))
+        let mut lines = crate::views::detail::detail_screen(&screen, &self.ctx());
+        if let (Some((filter, sel)), Some(files)) = (&d.picker, self.diffs.get(&d.id)) {
+            help::fade(&mut lines, h.saturating_sub(2));
+            help::place(&mut lines, &crate::views::detail::picker(files, filter, *sel, d.file, h), w);
+        }
+        Some(lines)
     }
 
     /// The design's row strips (tui.js `strip`): the first `k` rows, the

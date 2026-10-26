@@ -234,3 +234,17 @@ The cap rises once, to 9,000 lines, which is bothy's figure. That leaves about 9
 lines, against roughly 500 that the publishing work in `docs/launch.md` is
 likely to need, so the next raise has room to be argued properly rather
 than squeezed.
+
+## ADR-014 — Files are `n` and `b`, the list is `F`, and the detail view says so
+
+The design moved between files with `]f` and `[f`, vim's spelling. Reviewing
+a PR of 133 files showed what that costs: the maintainer had to ask what
+`]f` meant, and once known it still stepped through files one at a time with
+no way to see them all.
+
+So the detail view takes `n` for the next file and `b` for the one before,
+`F` opens a list of every changed file to filter and jump from, and its
+bottom row, empty in the design, names those keys. `]f` and `[f` still work.
+The design changed first, as ADR-002 requires: `design/tui.js` gained the
+bottom row and the help overlay's entries, and the goldens were regenerated
+from it.

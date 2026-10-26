@@ -37,4 +37,4 @@
 {fg}  {warn}○{fg} mara{dim}  review requested by claude{fg}                    {dim}3h{faint} │     101  {ok}+   ...inv.taxLines.map((t) =>{fg}                    
 {fg}                                                          {faint} │     102  {ok}+     credit(LEDGER_TAX, t.amount)),{fg}              
 {bg bg=acc b} NORMAL {fg bg=surf}  #4821  {dim bg=surf}overview{fg bg=surf}                                             {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
-{fg}                                                                                                                        
+{dim}n next file   b previous file   F all files   d widen the diff   q back to the list{fg}                                     

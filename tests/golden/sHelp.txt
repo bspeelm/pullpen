@@ -19,14 +19,14 @@
   gh ○   #22                                                                                                anly after  
   gh ✓ ◆ #48   detail view                   command line                  confirm prompt                               
   gl ○     #   h l        focus pane         Tab S-Tab  complete           y Enter    confirm                           
-  gh ✓     #   ]f [f      next / prev file   ↑ ↓        history            n Esc      cancel                            
-  gh ✗    #3   ]c [c      next / prev hunk   ^r #       insert selected    s m r      pick method                    2h 
-  gh ○   #22   zo zc      expand / fold      Enter      run                                                          2h 
-  gl ✓    #1   q Esc      back to list       Esc        cancel                                                       3h 
-  gh ○   #47                                                                                                         3h 
+  gh ✓     #   n b        next / prev file   ↑ ↓        history            n Esc      cancel                            
+  gh ✗    #3   F          all files          ^r #       insert selected    s m r      pick method                    2h 
+  gh ○   #22   ]c [c      next / prev hunk   Enter      run                                                          2h 
+  gl ✓    #1   zo zc      expand / fold      Esc        cancel                                                       3h 
+  gh ○   #47   q Esc      back to list                                                                               3h 
+                                                                                                                        
                Every key has a : command. M and x confirm on the command line, never in a dialog.                       
                                                                                                                         
-                                                                       │                                                
                                                                        │                                                
                                                                        │                                                
                                                                        │                                                

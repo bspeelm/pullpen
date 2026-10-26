@@ -24,7 +24,7 @@ how many PRs are armed and failing, when it last synced, and each forge with
 |---|---|
 | `j` `k` | down, up |
 | `h` `l` or `Tab` | previous, next section |
-| `Enter` | open the PR: verdict, description, checks, conversation, diff |
+| `Enter` | open the PR: verdict, description, checks, conversation, diff; there, `n` and `b` step through files and `F` lists them |
 | `M` | merge, after one key to confirm |
 | `A` | arm auto-merge, or disarm it |
 | `o` | open it in the browser |

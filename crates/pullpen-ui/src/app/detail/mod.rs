@@ -72,6 +72,11 @@ impl App {
     /// detail view's and falls through to the list's handling.
     pub(super) fn detail_key(&mut self, key: Key, now: Instant) -> Option<Vec<Effect>> {
         let mut d = self.detail.clone()?;
+        if d.picker.is_some() {
+            self.picker_key(&mut d, key);
+            self.detail = Some(d);
+            return Some(vec![]);
+        }
         if let Some((first, _)) = self.pending.take() {
             self.detail_sequence(&mut d, first, key);
             self.detail = Some(d);
@@ -120,6 +125,26 @@ impl App {
                 self.pending = Some((c, now));
                 vec![]
             }
+            Key::Char('n') | Key::Char('b') => {
+                let files = self.diffs.get(&d.id).map_or(0, Vec::len);
+                let to = if key == Key::Char('n') {
+                    (d.file + 1).min(files.saturating_sub(1))
+                } else {
+                    d.file.saturating_sub(1)
+                };
+                if to != d.file {
+                    d.file = to;
+                    d.scroll[1] = 0;
+                }
+                d.focus = Pane::Diff;
+                vec![]
+            }
+            Key::Char('F') => {
+                if self.diffs.get(&d.id).is_some_and(|f| !f.is_empty()) {
+                    d.picker = Some((String::new(), d.file));
+                }
+                vec![]
+            }
             Key::Char('d') => {
                 d.zoom = !d.zoom;
                 if d.zoom {
@@ -143,6 +168,36 @@ impl App {
         };
         self.detail = Some(d);
         Some(effects)
+    }
+
+    /// Keys while the file list is open: typing filters it, the arrows move,
+    /// Enter opens the highlighted file, Esc closes.
+    fn picker_key(&mut self, d: &mut Detail, key: Key) {
+        let files = self.diffs.get(&d.id).cloned().unwrap_or_default();
+        let Some((filter, sel)) = d.picker.as_mut() else { return };
+        let shown = crate::views::detail::matching(&files, filter);
+        match key {
+            Key::Esc => d.picker = None,
+            Key::Enter => {
+                if let Some(&i) = shown.get(*sel) {
+                    d.file = i;
+                    d.scroll[1] = 0;
+                    d.focus = Pane::Diff;
+                }
+                d.picker = None;
+            }
+            Key::Up | Key::Ctrl('p') => *sel = sel.saturating_sub(1),
+            Key::Down | Key::Ctrl('n') => *sel = (*sel + 1).min(shown.len().saturating_sub(1)),
+            Key::Backspace => {
+                filter.pop();
+                *sel = 0;
+            }
+            Key::Char(c) => {
+                filter.push(c);
+                *sel = 0;
+            }
+            _ => {}
+        }
     }
 
     fn detail_sequence(&mut self, d: &mut Detail, first: char, key: Key) {

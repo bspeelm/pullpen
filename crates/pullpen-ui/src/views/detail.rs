@@ -34,11 +34,14 @@ pub struct Detail {
     pub file: usize,
     pub zoom: bool,
     pub expanded: bool,
+    /// The file list `F` opens: what has been typed to filter it, and the
+    /// highlighted row.
+    pub picker: Option<(String, usize)>,
 }
 
 impl Detail {
     pub fn new(id: PrId) -> Self {
-        Detail { id, focus: Pane::Overview, scroll: [0, 0], file: 0, zoom: false, expanded: false }
+        Detail { id, focus: Pane::Overview, scroll: [0, 0], file: 0, zoom: false, expanded: false, picker: None }
     }
 }
 
@@ -223,6 +226,60 @@ pub fn diff_rows(f: &FileDiff) -> Vec<Line> {
             ]);
         }
     }
+    out
+}
+
+/// Indices of the files whose path contains `filter`, ignoring case.
+pub fn matching(files: &[FileDiff], filter: &str) -> Vec<usize> {
+    let f = filter.to_lowercase();
+    files.iter().enumerate().filter(|(_, x)| x.path.to_lowercase().contains(&f)).map(|(i, _)| i).collect()
+}
+
+/// The `F` file list: every changed file with its size, filtered by what
+/// has been typed, in the same surface panel as the `?` overlay.
+pub fn picker(files: &[FileDiff], filter: &str, sel: usize, current: usize, h: usize) -> Vec<Line> {
+    use super::help::PANEL_W;
+    let pad = |l: &[Span]| {
+        let mut v = vec![sp(3)];
+        v.extend_from_slice(l);
+        crate::span::with_bg(fit(&v, PANEL_W, true), Tok::Surf)
+    };
+    let title =
+        if filter.is_empty() { markup("{B|files}") } else { markup(&format!("{{B|files}}{{a|  {}}}", esc(filter))) };
+    let hint = markup("{d|type to filter · ↑↓ move · Enter open · Esc close}");
+    let mut out = vec![pad(&[]), pad(&lr(&title, &hint, PANEL_W - 6)), pad(&[])];
+    let shown = matching(files, filter);
+    let room = h.saturating_sub(12).max(3);
+    let start = sel.saturating_sub(room - 1);
+    for (row, &i) in shown.iter().enumerate().skip(start).take(room) {
+        let f = &files[i];
+        let mark = if i == current { s("▌ ", Tok::Acc) } else { sp(2) };
+        let size =
+            markup(&format!("{{g|{:>6}}} {{r|{:<6}}}", format!("+{}", f.additions), format!("−{}", f.deletions)));
+        let mut l = vec![mark];
+        l.extend(size);
+        l.push(sp(2));
+        l.push(s(&f.path, Tok::Fg));
+        let line = pad(&l);
+        out.push(if row == sel {
+            crate::span::with_bg(
+                line.into_iter()
+                    .map(|mut x| {
+                        x.bg = None;
+                        x
+                    })
+                    .collect(),
+                Tok::Sel,
+            )
+        } else {
+            line
+        });
+    }
+    if shown.is_empty() {
+        out.push(pad(&markup("{d|no file matches}")));
+    }
+    out.push(pad(&markup(&format!("{{d|{} of {} files}}", shown.len(), files.len()))));
+    out.push(pad(&[]));
     out
 }
 

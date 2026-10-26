@@ -37,4 +37,4 @@
   ○ mara  review requested by claude                    3h │     101  +   ...inv.taxLines.map((t) =>                    
                                                            │     102  +     credit(LEDGER_TAX, t.amount)),              
  NORMAL   #4821  overview                                             ◆ 7 armed   ✗ 3 failing   synced 40s   gh ✓  gl ✓ 
-                                                                                                                        
+n next file   b previous file   F all files   d widen the diff   q back to the list                                     

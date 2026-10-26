@@ -243,7 +243,7 @@ function detailScreen(){
  const bodyH=Hh-L.length-2;
  for(let i=0;i<bodyH;i++) L.push([sp(2),...fit(left[i]||[],LW),S(' │ ','faint'),...fit(right[i]||[],RW),sp(1)]);
  L.push(status(W,{mode:'NORMAL',section:'#4821',pos:'overview'}));
- L.push([]);
+ L.push(M('{d|n next file   b previous file   F all files   d widen the diff   q back to the list}'));
  return L.map(l=>fit(l,W,false));
 }
 
@@ -262,7 +262,7 @@ function helpScreen(){
   [['h l','prev / next section'],['Tab S-Tab','next / prev section'],['1–5','go to section'],['p','toggle preview'],[':','command line'],['?','this help'],['q','back / quit']]]));
  pl.push(pad([]));
  pl.push(...block(['detail view','command line','confirm prompt'],[
-  [['h l','focus pane'],[']f [f','next / prev file'],[']c [c','next / prev hunk'],['zo zc','expand / fold'],['q Esc','back to list']],
+  [['h l','focus pane'],['n b','next / prev file'],['F','all files'],[']c [c','next / prev hunk'],['zo zc','expand / fold'],['q Esc','back to list']],
   [['Tab S-Tab','complete'],['↑ ↓','history'],['^r #','insert selected'],['Enter','run'],['Esc','cancel']],
   [['y Enter','confirm'],['n Esc','cancel'],['s m r','pick method'],['','other key cancels']]]));
  pl.push(pad([]));
