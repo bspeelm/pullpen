@@ -58,7 +58,12 @@ impl Backend for Fake {
                 None => Outcome::Done,
             };
             // The receiver is gone only once the app has quit.
-            let _ = tx.send(Msg::Job(JobResult { job, outcome }));
+            let note = match &job.action {
+                Action::Merge { .. } => Some("source branch deleted".to_string()),
+                Action::Checkout { .. } => Some("(fixtures: nothing fetched)".to_string()),
+                _ => None,
+            };
+            let _ = tx.send(Msg::Job(JobResult { job, outcome, note }));
         });
     }
 

@@ -131,7 +131,7 @@ async fn merge_then_delete_the_branch_when_it_is_in_the_same_repo() {
         .mount(&server)
         .await;
     let id = PrId { forge: Forge::GitHub, host: "github.com".into(), repo: "o/r".into(), number: 7 };
-    gh(&server).merge(&id, MergeMethod::Squash).await.unwrap();
+    assert!(gh(&server).merge(&id, MergeMethod::Squash).await.unwrap(), "reports the branch deleted");
 }
 
 fn id() -> PrId {

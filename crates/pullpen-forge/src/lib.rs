@@ -71,7 +71,8 @@ pub trait Forge: Send + Sync {
     async fn search(&self, q: &Query, me: &str, limit: usize) -> Result<Page>;
     /// What each repo seen so far allows, keyed `host/repo`.
     fn capabilities(&self) -> HashMap<String, Capabilities>;
-    async fn merge(&self, id: &PrId, m: MergeMethod) -> Result<()>;
+    /// Whether the source branch was deleted with it.
+    async fn merge(&self, id: &PrId, m: MergeMethod) -> Result<bool>;
     async fn arm(&self, id: &PrId, m: MergeMethod) -> Result<()>;
     async fn disarm(&self, id: &PrId) -> Result<()>;
     async fn approve(&self, id: &PrId) -> Result<()>;
@@ -79,18 +80,22 @@ pub trait Forge: Send + Sync {
     async fn close(&self, id: &PrId) -> Result<()>;
 }
 
-/// Runs a job's action. Opening and checking out are local, not forge calls.
-pub async fn run(f: &dyn Forge, job: &Job) -> Result<()> {
+/// Runs a job's action, and says what else happened. Opening and checking
+/// out are local, not forge calls.
+pub async fn run(f: &dyn Forge, job: &Job) -> Result<Option<String>> {
     let id = &job.target;
-    match &job.action {
-        Action::Merge { method } => f.merge(id, *method).await,
+    let done = match &job.action {
+        Action::Merge { method } => {
+            return Ok(f.merge(id, *method).await?.then(|| "source branch deleted".to_string()));
+        }
         Action::Arm { method } => f.arm(id, *method).await,
         Action::Disarm => f.disarm(id).await,
         Action::Approve => f.approve(id).await,
         Action::Comment(body) => f.comment(id, body).await,
         Action::Close => f.close(id).await,
-        Action::Checkout | Action::Open | Action::Refresh { .. } => Ok(()),
-    }
+        Action::Checkout { .. } | Action::Open | Action::Refresh { .. } => Ok(()),
+    };
+    done.map(|()| None)
 }
 
 #[cfg(test)]

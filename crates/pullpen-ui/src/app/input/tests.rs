@@ -141,7 +141,7 @@ fn a_prompt_about_a_pr_that_merged_meanwhile_goes_away() {
     assert!(matches!(a.input, Input::Confirm(_)), "close #812 asked while its merge runs");
     for e in fx {
         if let Effect::Run(job) = e {
-            a.job_done(pullpen_core::JobResult { job, outcome: pullpen_core::Outcome::Done });
+            a.job_done(pullpen_core::JobResult { job, outcome: pullpen_core::Outcome::Done, note: None });
         }
     }
     assert!(matches!(a.input, Input::Normal));

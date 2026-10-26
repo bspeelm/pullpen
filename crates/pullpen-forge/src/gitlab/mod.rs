@@ -346,8 +346,9 @@ impl ForgeTrait for GitLab {
         self.caps.lock().map(|c| c.clone()).unwrap_or_default()
     }
 
-    async fn merge(&self, id: &PrId, m: MergeMethod) -> Result<()> {
-        self.merge_with(id, m, false).await
+    async fn merge(&self, id: &PrId, m: MergeMethod) -> Result<bool> {
+        // GitLab deletes the branch itself when asked, as part of the merge.
+        self.merge_with(id, m, false).await.map(|()| self.delete_branch)
     }
 
     async fn arm(&self, id: &PrId, m: MergeMethod) -> Result<()> {

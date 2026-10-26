@@ -2,6 +2,7 @@
 
 mod backend;
 mod cache;
+mod checkout;
 mod cli;
 mod config;
 mod fixtures;

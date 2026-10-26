@@ -390,7 +390,13 @@ impl App {
             Cmd::Approve => self.request_simple(ids, Action::Approve, o, typed),
             Cmd::Comment if p.rest.trim().is_empty() => vec![Effect::Edit { targets: ids }],
             Cmd::Comment => self.request_simple(ids, Action::Comment(p.rest.to_string()), o, typed),
-            Cmd::Checkout => self.request_simple(ids, Action::Checkout, o, typed),
+            Cmd::Checkout => {
+                let jobs = ids
+                    .into_iter()
+                    .filter_map(|id| self.find(&id).map(|p| (id, Action::Checkout { branch: p.head.clone() }, false)))
+                    .collect();
+                self.start(jobs, None, o, typed)
+            }
             Cmd::Open => self.urls(&ids).into_iter().map(Effect::Open).collect(),
             Cmd::Close => self.request_simple(ids, Action::Close, o, typed),
             Cmd::Diff => {

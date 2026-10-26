@@ -378,7 +378,7 @@ impl ForgeTrait for GitHub {
         self.caps.lock().map(|c| c.clone()).unwrap_or_default()
     }
 
-    async fn merge(&self, id: &PrId, m: MergeMethod) -> Result<()> {
+    async fn merge(&self, id: &PrId, m: MergeMethod) -> Result<bool> {
         let path = format!("/repos/{}/pulls/{}/merge", id.repo, id.number);
         send(&self.host, self.req(reqwest::Method::PUT, &path).json(&json!({ "merge_method": m.word() }))).await?;
         if self.delete_branch {
@@ -389,12 +389,11 @@ impl ForgeTrait for GitHub {
             if s(&pr, "/head/repo/full_name") == id.repo {
                 let path = format!("/repos/{}/git/refs/heads/{}", id.repo, s(&pr, "/head/ref"));
                 // The merge has happened; a branch that will not delete is
-                // left for the forge's own cleanup rather than reported as a
-                // failed merge.
-                let _ = send(&self.host, self.req(reqwest::Method::DELETE, &path)).await;
+                // reported as kept, not as a failed merge.
+                return Ok(send(&self.host, self.req(reqwest::Method::DELETE, &path)).await.is_ok());
             }
         }
-        Ok(())
+        Ok(false)
     }
 
     async fn arm(&self, id: &PrId, m: MergeMethod) -> Result<()> {

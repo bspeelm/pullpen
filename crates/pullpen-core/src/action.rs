@@ -4,15 +4,24 @@ use crate::pr::{MergeMethod, PrId};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Action {
-    Merge { method: MergeMethod },
-    Arm { method: MergeMethod },
+    Merge {
+        method: MergeMethod,
+    },
+    Arm {
+        method: MergeMethod,
+    },
     Disarm,
     Approve,
     Comment(String),
     Close,
-    Checkout,
+    /// Fetch the PR's head and switch to it as `branch` in the local clone.
+    Checkout {
+        branch: String,
+    },
     Open,
-    Refresh { all: bool },
+    Refresh {
+        all: bool,
+    },
 }
 
 impl Action {
@@ -24,7 +33,7 @@ impl Action {
             Action::Approve => "approve",
             Action::Comment(_) => "comment",
             Action::Close => "close",
-            Action::Checkout => "checkout",
+            Action::Checkout { .. } => "checkout",
             Action::Open => "open",
             Action::Refresh { .. } => "refresh",
         }
@@ -52,4 +61,7 @@ pub enum Outcome {
 pub struct JobResult {
     pub job: Job,
     pub outcome: Outcome,
+    /// What the forge or the local step did beyond the action itself, in
+    /// words for the message: "source branch deleted", "in ~/src/api".
+    pub note: Option<String>,
 }

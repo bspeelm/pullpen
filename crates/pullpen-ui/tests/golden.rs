@@ -225,7 +225,10 @@ fn answer(a: &mut App, mut effects: Vec<Effect>, hold: &[u64], fail: Option<(u64
             Some((n, r)) if n == job.target.number => Outcome::Failed { reason: r.into() },
             _ => Outcome::Done,
         };
-        effects.extend(a.job_done(JobResult { job, outcome }));
+        // The fake forge deletes merged branches, as the design's message says.
+        let note =
+            matches!(job.action, pullpen_core::Action::Merge { .. }).then(|| "source branch deleted".to_string());
+        effects.extend(a.job_done(JobResult { job, outcome, note }));
     }
 }
 

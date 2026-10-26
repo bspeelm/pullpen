@@ -107,7 +107,7 @@ pub fn verb(a: &Action) -> &'static str {
         Action::Approve => "Approving",
         Action::Comment(_) => "Commenting on",
         Action::Close => "Closing",
-        Action::Checkout => "Checking out",
+        Action::Checkout { .. } => "Checking out",
         Action::Open => "Opening",
         Action::Refresh { .. } => "Refreshing",
     }
@@ -552,7 +552,7 @@ impl App {
         let single = run.batch.is_none() || run.merging_now;
         match &r.outcome {
             Outcome::Done => {
-                if let Some(line) = self.apply_done(&run)
+                if let Some(line) = self.apply_done(&run, r.note.as_deref())
                     && single
                 {
                     self.say(line, Mode::Normal);
@@ -593,15 +593,15 @@ impl App {
     }
 
     /// Applies a finished job to the rows, and says so.
-    fn apply_done(&mut self, run: &Running) -> Option<Line> {
+    fn apply_done(&mut self, run: &Running, note: Option<&str>) -> Option<Line> {
         let id = &run.job.target;
         let p = self.find(id).cloned()?;
         let n = id.number;
         Some(match &run.job.action {
             Action::Merge { method } => {
                 self.remove_pr(id);
-                let branch = if self.ui.delete_branch { " · source branch deleted" } else { "" };
-                markup(&format!("{{g|✓}} {{f|Merged #{n} into {}}}{{d|   {}{branch}}}", esc(&p.base), method.word()))
+                let note = note.map_or(String::new(), |n| format!(" · {}", esc(n)));
+                markup(&format!("{{g|✓}} {{f|Merged #{n} into {}}}{{d|   {}{note}}}", esc(&p.base), method.word()))
             }
             Action::Arm { method } => {
                 let wait = match verdict(&p, &self.caps_of(&p)) {
@@ -632,7 +632,10 @@ impl App {
                 self.remove_pr(id);
                 markup(&format!("{{g|✓}} {{f|Closed #{n}}}{{d|   without merging}}"))
             }
-            Action::Checkout => markup(&format!("{{g|✓}} {{f|Checked out #{n}}}{{d|   {}}}", esc(&p.head))),
+            Action::Checkout { branch } => {
+                let wher = note.map_or(String::new(), |n| format!(" {}", esc(n)));
+                markup(&format!("{{g|✓}} {{f|Checked out #{n}}}{{d|   {}{wher}}}", esc(branch)))
+            }
             Action::Open | Action::Refresh { .. } => return None,
         })
     }

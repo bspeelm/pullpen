@@ -8,14 +8,14 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use pullpen_core::query::Query;
-use pullpen_core::{Capabilities, Forge as Kind, Job, JobResult, Outcome, Pr, Section, Sort, readiness};
+use pullpen_core::{Action, Capabilities, Forge as Kind, Job, JobResult, Outcome, Pr, Section, Sort, readiness};
 use pullpen_forge::{Agents, Error, Forge, auth};
 use tokio::runtime::Runtime;
 use tokio::sync::{Notify, OnceCell};
 
 use crate::backend::{Backend, Msg};
-use crate::cache;
 use crate::config::{Config, Kind as CfgKind};
+use crate::{cache, checkout};
 
 /// Per section, per forge: two screens of rows. Each 10 rows cost GitHub a
 /// details query, so more is slower for rows nobody scrolls to; a section
@@ -35,6 +35,8 @@ pub struct Live {
     rx: Receiver<Msg>,
     wake: Vec<Arc<Notify>>,
     last: Arc<Mutex<Option<Instant>>>,
+    repos: Arc<HashMap<String, String>>,
+    worktree: bool,
 }
 
 impl Live {
@@ -95,6 +97,8 @@ impl Live {
             rx,
             wake: sections.iter().map(|_| Arc::new(Notify::new())).collect(),
             last: Arc::default(),
+            repos: Arc::new(cfg.repos.clone()),
+            worktree: cfg.checkout.worktree,
         };
         for (i, s) in sections.iter().enumerate() {
             live.spawn_section(i, s.clone(), cfg.sync.every(), cache_dir.clone());
@@ -191,20 +195,32 @@ fn sort(prs: &mut [Pr], by: Sort) {
 impl Backend for Live {
     fn run(&mut self, job: Job) {
         let (forges, tx, wake) = (self.forges.clone(), self.tx.clone(), self.wake.clone());
+        let (repos, worktree) = (self.repos.clone(), self.worktree);
         self.rt.spawn(async move {
             let f = forges.iter().find(|e| e.forge.kind() == job.target.forge && e.forge.host() == job.target.host);
-            let outcome = match f {
-                None => Outcome::Failed { reason: format!("not signed in to {}", job.target.host) },
-                Some(e) => match pullpen_forge::run(e.forge.as_ref(), &job).await {
-                    Ok(()) => Outcome::Done,
-                    Err(err) => Outcome::Failed { reason: err.to_string() },
+            let (outcome, note) = match (&job.action, f) {
+                (Action::Checkout { branch }, _) => {
+                    let (id, branch) = (job.target.clone(), branch.clone());
+                    let cwd = std::env::current_dir().unwrap_or_default();
+                    let r =
+                        tokio::task::spawn_blocking(move || checkout::checkout(&id, &branch, &repos, worktree, &cwd))
+                            .await;
+                    match r.unwrap_or_else(|e| Err(e.to_string())) {
+                        Ok(wher) => (Outcome::Done, Some(wher)),
+                        Err(reason) => (Outcome::Failed { reason }, None),
+                    }
+                }
+                (_, None) => (Outcome::Failed { reason: format!("not signed in to {}", job.target.host) }, None),
+                (_, Some(e)) => match pullpen_forge::run(e.forge.as_ref(), &job).await {
+                    Ok(note) => (Outcome::Done, note),
+                    Err(err) => (Outcome::Failed { reason: err.to_string() }, None),
                 },
             };
             if outcome == Outcome::Done {
                 // After an action, every section may have changed (PLAN.md §4.3).
                 wake.iter().for_each(|w| w.notify_one());
             }
-            let _ = tx.send(Msg::Job(JobResult { job, outcome }));
+            let _ = tx.send(Msg::Job(JobResult { job, outcome, note }));
         });
     }
 

@@ -368,7 +368,7 @@ Modal key dispatcher with pending-sequence buffer; list navigation; sections (`h
 
 ### M4 — Actions
 merge / arm / disarm / approve / comment (incl. `$EDITOR` suspend/resume) / close / open / checkout (+worktree) / refresh, single and batch, with the §6.3 messages and the "not ready → offer to arm" and "would be rejected → refuse with reason" branches. Spinner on acting rows. Post-action refresh.
-**Exit:** manual script in `docs/testing.md` completed on a scratch repo per forge: arm, merge, batch-arm with one draft skipped, approve-your-own-PR error renders correctly.
+**Exit:** manual script in `docs/testing.md` completed on a scratch repo per forge: arm, merge, batch-arm with one draft skipped, approve-your-own-PR error renders correctly. Checkout fetches the PR's ref (`pull/N/head`, `merge-requests/N/head`), so forks work, and only ever fast-forwards an existing local branch.
 
 ### M5 — Detail view
 Breadcrumb, verdict, fact grid, overview pane (description, checks with fold, conversation), diff pane (fetch unified diff, parse hunks, file/hunk navigation, fold), `h l` focus, `d` zoom, `--external` pager, all list actions available.
