@@ -25,6 +25,10 @@ use crate::{cache, checkout};
 const LIMIT: usize = 60;
 const BACKOFF_MAX: u64 = 60;
 
+/// A configured forge pullpen could not sign in to, and the status line's
+/// words for it.
+pub type Unreachable = (Kind, String);
+
 struct Entry {
     forge: Arc<dyn Forge>,
     me: OnceCell<String>,
@@ -42,8 +46,8 @@ pub struct Live {
 }
 
 impl Live {
-    /// The backend, the forges it reaches, and why any configured forge
-    /// could not be reached.
+    /// The backend, the forges it reaches, and each configured forge it
+    /// cannot, with why.
     /// `since` is the last visit: an armed section also keeps what merged
     /// after it.
     pub fn start(
@@ -52,7 +56,7 @@ impl Live {
         cache_dir: PathBuf,
         since: Timestamp,
         creds: &Credentials,
-    ) -> std::io::Result<(Live, Vec<Kind>, Vec<String>)> {
+    ) -> std::io::Result<(Live, Vec<Kind>, Vec<Unreachable>)> {
         let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build()?;
         let agents = Agents(cfg.agents.logins.clone());
         let explicit = !cfg.forge.is_empty();
@@ -68,9 +72,9 @@ impl Live {
                 Ok(t) => t,
                 // An unconfigured forge without a token is one the user does
                 // not use; only a configured one is worth a complaint.
-                Err(e) => {
+                Err(_) => {
                     if explicit {
-                        problems.push(e.to_string());
+                        problems.push((kind, format!("not signed in to {} · run `pullpen setup`", f.host())));
                     }
                     continue;
                 }
@@ -118,6 +122,12 @@ impl Live {
         let (forges, tx, wake, last) = (self.forges.clone(), self.tx.clone(), self.wake[i].clone(), self.last.clone());
         self.rt.spawn(async move {
             let q = Query::parse(&section.query);
+            // No forge this section can reach: say nothing rather than report
+            // an empty list as a successful sync, and leave the cache alone.
+            // The status line already says which forge is not signed in.
+            if !forges.iter().any(|e| q.reaches(e.forge.kind())) {
+                return;
+            }
             let mut backoff = 0u64;
             loop {
                 let (mut prs, mut total, mut failed, mut caps) = (Vec::new(), 0, None, HashMap::new());

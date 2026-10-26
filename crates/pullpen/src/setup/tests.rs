@@ -45,11 +45,13 @@ fn a_refused_token_can_be_skipped_and_nothing_is_saved() {
 fn clones_are_asked_for_and_checked() {
     // GitHub; host; gh login; no scope; merge defaults ×4; clones: yes, one
     // that is not a clone, kept; done; worktrees yes.
-    let script = "1\n\ny\n\n\n\n\n\ny\nacme/api\n/nowhere\ny\n\ny\n";
+    let script = "1\n\ny\n\n\n\n\n\ny\ny\nacme/api\n/nowhere\ny\n\ny\n";
     let (c, _, out) = run_with(script, Config::default(), true, true);
     assert_eq!(c.repos.get("acme/api").map(String::as_str), Some("/nowhere"));
     assert!(c.checkout.worktree);
     assert!(out.contains("is not a git clone"));
+    assert!(out.contains("a repo is owner/name"), "a bare y is not taken for a repo");
+    assert!(!c.repos.contains_key("y"));
 }
 
 #[test]

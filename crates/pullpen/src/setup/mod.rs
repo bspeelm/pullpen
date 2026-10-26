@@ -178,7 +178,15 @@ pub fn run(io: &mut Io, d: &mut Deps, mut cfg: Config, mut creds: Credentials) -
             if repo.is_empty() {
                 break;
             }
+            if !repo.contains('/') || repo.contains(' ') {
+                io.say("  a repo is owner/name, like acme/api")?;
+                continue;
+            }
             let path = io.line("  path to its clone", cfg.repos.get(&repo).map_or("", String::as_str))?;
+            if path.is_empty() {
+                io.say("  no path given; skipped")?;
+                continue;
+            }
             if !expand(&path).join(".git").exists()
                 && !io.yes(&format!("  {path} is not a git clone; keep it anyway"), false)?
             {

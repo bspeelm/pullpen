@@ -87,7 +87,7 @@ fn main() -> Result<()> {
         Ok(c) => (c, None),
         Err(e) => (credentials::Credentials::default(), Some(e)),
     };
-    let (mut backend, forges, problems) = live::Live::start(&cfg, &sections, dirs.cache.clone(), since, &creds)?;
+    let (mut backend, forges, mut down) = live::Live::start(&cfg, &sections, dirs.cache.clone(), since, &creds)?;
     let states = sections
         .into_iter()
         .map(|s| {
@@ -96,13 +96,18 @@ fn main() -> Result<()> {
         })
         .collect();
     let mut app = App::new(states, theme, pullpen_core::time::Timestamp::now());
-    app.forges = forges;
-    apply(&mut app, &cfg, &args);
-    for p in problems.iter().chain(&cfg_err).chain(&creds_err) {
-        app.error(p, Mode::Normal);
+    if forges.is_empty() && down.is_empty() {
+        down.push((pullpen_core::Forge::GitHub, "not signed in to any forge · run `pullpen setup`".into()));
     }
-    if app.forges.is_empty() {
-        app.error("no forge to talk to: run `pullpen setup`", Mode::Normal);
+    // A forge that cannot be reached stays on the status line, marked ✗,
+    // until it can: a message that one key clears is too easy to miss.
+    app.forges = forges.into_iter().chain(down.iter().map(|(k, _)| *k)).collect();
+    apply(&mut app, &cfg, &args);
+    for (k, msg) in down {
+        app.forge_down(k, msg);
+    }
+    for p in cfg_err.iter().chain(&creds_err) {
+        app.error(p, Mode::Normal);
     }
     app.tz_offset = utc_offset();
     let remap = remap(&mut app, &cfg);
