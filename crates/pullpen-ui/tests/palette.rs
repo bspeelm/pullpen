@@ -38,10 +38,7 @@ fn colours(text: &str) -> Vec<String> {
         if b[i] != b'#' {
             continue;
         }
-        let run = b[i + 1..]
-            .iter()
-            .take_while(|c| c.is_ascii_hexdigit())
-            .count();
+        let run = b[i + 1..].iter().take_while(|c| c.is_ascii_hexdigit()).count();
         // Exactly six hex digits, and at least one a–f, so `#123456` as an
         // issue number is not mistaken for a colour.
         let digits = &text[i + 1..i + 1 + run];
@@ -58,12 +55,7 @@ fn only_the_built_in_palette_is_shipped() {
     let allowed: BTreeSet<String> = Tok::ALL.iter().map(|t| hex(*t)).collect();
     let mut files = Vec::new();
     walk(&root, &mut files);
-    assert!(
-        files.len() > 10,
-        "walked only {} files from {}",
-        files.len(),
-        root.display()
-    );
+    assert!(files.len() > 10, "walked only {} files from {}", files.len(), root.display());
     let mut stray = Vec::new();
     for f in files {
         // Binary files cannot hold a colour a reader would see.
@@ -72,24 +64,14 @@ fn only_the_built_in_palette_is_shipped() {
         };
         for c in colours(&text) {
             if !allowed.contains(&c) {
-                stray.push(format!(
-                    "{}: {c}",
-                    f.strip_prefix(&root).unwrap_or(&f).display()
-                ));
+                stray.push(format!("{}: {c}", f.strip_prefix(&root).unwrap_or(&f).display()));
             }
         }
     }
-    assert!(
-        stray.is_empty(),
-        "colour values outside the built-in palette (ADR-003):\n{}",
-        stray.join("\n")
-    );
+    assert!(stray.is_empty(), "colour values outside the built-in palette (ADR-003):\n{}", stray.join("\n"));
 }
 
 #[test]
 fn the_scanner_sees_a_colour() {
-    assert_eq!(
-        colours("accent = \"#7CC4DC\" and #4821 and #123456"),
-        vec!["#7cc4dc"]
-    );
+    assert_eq!(colours("accent = \"#7CC4DC\" and #4821 and #123456"), vec!["#7cc4dc"]);
 }

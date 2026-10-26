@@ -4,6 +4,7 @@
 //! Rows are transcribed in tui.js's compact form and expanded into full
 //! `Pr`s here, so a reader can check them against the design line by line.
 
+use pullpen_core::diff::FileDiff;
 use pullpen_core::time::{Timestamp, parse_age};
 use pullpen_core::*;
 
@@ -53,21 +54,7 @@ const fn raw(
     de: u32,
     age: &'static str,
 ) -> Raw {
-    Raw {
-        f,
-        r,
-        n,
-        t,
-        a,
-        ci,
-        rv,
-        armed: false,
-        draft: false,
-        conflict: false,
-        ad,
-        de,
-        age,
-    }
+    Raw { f, r, n, t, a, ci, rv, armed: false, draft: false, conflict: false, ad, de, age }
 }
 
 const fn armed(mut x: Raw) -> Raw {
@@ -142,76 +129,41 @@ fn expand(x: &Raw) -> Pr {
         (4821, _) => (12, 12, 0, vec![]),
         (377, _) => (9, 4, 5, vec![]),
         (809, _) => (9, 6, 3, vec![]),
-        (2290, Fail) => (
-            9,
-            8,
-            0,
-            vec![CheckRun {
-                name: "e2e/chromium".into(),
-                detail: "2 retries".into(),
-            }],
-        ),
+        (2290, Fail) => (9, 8, 0, vec![CheckRun { name: "e2e/chromium".into(), detail: "2 retries".into() }]),
         (_, Ok) => (9, 9, 0, vec![]),
         (_, Run) => (9, 4, 5, vec![]),
-        (_, Fail) => (
-            9,
-            8,
-            0,
-            vec![CheckRun {
-                name: "test".into(),
-                detail: String::new(),
-            }],
-        ),
+        (_, Fail) => (9, 8, 0, vec![CheckRun { name: "test".into(), detail: String::new() }]),
         (_, Ci::None) => (0, 0, 0, vec![]),
     };
     let pending = match x.n {
         4821 => vec!["mara".to_string()],
+        377 => vec!["acme/infra".to_string()],
         _ => vec![],
     };
     let head = match x.n {
         4821 => "claude/ledger-v2".to_string(),
         n => format!("{}/{n}", x.a),
     };
-    let sep = if x.f == Forge::GitHub {
-        "pull"
-    } else {
-        "-/merge_requests"
-    };
+    let sep = if x.f == Forge::GitHub { "pull" } else { "-/merge_requests" };
     Pr {
-        id: PrId {
-            forge: x.f,
-            host: host.into(),
-            repo: x.r.into(),
-            number: x.n,
-        },
+        id: PrId { forge: x.f, host: host.into(), repo: x.r.into(), number: x.n },
         title: x.t.into(),
-        author: Author {
-            login: x.a.into(),
-            is_agent: AGENTS.contains(&x.a),
-        },
+        author: Author { login: x.a.into(), is_agent: AGENTS.contains(&x.a) },
         head,
         base: "main".into(),
         additions: x.ad,
         deletions: x.de,
         files: if x.n == 4821 { 14 } else { 3 },
         draft: x.draft,
-        checks: Checks {
-            required_total: total,
-            required_passed: passed,
-            running,
-            failed,
-        },
+        checks: Checks { required_total: total, required_passed: passed, running, failed, ..Default::default() },
         reviews: Reviews {
             have: x.rv.0,
             need: x.rv.1,
+            approved_by: if x.n == 4821 { vec!["jkoh".into()] } else { vec![] },
             changes_requested: false,
             pending,
         },
-        mergeable: if x.conflict {
-            Mergeable::Conflict
-        } else {
-            Mergeable::Clean
-        },
+        mergeable: if x.conflict { Mergeable::Conflict } else { Mergeable::Clean },
         auto_merge: x.armed.then(|| AutoMerge {
             method: MergeMethod::Squash,
             armed_by: "ash".into(),
@@ -219,7 +171,9 @@ fn expand(x: &Raw) -> Pr {
         }),
         merge_train: None,
         state: PrState::Open,
-        updated_at: ago(x.age),
+        // The design's detail view says #4821 was opened 3h ago and updated
+        // 12m ago; the list's age column is time since opening.
+        updated_at: if x.n == 4821 { ago("12m") } else { ago(x.age) },
         created_at: ago(x.age),
         url: format!("https://{host}/{}/{sep}/{}", x.r, x.n),
         repo_default_method: MergeMethod::Squash,
@@ -297,15 +251,7 @@ pub fn sections() -> Vec<FixtureSection> {
     let pick = |ns: &[u64]| ns.iter().filter_map(|n| by_number(*n)).collect::<Vec<_>>();
     let armed: Vec<Pr> = agent_prs().into_iter().filter(Pr::armed).collect();
     vec![
-        section(
-            "Mine",
-            "Mine",
-            "is:open author:@me",
-            View::List,
-            true,
-            pick(&[4823, 2291, 1205, 60, 378, 4811]),
-            6,
-        ),
+        section("Mine", "Mine", "is:open author:@me", View::List, true, pick(&[4823, 2291, 1205, 60, 378, 4811]), 6),
         section(
             "Needs my review",
             "Review",
@@ -315,24 +261,8 @@ pub fn sections() -> Vec<FixtureSection> {
             pick(&[2291, 1205, 378, 146]),
             4,
         ),
-        section(
-            "Agent-opened",
-            "Agent",
-            "is:open is:agent",
-            View::List,
-            true,
-            agent_prs(),
-            23,
-        ),
-        section(
-            "Auto-merge armed",
-            "Armed",
-            "is:armed",
-            View::Armed,
-            true,
-            armed.clone(),
-            armed.len(),
-        ),
+        section("Agent-opened", "Agent", "author:@agents", View::List, true, agent_prs(), 23),
+        section("Auto-merge armed", "Armed", "is:armed", View::Armed, true, armed.clone(), armed.len()),
         section("All", "All", "is:open", View::List, false, all_prs(), 96),
     ]
 }
@@ -346,13 +276,7 @@ pub fn detail(n: u64) -> PrDetail {
     let who = |w: &str| (w.to_string(), AGENTS.contains(&w));
     let act = |w: &str, kind: ActivityKind, age: &str, body: &str| {
         let (who, is_agent) = who(w);
-        Activity {
-            who,
-            is_agent,
-            kind,
-            at: ago(age),
-            body: body.into(),
-        }
+        Activity { who, is_agent, kind, at: ago(age), body: body.into() }
     };
     let ck = |name: &str, d: &str| CheckLine {
         name: name.into(),
@@ -373,6 +297,8 @@ pub fn detail(n: u64) -> PrDetail {
     PrDetail {
         description: "Moves invoice writes onto the ledger v2 double-entry tables. The backfill runs as an online migration in batches of 5,000 with a checkpoint table, so it resumes cleanly after a deploy. Reads switch behind the ledger_v2_reads flag, off by default.\n\n- add migrate_invoices job and checkpoint table\n- dual-write legacy + ledger until the flag flips\n- remove InvoiceTotalsCache, unused since #4790".into(),
         checks,
+        checks_took: "8m 14s".into(),
+        conversation_total: 4,
         activity: vec![
             act("jkoh", ActivityKind::Approved, "2h", ""),
             act("ash", ActivityKind::ArmedAutoMerge, "2h", ""),
@@ -390,15 +316,65 @@ pub fn detail(n: u64) -> PrDetail {
 #[cfg(test)]
 mod tests;
 
+/// tui.js `DIFF`: the hunks the design shows for #4821's second file.
+const MIGRATE: &str = "diff --git a/src/ledger/migrate.ts b/src/ledger/migrate.ts
+--- a/src/ledger/migrate.ts
++++ b/src/ledger/migrate.ts
+@@ -38,14 +38,24 @@ migrateInvoices(db, opts)
+ const cursor = await loadCheckpoint(db)
+ while (true) {
+   const batch = await nextBatch(cursor, 5000)
+-  if (!batch.length) break
+-  for (const inv of batch) await writeLegacy(inv)
++  if (batch.length === 0) {
++    await markComplete(db)
++    break
++  }
++  await db.tx(async (tx) => {
++    for (const inv of batch) {
++      await writeLegacy(tx, inv)
++      await writeLedger(tx, toEntries(inv))
++    }
++    await saveCheckpoint(tx, batch.at(-1).id)
++  })
+   metrics.batches.inc()
+ }
+@@ -88,6 +98,9 @@ function toEntries(inv: Invoice)
+ return [
+   debit(inv.accountId, inv.total),
+   credit(LEDGER_REVENUE, inv.net),
++  ...inv.taxLines.map((t) =>
++    credit(LEDGER_TAX, t.amount)),
+ ]
+";
+
+/// #4821's diff: fourteen files, as the design's header counts them, with
+/// the design's hunks as the second. The others are small, so file and
+/// hunk navigation have somewhere to go. Line counts are the design's, not
+/// the hunks', because the design shows an excerpt of a larger change.
+pub fn diff(n: u64) -> Vec<FileDiff> {
+    if n != 4821 {
+        return Vec::new();
+    }
+    let mut text = String::from(
+        "diff --git a/db/checkpoint.sql b/db/checkpoint.sql\n@@ -0,0 +1,2 @@\n+create table checkpoint (id bigint);\n+create index on checkpoint (invoice_id);\n",
+    );
+    text.push_str(MIGRATE);
+    for i in 3..=14 {
+        text.push_str(&format!(
+            "diff --git a/src/ledger/part{i}.ts b/src/ledger/part{i}.ts\n@@ -1,2 +1,2 @@ part{i}\n context\n-old {i}\n+new {i}\n@@ -20,1 +20,2 @@ tail\n end\n+more {i}\n"
+        ));
+    }
+    let mut files = pullpen_core::diff::parse(&text);
+    files[1].additions = 120;
+    files[1].deletions = 12;
+    files
+}
+
 /// A golden screen from `tests/golden/`: `(plain, styled)`.
 pub fn golden(name: &str) -> (String, String) {
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/golden");
-    let read = |f: String| {
-        std::fs::read_to_string(dir.join(&f))
-            .unwrap_or_else(|e| panic!("{f}: {e}; run `make golden`"))
-    };
-    (
-        read(format!("{name}.txt")),
-        read(format!("{name}.ansi.txt")),
-    )
+    let read =
+        |f: String| std::fs::read_to_string(dir.join(&f)).unwrap_or_else(|e| panic!("{f}: {e}; run `make golden`"));
+    (read(format!("{name}.txt")), read(format!("{name}.ansi.txt")))
 }

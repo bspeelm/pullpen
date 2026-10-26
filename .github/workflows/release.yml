@@ -1,0 +1,89 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  # Keyless signing: id-token mints the OIDC token that binds the certificate
+  # to this workflow, attestations writes the result. There is no private key
+  # to keep (bothy ADR-030, adopted unchanged).
+  id-token: write
+  attestations: write
+
+jobs:
+  # The gates run again here rather than trusting the branch: a tag can be
+  # pushed at any commit, including one CI never saw.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - run: make check
+      # Cargo.toml holds the one written version; a hand-made tag that
+      # disagrees would stamp binaries with a number the source does not have.
+      - name: the tag matches Cargo.toml
+        run: |
+          v=$(sed -n '/^\[workspace.package\]/,/^\[/s/^version = "\(.*\)"/\1/p' Cargo.toml)
+          test "v$v" = "${GITHUB_REF_NAME}" || { echo "::error::tag ${GITHUB_REF_NAME} but Cargo.toml says $v"; exit 1; }
+
+  build:
+    needs: check
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-22.04, name: linux_amd64 }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-22.04-arm, name: linux_arm64 }
+          - { target: x86_64-apple-darwin, os: macos-13, name: darwin_amd64 }
+          - { target: aarch64-apple-darwin, os: macos-14, name: darwin_arm64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      # The oldest Ubuntu runner builds the Linux binaries, so they run on
+      # any glibc at least that old.
+      - run: cargo build --release --locked --target ${{ matrix.target }}
+      # No version in the archive name, so /releases/latest/download/ URLs
+      # stay stable across releases.
+      - name: package
+        run: |
+          set -euo pipefail
+          mkdir -p dist/pkg
+          cp target/${{ matrix.target }}/release/pullpen LICENSE README.md dist/pkg/
+          tar -czf dist/pullpen_${{ matrix.name }}.tar.gz -C dist/pkg .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pullpen_${{ matrix.name }}
+          path: dist/pullpen_${{ matrix.name }}.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - run: cd dist && sha256sum pullpen_*.tar.gz > checksums.txt
+      # Everything the release page offers, checksums included: attesting
+      # the archives alone would leave the file that vouches for them
+      # swappable by whoever could swap them.
+      - id: attest
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/pullpen_*.tar.gz
+            dist/checksums.txt
+      - name: publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp "${{ steps.attest.outputs.bundle-path }}" dist/attestation.jsonl
+          gh release create "${GITHUB_REF_NAME}" dist/* --generate-notes --title "pullpen ${GITHUB_REF_NAME#v}"

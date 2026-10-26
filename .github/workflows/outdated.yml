@@ -1,0 +1,45 @@
+name: outdated
+
+# Cargo.lock pins every dependency, and nothing notices when one moves. This
+# opens or updates one tracking issue. Never a pull request, and never an
+# automatic bump: a dependency changes by a commit someone made on purpose,
+# within the ceiling ADR-005 sets.
+on:
+  schedule:
+    # Mondays, early. Weekly is often enough to catch a release and rare
+    # enough that the issue does not become wallpaper.
+    - cron: '23 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  outdated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: what cargo update would change
+        run: |
+          set -o pipefail
+          cargo update --workspace --dry-run 2>&1 | grep -E '^\s*(Updating|Adding|Removing|Downgrading) ' | grep -v 'crates.io index' > updates.txt || true
+          cat updates.txt
+      - name: open, update or close the tracking issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh label create dependency-updates --description "A locked dependency has a newer compatible release" --color ededed 2>/dev/null || true
+          issue=$(gh issue list --label dependency-updates --state open --json number --jq '.[0].number // empty')
+          if [ ! -s updates.txt ]; then
+            if [ -n "$issue" ]; then gh issue close "$issue" --comment "Every dependency is current again."; fi
+            exit 0
+          fi
+          body=$(printf 'What `cargo update --workspace` would change, as of %s:\n\n```\n%s\n```\n\nUpdate deliberately: run `cargo update`, then `make check`, and open a PR.\n' "$(date -u +%F)" "$(cat updates.txt)")
+          if [ -n "$issue" ]; then
+            gh issue edit "$issue" --body "$body"
+          else
+            gh issue create --title "Dependency updates available" --label dependency-updates --body "$body"
+          fi

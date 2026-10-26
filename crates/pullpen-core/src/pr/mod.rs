@@ -1,8 +1,9 @@
 //! A pull request as pullpen sees it, whichever forge it came from.
 
 use crate::time::Timestamp;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Forge {
     GitHub,
     GitLab,
@@ -18,7 +19,7 @@ impl Forge {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PrId {
     pub forge: Forge,
     pub host: String,
@@ -35,24 +36,28 @@ impl PrId {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Author {
     pub login: String,
     pub is_agent: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CheckRun {
     pub name: String,
     pub detail: String,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Checks {
     pub required_total: u32,
     pub required_passed: u32,
     pub running: u32,
     pub failed: Vec<CheckRun>,
+    /// Required checks that have not started, when the forge says which.
+    pub queued: Vec<String>,
+    /// Minutes until the running checks finish, when the forge can tell.
+    pub eta_mins: Option<u32>,
 }
 
 impl Checks {
@@ -64,9 +69,11 @@ impl Checks {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Reviews {
     pub have: u32,
+    /// Who has approved, as the detail view lists them.
+    pub approved_by: Vec<String>,
     pub need: u32,
     pub changes_requested: bool,
     pub pending: Vec<String>,
@@ -78,7 +85,7 @@ impl Reviews {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mergeable {
     Clean,
     Conflict,
@@ -86,7 +93,7 @@ pub enum Mergeable {
     Unknown,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum MergeMethod {
     Squash,
     Merge,
@@ -103,27 +110,27 @@ impl MergeMethod {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AutoMerge {
     pub method: MergeMethod,
     pub armed_by: String,
     pub armed_at: Timestamp,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MergeTrainPos {
     pub position: u32,
     pub length: u32,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PrState {
     Open,
     Merged { at: Timestamp, method: MergeMethod },
     Closed,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Pr {
     pub id: PrId,
     pub title: String,
@@ -157,7 +164,7 @@ impl Pr {
 }
 
 /// What a repo demands before a merge, as far as pullpen needs to know.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Capabilities {
     pub allowed_methods: Vec<MergeMethod>,
     pub merge_trains: bool,

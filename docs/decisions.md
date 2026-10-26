@@ -82,7 +82,8 @@ any document quotes them differently.
 Code and comments are counted separately, as in bothy's ADR-010 and ADR-021.
 A single combined figure punishes a comment explaining *why* exactly as hard
 as it punishes sprawl. Code means the non-test `.rs` files under
-`crates/*/src`. Unit tests live in a sibling `tests.rs`, never inline, so the
+`crates/*/src`, as formatted by `rustfmt.toml`: a narrower format would
+report more lines for the same code, so the format changes only by a record. Unit tests live in a sibling `tests.rs`, never inline, so the
 counter can tell code from tests by filename alone.
 
 Prose means every markdown file outside `design/` and `docs/history/`. It is
@@ -108,6 +109,8 @@ and the binary budget (ADR-004) is what keeps that cost honest.
 
 ## ADR-006 — pullpen never stores a token
 
+**Amended by ADR-012:** pullpen now stores a token it is given in setup.
+
 Credentials come from the environment (`PULLPEN_GITHUB_TOKEN`, then
 `GITHUB_TOKEN`), from `gh auth token` or `glab`, or from a `token_cmd` the
 user configures, in that order. They live in memory for the life of the
@@ -121,3 +124,127 @@ make it better at its job.
 The log must redact the `Authorization` header. The forge milestone (M3) is
 not done until a test asserts that a known token never appears in any file
 pullpen writes.
+
+## ADR-007 — The batch strip marks rows the design's own rule can act on
+
+The design's batch example marked #812, #145, #96, #1203, #4815 and #375,
+and its result showed #812 merging at once ("already green") while #145, #96
+and #4815 were armed and left waiting. Its note says the rule: rows already
+green merge immediately. But #145, #96 and #4815 are green in the same
+fixtures; the rows show ✓. No one rule produces that screen.
+
+The rule is the useful half. Arming a PR that could merge now only makes the
+user wait for a merge nobody is blocking, and GitHub refuses to enable
+auto-merge on a PR whose state is already clean. So the example changed and
+the rule did not: the marks in `design/tui.js` are now #812, #377, #143,
+#1203 and #375, of which only #812 is green, and the counts and message follow
+(5 marked, 4 armed, 11 armed in total). The goldens were regenerated from the
+edited design, as ADR-002 says changes to the look must be.
+
+## ADR-008 — GitLab is read through GraphQL and written through REST
+
+`PLAN.md` chose REST v4 for GitLab, with GraphQL "optional later". Building
+the list showed what that costs: REST's merge request list has no head
+pipeline, no approvals and no line counts, so each row needs three more
+requests, which is 150 calls for a page of 50.
+
+GitLab's GraphQL returns all of it in one query per page: `diffStatsSummary`,
+`headPipeline`, `approvalsRequired`, `approvalsLeft`, `approvedBy`,
+`detailedMergeStatus`, `autoMergeEnabled`, `mergeTrainIndex`. Every field
+pullpen reads was checked against the gitlab.com schema by introspection
+before the client was written, rather than taken from memory.
+
+Writes stay REST (`/merge`, `/approve`, `/notes`,
+`/cancel_merge_when_pipeline_succeeds`), because the REST endpoints are the
+documented, long-stable interface for them and GraphQL's merge mutations lag
+behind.
+
+GitHub was already split the same way, for the same reason: GraphQL for
+reading, REST for the merge, review, comment and close endpoints.
+
+## ADR-009 — The armed example's #4809 shows that it is waiting
+
+In the design's armed view, #4809 sits under *waiting* with the reason
+"required check sbom queued", but its state glyph was ✓, ready. A PR
+waiting on a required check is not ready, and the glyph is the one cell the
+design asks the user to trust at a glance. So the example changed, as
+ADR-007's did: `design/tui.js` gives #4809 a running check there, its row
+shows ○, and the goldens were regenerated.
+
+## ADR-010 — PR numbers are not OSC 8 links yet
+
+The design asks for PR numbers as OSC 8 hyperlinks, so cmd-click opens them.
+ratatui 0.30's cells carry a symbol and a style and nothing else; there is
+no hyperlink attribute. The workaround in circulation writes the escape
+sequence into a cell's symbol, where ratatui measures it as text when
+deciding which cells to redraw, and the layout this project tests byte for
+byte (ADR-002) would rest on that measurement going right.
+
+`o` opens the selected PR in the browser, so nothing is unreachable without
+links. This is deferred, not refused: it returns when ratatui gains a link
+attribute, or with a test that proves the workaround leaves every golden
+screen intact.
+
+## ADR-011 — Releases are a workflow in this repository, not cargo-dist
+
+`PLAN.md` named `cargo-dist`. It is not installed where this project is
+built, so the workflow it would generate could not be read and run here
+before being trusted, which is the opposite of what bothy's release
+records ask for.
+
+`.github/workflows/release.yml` is about a hundred lines. It runs `make
+check`, refuses a tag that disagrees with `Cargo.toml`, builds four targets,
+packages them under fixed names, writes `checksums.txt`, attests every
+artifact including the checksums (bothy's ADR-030), and publishes. Each step
+can be read in a minute. cargo-dist would add installers and a Homebrew
+tap update in exchange for generated code, and either can be taken up later
+by a record that replaces this one.
+
+## ADR-012 — Setup stores the tokens it is given, owner-only, beside the config
+
+ADR-006 had pullpen borrow tokens and never keep one. That serves someone who
+already uses `gh` or `glab`, and nobody else: anyone else had to export an
+environment variable in every shell before pullpen worked at all. The
+maintainer's requirement is that someone can configure pullpen by answering
+its questions, so `pullpen setup` asks for a token when it finds no login to
+borrow, and keeps it.
+
+**Where.** `~/.config/pullpen/credentials.toml`, mode 0600, written to a new
+owner-only file and renamed into place so the token is never on disk with
+wider permissions, even briefly. It is separate from `config.toml` so that
+file can be shared or committed. This is how `gh` and `glab` store theirs.
+An OS keyring would encrypt at rest, but it adds a dependency (ADR-005) and
+fails on headless machines with no keyring running.
+
+**What still holds from ADR-006.** A login to borrow is offered first, and
+when chosen nothing is stored. The environment still overrides the file. A
+token never reaches the log, the cache, the history or the screen: setup
+reads it with echo off, and the test that holds ADR-006 still runs. A
+credentials file others can read is refused with the `chmod` that fixes it,
+not used.
+
+## ADR-013 — The code cap rises to 9,000, for setup and settings
+
+`pullpen setup` and `pullpen settings` took the code from 7,388 lines to
+8,049, over ADR-004's 8,000. They are the maintainer's requirement, since
+without them pullpen could be configured only by editing TOML, and they were
+written as plain prompts rather than as a TUI screen to stay small.
+
+The cap rises once, to 9,000 lines, which is bothy's figure. That leaves about 950
+lines, against roughly 500 that the publishing work in `docs/launch.md` is
+likely to need, so the next raise has room to be argued properly rather
+than squeezed.
+
+## ADR-014 — Files are `n` and `b`, the list is `F`, and the detail view says so
+
+The design moved between files with `]f` and `[f`, vim's spelling. Reviewing
+a PR of 133 files showed what that costs: the maintainer had to ask what
+`]f` meant, and once known it still stepped through files one at a time with
+no way to see them all.
+
+So the detail view takes `n` for the next file and `b` for the one before,
+`F` opens a list of every changed file to filter and jump from, and its
+bottom row, empty in the design, names those keys. `]f` and `[f` still work.
+The design changed first, as ADR-002 requires: `design/tui.js` gained the
+bottom row and the help overlay's entries, and the goldens were regenerated
+from it.

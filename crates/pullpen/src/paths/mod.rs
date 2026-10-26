@@ -25,10 +25,7 @@ impl Dirs {
         };
         // The XDG spec says a relative value is invalid and must be ignored.
         let xdg = |k: &str, fallback: &str| {
-            var(k)
-                .filter(|p| p.is_absolute())
-                .unwrap_or_else(|| home.join(fallback))
-                .join("pullpen")
+            var(k).filter(|p| p.is_absolute()).unwrap_or_else(|| home.join(fallback)).join("pullpen")
         };
         Ok(Dirs {
             config: xdg("XDG_CONFIG_HOME", ".config"),

@@ -40,9 +40,9 @@ Each row is settled. The ones with a record are answered by its number: ADR-001 
 | Language / TUI | **Rust**, `ratatui` + `crossterm` | Single static binary, instant startup, cell-level rendering control the design needs. |
 | Async | `tokio` (multi-thread), `reqwest` with `rustls` | Forge calls run in background tasks; UI thread never blocks. |
 | GitHub API | **GraphQL** (`https://api.github.com/graphql`) via `reqwest` + `serde_json` (hand-written queries, no codegen) | Auto-merge (`enablePullRequestAutoMerge`), review decision, status check rollup and mergeability are only sane via GraphQL. REST only for `PATCH`/`PUT` merge and checkout refs. |
-| GitLab API | **REST v4** (`/api/v4`) | MR approvals, pipelines, `merge?auto_merge=true`, merge trains are complete in REST; GraphQL optional later. |
-| Auth | In order: `PULLPEN_GITHUB_TOKEN` / `PULLPEN_GITLAB_TOKEN`, then `GITHUB_TOKEN` / `GITLAB_TOKEN`, then `gh auth token` / `glab auth status -t` shell-out, then `config.toml` `token_cmd` | Zero setup for anyone already using gh/glab. Never store tokens ourselves. |
-| Config | TOML at `$XDG_CONFIG_HOME/pullpen/config.toml` | Design says YAML/TOML; TOML is the Rust norm. No config UI. |
+| GitLab API | **GraphQL** to read (`/api/graphql`), **REST v4** to write (`/api/v4`) | One GraphQL query per page carries pipeline, approvals and diff stats that REST needs three calls per MR for (ADR-008). Writes use the stable REST endpoints. |
+| Auth | In order: `PULLPEN_GITHUB_TOKEN` / `PULLPEN_GITLAB_TOKEN`, then `GITHUB_TOKEN` / `GITLAB_TOKEN`, then a token `pullpen setup` stored in `credentials.toml` (0600), then `gh auth token` / `glab auth status -t`, then `config.toml` `token_cmd` | Zero setup for anyone already using gh/glab; one question for anyone else (ADR-012). |
+| Config | TOML at `$XDG_CONFIG_HOME/pullpen/config.toml`, written by `pullpen setup` and `pullpen settings` (§6.6) or by hand | Design says YAML/TOML; TOML is the Rust norm. |
 | Cache | `$XDG_CACHE_HOME/pullpen/` — JSON per section, history file, messages log | Instant first paint from cache, then refresh. |
 | Clipboard / browser | `open` crate for `o`; no clipboard in v1 | |
 | Row treatment | **1a columns** (`rowA`) | Chosen in design review. |
@@ -167,6 +167,8 @@ pub trait Forge: Send + Sync {
 | squash | `squash` | `squash: true` on merge |
 | rebase merge | `rebase` | fast-forward merge method (project setting `merge_method = ff`) |
 
+GitHub's search asks for the cheap fields of up to 30 PRs, then a second `nodes(ids:)` query per 10 asks for mergeability and check details. Computing mergeability is what made a single query slow enough for GitHub to answer 502. A required check that has not reported counts as pending ("Expected"), not absent.
+
 ### 4.2 Errors
 
 Map forge errors to `ActionFailed{reason, hint}` where `hint` is the next useful key, e.g. `#2290 can't merge: e2e/chromium failing · 1 review required` + `d diff   o open in browser`. Rate limits and 5xx become `SyncError` with backoff (1s, 2s, 4s… cap 60s) and surface on the status line, not the command line.
@@ -277,7 +279,7 @@ view  = "armed"            # the grouped lifecycle view
 Query grammar (forge-neutral, translated per forge; unknown terms are free text matched on title):
 `is:open|merged|closed|draft|armed|agent|ready|failing|conflict`, `author:<login|@me|@agents>`, `review-requested:@me`, `reviewed-by:@me`, `repo:<owner/name|glob>`, `org:<name>`, `group:<name>`, `forge:gh|gl`, `ci:pass|fail|running`, `label:<x>`, `base:<branch>`, free text.
 
-Translation splits each query in two. Terms a forge's search understands go to the server; the rest (`is:armed`, `is:agent`, `is:ready`, `is:failing`, `is:conflict`, `ci:*`) are evaluated on the fetched `Pr`s. A query made only of client-side terms fetches a superset (`involves:@me` on GitHub, `scope=all` within configured groups on GitLab). GitHub search returns at most 1,000 results; a section that hits the cap says so on the status line.
+Translation splits each query in two. Terms a forge's search understands go to the server; the rest (`is:armed`, `is:agent`, `is:ready`, `is:failing`, `is:conflict`, `ci:*`) are evaluated on the fetched `Pr`s. A query made only of client-side terms fetches a superset (`involves:@me` on GitHub, `scope=all` within configured groups on GitLab). GitHub search returns at most 1,000 results; a section that hits the cap says so on the status line. A query that names no person, repo, org or group would mean every PR on the forge, so it is scoped: on GitHub by the forge's `scope` (default `involves:@me`), on GitLab to its configured `groups`, or, with none, to the union of PRs you authored, review or are assigned.
 
 `/` filter inside a section uses the same grammar plus free text. Defaults ship: Mine, Needs my review, Agent-opened, Auto-merge armed, All.
 
@@ -287,11 +289,11 @@ Translation splits each query in two. Terms a forge's search understands go to t
 
 **List:** `j k` · `gg G` · `^d ^u` · `/` filter, `n N` next/prev match · `Space` mark, `V` mark range · `Enter` detail · `p` toggle preview · `M` merge (confirm) · `x` close (confirm) · `A` arm/disarm · `a` approve · `c` comment · `d` diff · `o` browser.
 
-**Detail:** `j k ^d ^u gg G` scroll focused pane · `h l` focus overview/diff · `]f [f` next/prev file · `]c [c` next/prev hunk · `zo zc` expand/fold · `d` zoom diff · `M A a c o x` as in list · `q Esc` back, cursor kept.
+**Detail:** `j k ^d ^u gg G` scroll focused pane · `h l` focus overview/diff · `n b` next/prev file (`]f [f` too), `F` the file list (ADR-014) · `]c [c` next/prev hunk · `zo zc` expand/fold · `d` zoom diff · `M A a c o x` as in list · `q Esc` back, cursor kept.
 
 **Command & confirm:** `Tab S-Tab` complete/cycle · `↑ ↓` history (prefix-filtered) · `^r #` insert selected PR ref · `^w ^u` delete word/line · `Enter Esc` run/cancel · confirm: `y Enter` yes, `n Esc` no, `s m r` yes-with-method, **any other key cancels and is discarded**.
 
-Multi-key sequences (`gg`, `]f`, `zo`) use a pending-key buffer with 500ms timeout. Keys are remappable under `[keys]` in config; defaults are the above.
+`Space` marks the row and moves down, as ranger does; `V` marks every row from the last mark to the cursor. Multi-key sequences (`gg`, `]f`, `zo`) use a pending-key buffer with 500ms timeout. Keys are remappable under `[keys]` in config; defaults are the above.
 
 ### 6.3 Commands (design §07)
 
@@ -331,6 +333,23 @@ armed → waiting (CI / reviews / merge train) → merged, or → needs attentio
 
 ---
 
+### 6.6 Setup and settings
+
+`pullpen setup` walks through what pullpen needs, as plain prompts that work
+over SSH: which forges, each host, sign-in (use the `gh`/`glab` login, or
+paste a token read with echo off, checked by asking the forge who it belongs
+to), the orgs, repos or groups an unscoped list searches, merge preferences
+and notifications, and local clones for `:checkout`. Every question has a
+default, and running it again starts from the last answers. A first launch
+with no config and a terminal runs it before the list opens.
+
+`pullpen settings` lists every setting with its value; choosing one shows what
+it means and what it takes, and a valid answer is saved at once. `s` re-runs
+sign-in, `e` opens sections and key remaps in `$EDITOR` and then checks them.
+`pullpen settings get|set <key> [value]` does the same from a script, and
+`pullpen settings path` prints both files. Saving keeps the previous
+`config.toml` as `config.toml.bak`, because the TOML writer drops comments.
+
 ## 7. Golden tests from the design artifact
 
 The design renders deterministic screens from fixture data. Make that the regression suite.
@@ -366,7 +385,7 @@ Modal key dispatcher with pending-sequence buffer; list navigation; sections (`h
 
 ### M4 — Actions
 merge / arm / disarm / approve / comment (incl. `$EDITOR` suspend/resume) / close / open / checkout (+worktree) / refresh, single and batch, with the §6.3 messages and the "not ready → offer to arm" and "would be rejected → refuse with reason" branches. Spinner on acting rows. Post-action refresh.
-**Exit:** manual script in `docs/testing.md` completed on a scratch repo per forge: arm, merge, batch-arm with one draft skipped, approve-your-own-PR error renders correctly.
+**Exit:** manual script in `docs/testing.md` completed on a scratch repo per forge: arm, merge, batch-arm with one draft skipped, approve-your-own-PR error renders correctly. Checkout fetches the PR's ref (`pull/N/head`, `merge-requests/N/head`), so forks work, and only ever fast-forwards an existing local branch.
 
 ### M5 — Detail view
 Breadcrumb, verdict, fact grid, overview pane (description, checks with fold, conversation), diff pane (fetch unified diff, parse hunks, file/hunk navigation, fold), `h l` focus, `d` zoom, `--external` pager, all list actions available.
@@ -377,7 +396,7 @@ Armed view grouping (needs attention / waiting / merged since), *why* column, `:
 **Exit:** `sArmed` golden passes; a fixture sync sequence (armed → ci running → merged) produces the right groups and exactly one notification.
 
 ### M7 — Polish and release
-`NO_COLOR`; PR numbers as OSC 8 links; styled underline for matches where supported; mouse (click row, double-click opens detail, click tab, wheel); `[keys]` remapping; `config.example.toml` and README with a 30-second GIF (vhs); `cargo-dist` release with linux/macos binaries, every artifact and `checksums.txt` attested by `actions/attest-build-provenance`; release in two steps (`make release` opens the version-bump PR, `make release-tag` tags the merged commit); Homebrew tap formula, with Copr and AUR as their own issues; `pullpen --version`, `pullpen config check`.
+`NO_COLOR` (glyphs, bold and reverse video carry it); coloured underline for matches; mouse (click row, double-click opens detail, click tab, wheel); `[keys]` remapping by action name; `config.example.toml`; a release workflow building linux and macOS binaries for amd64 and arm64, every artifact and `checksums.txt` attested by `actions/attest-build-provenance` (ADR-011); release in two steps (`make release` opens the version-bump PR, `make release-tag` tags the merged commit); a Homebrew formula template, with the tap, Copr and AUR as their own issues; OSC 8 links on PR numbers are deferred (ADR-010); a README GIF waits on `vhs`; `pullpen --version`, `pullpen config check`.
 **Exit:** fresh machine with only `gh auth login` done: `brew install <tap>/pullpen && pullpen` works.
 
 ---
@@ -389,10 +408,12 @@ Armed view grouping (needs attention / waiting / merged since), *why* column, `:
 kind = "github"
 host = "github.com"
 # token_cmd = "gh auth token"
+# scope = "involves:@me"  # what an unscoped query is narrowed to
 
 [[forge]]
 kind = "gitlab"
 host = "gitlab.com"
+# groups = ["platform"]   # searched when a query names no project, group or person
 # token_cmd = "glab auth status -t 2>&1 | awk '/Token:/{print $2}'"
 
 [ui]

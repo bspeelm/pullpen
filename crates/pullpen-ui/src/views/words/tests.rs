@@ -9,35 +9,17 @@ fn pr(n: u64) -> Pr {
     use pullpen_core::*;
     {
         Pr {
-            id: PrId {
-                forge: Forge::GitHub,
-                host: "h".into(),
-                repo: "o/r".into(),
-                number: n,
-            },
+            id: PrId { forge: Forge::GitHub, host: "h".into(), repo: "o/r".into(), number: n },
             title: "t".into(),
-            author: Author {
-                login: "a".into(),
-                is_agent: false,
-            },
+            author: Author { login: "a".into(), is_agent: false },
             head: "x".into(),
             base: "main".into(),
             additions: 0,
             deletions: 0,
             files: 0,
             draft: false,
-            checks: Checks {
-                required_total: 9,
-                required_passed: 4,
-                running: 5,
-                failed: vec![],
-            },
-            reviews: Reviews {
-                have: 0,
-                need: 1,
-                changes_requested: false,
-                pending: vec![],
-            },
+            checks: Checks { required_total: 9, required_passed: 4, running: 5, failed: vec![], ..Default::default() },
+            reviews: Reviews { have: 0, need: 1, approved_by: vec![], changes_requested: false, pending: vec![] },
             mergeable: Mergeable::Clean,
             auto_merge: None,
             merge_train: None,
@@ -55,10 +37,7 @@ fn pr(n: u64) -> Pr {
 fn waiting_and_unarmed_names_everything_and_offers_a() {
     let p = pr(1);
     let v = verdict(&p, &Capabilities::default());
-    assert_eq!(
-        verdict_long(&p, &v),
-        "Waiting on CI (4/9) and 1 review. A arms auto-merge."
-    );
+    assert_eq!(verdict_long(&p, &v), "Waiting on CI (4/9) and 1 review. A arms auto-merge.");
     assert_eq!(verdict_short(&p, &v), "waiting on CI (4/9) and 1 review");
 }
 
@@ -69,10 +48,7 @@ fn ready_names_the_method() {
     p.checks.running = 0;
     p.reviews.have = 1;
     let v = verdict(&p, &Capabilities::default());
-    assert_eq!(
-        verdict_long(&p, &v),
-        "Nothing blocking. M merges with squash."
-    );
+    assert_eq!(verdict_long(&p, &v), "Nothing blocking. M merges with squash.");
 }
 
 #[test]
@@ -80,8 +56,5 @@ fn blocked_names_the_first_blocker_and_the_key_that_helps() {
     let mut p = pr(1);
     p.mergeable = pullpen_core::Mergeable::Conflict;
     let v = verdict(&p, &Capabilities::default());
-    assert_eq!(
-        verdict_long(&p, &v),
-        "Conflicts with main. :checkout to resolve."
-    );
+    assert_eq!(verdict_long(&p, &v), "Conflicts with main. :checkout to resolve.");
 }

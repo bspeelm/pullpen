@@ -10,11 +10,7 @@ fn columns_collapse_in_the_designed_order() {
     assert_eq!(at(89), (12, 12, 17, 4, 5, 3), "≥ 89: everything");
     assert_eq!(at(88), (0, 12, 17, 4, 5, 3), "77–88: size dropped");
     assert_eq!(at(77), (0, 12, 17, 4, 5, 3));
-    assert_eq!(
-        at(76),
-        (0, 2, 17, 4, 5, 3),
-        "67–76: author is the mark only"
-    );
+    assert_eq!(at(76), (0, 2, 17, 4, 5, 3), "67–76: author is the mark only");
     assert_eq!(at(67), (0, 2, 17, 4, 5, 3));
     assert_eq!(at(66), (0, 2, 11, 4, 5, 3), "61–66: repo shortens");
     assert_eq!(at(60), (0, 2, 11, 0, 5, 3), "57–60: age dropped");
@@ -28,10 +24,7 @@ fn columns_collapse_in_the_designed_order() {
 #[test]
 fn the_title_takes_all_spare_width() {
     let c = cols(119);
-    assert_eq!(
-        12 + c.forge + c.repo + c.author + c.rev + c.size + c.age + c.title,
-        119
-    );
+    assert_eq!(12 + c.forge + c.repo + c.author + c.rev + c.size + c.age + c.title, 119);
 }
 
 #[test]

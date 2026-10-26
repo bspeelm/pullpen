@@ -14,11 +14,7 @@ fn people(pending: &[String]) -> String {
 
 fn reviews_left(have: u32, need: u32) -> String {
     let n = need.saturating_sub(have);
-    if n == 1 {
-        "1 review".into()
-    } else {
-        format!("{n} reviews")
-    }
+    if n == 1 { "1 review".into() } else { format!("{n} reviews") }
 }
 
 /// What a single wait is for, as a clause: "CI (4/9)", "1 review".
@@ -36,11 +32,7 @@ fn join(clauses: Vec<String>) -> String {
     match clauses.len() {
         0 => String::new(),
         1 => clauses[0].clone(),
-        _ => format!(
-            "{} and {}",
-            clauses[..clauses.len() - 1].join(", "),
-            clauses[clauses.len() - 1]
-        ),
+        _ => format!("{} and {}", clauses[..clauses.len() - 1].join(", "), clauses[clauses.len() - 1]),
     }
 }
 
@@ -59,16 +51,12 @@ fn armed_condition(waits: &[Wait]) -> String {
 }
 
 fn method(pr: &Pr) -> &'static str {
-    pr.auto_merge
-        .as_ref()
-        .map_or(pr.repo_default_method, |a| a.method)
-        .word()
+    pr.auto_merge.as_ref().map_or(pr.repo_default_method, |a| a.method).word()
 }
 
 fn capital(s: &str) -> String {
     let mut c = s.chars();
-    c.next()
-        .map_or_else(String::new, |f| f.to_uppercase().chain(c).collect())
+    c.next().map_or_else(String::new, |f| f.to_uppercase().chain(c).collect())
 }
 
 /// The preview's verdict clause, after `○ waiting` and friends.
@@ -97,28 +85,17 @@ pub fn verdict_long(pr: &Pr, v: &Verdict) -> String {
     match v {
         Verdict::Ready => format!("Nothing blocking. M merges with {}.", method(pr)),
         Verdict::Waiting(w) if pr.armed() => {
-            format!(
-                "{}-merges automatically {}. Nothing else is blocking.",
-                capital(method(pr)),
-                armed_condition(w)
-            )
+            format!("{}-merges automatically {}. Nothing else is blocking.", capital(method(pr)), armed_condition(w))
         }
-        Verdict::Waiting(w) => format!(
-            "Waiting on {}. A arms auto-merge.",
-            join(w.iter().map(wait_clause).collect())
-        ),
+        Verdict::Waiting(w) => format!("Waiting on {}. A arms auto-merge.", join(w.iter().map(wait_clause).collect())),
         Verdict::Blocked(Block::Failing { check }) => {
             format!("{check} failing. d opens the diff, o the run.")
         }
         Verdict::Blocked(Block::Conflict { base }) => {
             format!("Conflicts with {base}. :checkout to resolve.")
         }
-        Verdict::Blocked(Block::ChangesRequested) => {
-            "Changes requested. o opens the review.".into()
-        }
-        Verdict::Blocked(Block::Draft) => {
-            "Draft. Mark it ready on the forge first; o opens it.".into()
-        }
+        Verdict::Blocked(Block::ChangesRequested) => "Changes requested. o opens the review.".into(),
+        Verdict::Blocked(Block::Draft) => "Draft. Mark it ready on the forge first; o opens it.".into(),
     }
 }
 

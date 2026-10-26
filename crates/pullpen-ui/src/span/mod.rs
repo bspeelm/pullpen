@@ -21,13 +21,7 @@ pub type Line = Vec<Span>;
 
 impl Span {
     pub fn new(text: impl Into<String>, fg: Tok) -> Self {
-        Span {
-            text: text.into(),
-            fg,
-            bg: None,
-            bold: false,
-            underline: false,
-        }
+        Span { text: text.into(), fg, bg: None, bold: false, underline: false }
     }
     pub fn bold(mut self) -> Self {
         self.bold = true;
@@ -42,10 +36,7 @@ impl Span {
         self
     }
     fn with_text(&self, text: impl Into<String>) -> Self {
-        Span {
-            text: text.into(),
-            ..self.clone()
-        }
+        Span { text: text.into(), ..self.clone() }
     }
 }
 
@@ -105,11 +96,7 @@ pub fn fit(l: &[Span], w: usize, ellipsis: bool) -> Line {
                 l.text = trimmed;
             }
         }
-        out.push(Span {
-            text: "…".into(),
-            underline: false,
-            ..last
-        });
+        out.push(Span { text: "…".into(), underline: false, ..last });
         if moved > 0 {
             out.push(sp(moved));
         }
@@ -153,21 +140,14 @@ pub fn overlay(base: &[Span], x: usize, top: &[Span]) -> Line {
 }
 
 fn to_cells(l: &[Span]) -> Vec<Span> {
-    l.iter()
-        .flat_map(|s| s.text.chars().map(move |c| s.with_text(c)))
-        .collect()
+    l.iter().flat_map(|s| s.text.chars().map(move |c| s.with_text(c))).collect()
 }
 
 fn from_cells(cells: Vec<Span>) -> Line {
     let mut out: Line = Vec::new();
     for c in cells {
         match out.last_mut() {
-            Some(p)
-                if p.fg == c.fg
-                    && p.bg == c.bg
-                    && p.bold == c.bold
-                    && p.underline == c.underline =>
-            {
+            Some(p) if p.fg == c.fg && p.bg == c.bg && p.bold == c.bold && p.underline == c.underline => {
                 p.text.push_str(&c.text)
             }
             _ => out.push(c),
@@ -227,12 +207,7 @@ fn next_tag(src: &str) -> Option<(usize, &str, &str, usize)> {
             let body_start = i + 1 + tags_len + 1;
             if let Some(close) = src[body_start..].find('}') {
                 let body_end = body_start + close;
-                return Some((
-                    i,
-                    &src[i + 1..i + 1 + tags_len],
-                    &src[body_start..body_end],
-                    body_end + 1,
-                ));
+                return Some((i, &src[i + 1..i + 1 + tags_len], &src[body_start..body_end], body_end + 1));
             }
         }
         from = i + 1;

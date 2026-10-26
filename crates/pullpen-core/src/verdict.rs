@@ -8,22 +8,10 @@ use crate::pr::*;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Wait {
-    Ci {
-        passed: u32,
-        total: u32,
-    },
-    Reviews {
-        have: u32,
-        need: u32,
-        pending: Vec<String>,
-    },
-    Train {
-        position: u32,
-        length: u32,
-    },
-    Behind {
-        base: String,
-    },
+    Ci { passed: u32, total: u32 },
+    Reviews { have: u32, need: u32, pending: Vec<String> },
+    Train { position: u32, length: u32 },
+    Behind { base: String },
     Mergeability,
 }
 
@@ -49,49 +37,29 @@ pub fn verdict(pr: &Pr, caps: &Capabilities) -> Verdict {
         return Verdict::Blocked(Block::Draft);
     }
     if pr.mergeable == Mergeable::Conflict {
-        return Verdict::Blocked(Block::Conflict {
-            base: pr.base.clone(),
-        });
+        return Verdict::Blocked(Block::Conflict { base: pr.base.clone() });
     }
     if let Some(c) = pr.checks.failed.first() {
-        return Verdict::Blocked(Block::Failing {
-            check: c.name.clone(),
-        });
+        return Verdict::Blocked(Block::Failing { check: c.name.clone() });
     }
     if pr.reviews.changes_requested {
         return Verdict::Blocked(Block::ChangesRequested);
     }
     let mut waits = Vec::new();
     if !pr.checks.all_passed() {
-        waits.push(Wait::Ci {
-            passed: pr.checks.required_passed,
-            total: pr.checks.required_total,
-        });
+        waits.push(Wait::Ci { passed: pr.checks.required_passed, total: pr.checks.required_total });
     }
     if pr.reviews.short() {
-        waits.push(Wait::Reviews {
-            have: pr.reviews.have,
-            need: pr.reviews.need,
-            pending: pr.reviews.pending.clone(),
-        });
+        waits.push(Wait::Reviews { have: pr.reviews.have, need: pr.reviews.need, pending: pr.reviews.pending.clone() });
     }
     if pr.mergeable == Mergeable::Behind && caps.requires_up_to_date {
-        waits.push(Wait::Behind {
-            base: pr.base.clone(),
-        });
+        waits.push(Wait::Behind { base: pr.base.clone() });
     }
     if pr.mergeable == Mergeable::Unknown {
         waits.push(Wait::Mergeability);
     }
     if let Some(t) = pr.merge_train {
-        waits.push(Wait::Train {
-            position: t.position,
-            length: t.length,
-        });
+        waits.push(Wait::Train { position: t.position, length: t.length });
     }
-    if waits.is_empty() {
-        Verdict::Ready
-    } else {
-        Verdict::Waiting(waits)
-    }
+    if waits.is_empty() { Verdict::Ready } else { Verdict::Waiting(waits) }
 }

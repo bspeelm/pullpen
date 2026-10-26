@@ -1,0 +1,44 @@
+name: wiki
+
+# The wiki is a separate git repository, so pages cannot live there and be
+# reviewed here at the same time. They live in wiki/, go through a PR like
+# anything else, and this copies them across on merge. An edit made in the
+# wiki's own editor is overwritten by the next copy, which Home.md says.
+on:
+  push:
+    branches: [main]
+    paths: ['wiki/**']
+  workflow_dispatch:
+
+# Whether contents: write reaches the wiki repository is not certain. If it
+# does not, set WIKI_TOKEN to a token with Contents: write on this repository.
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: copy wiki/ to the wiki
+        env:
+          TOKEN: ${{ secrets.WIKI_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          test -n "$(ls wiki/*.md 2>/dev/null)" || {
+            echo "::error::wiki/ has no pages; refusing to empty the wiki"; exit 1; }
+          git clone -q "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" wiki-repo
+          # Mirror rather than merge: a page deleted from wiki/ should leave
+          # the wiki, or the two drift and the repository stops being the source.
+          find wiki-repo -maxdepth 1 -name '*.md' -delete
+          cp wiki/*.md wiki-repo/
+          cd wiki-repo
+          if git diff --quiet && git diff --cached --quiet && test -z "$(git status --porcelain)"; then
+            echo "wiki is already current"; exit 0
+          fi
+          git add -A
+          git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -qm "sync wiki/ from ${GITHUB_SHA:0:7}"
+          git push -q origin HEAD
+          echo "pushed $(ls *.md | wc -l) pages"

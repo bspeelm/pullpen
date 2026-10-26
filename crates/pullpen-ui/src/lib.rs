@@ -5,6 +5,7 @@
 
 pub mod app;
 pub mod glyphs;
+pub mod keymap;
 pub mod paint;
 pub mod palette;
 pub mod snapshot;

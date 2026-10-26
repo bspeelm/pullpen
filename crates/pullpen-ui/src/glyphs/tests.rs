@@ -10,19 +10,11 @@ fn every_glyph_in_every_tier_is_one_cell() {
         for c in DESIGN.chars() {
             let m = tier.map(c);
             let w = unicode_width::UnicodeWidthChar::width(m);
-            assert_eq!(
-                w,
-                Some(1),
-                "{c:?} maps to {m:?} in {tier:?}, which is {w:?} cells"
-            );
+            assert_eq!(w, Some(1), "{c:?} maps to {m:?} in {tier:?}, which is {w:?} cells");
         }
         for f in [Forge::GitHub, Forge::GitLab] {
             let s = tier.forge(f);
-            assert_eq!(
-                unicode_width::UnicodeWidthStr::width(s),
-                2,
-                "{tier:?} forge tag {s:?}"
-            );
+            assert_eq!(unicode_width::UnicodeWidthStr::width(s), 2, "{tier:?} forge tag {s:?}");
         }
     }
 }

@@ -43,10 +43,9 @@ pub fn serialize(buf: &Buffer, tier: Tier) -> (String, String) {
 fn name(c: Color, tier: Tier, is_bg: bool) -> Option<String> {
     let n = match (tier, c) {
         (_, Color::Reset) if is_bg => return None,
-        (Tier::True, Color::Rgb(r, g, b)) => Tok::ALL
-            .iter()
-            .find(|t| truecolor(**t) == (r, g, b))
-            .map(|t| format!("{t:?}").to_lowercase())?,
+        (Tier::True, Color::Rgb(r, g, b)) => {
+            Tok::ALL.iter().find(|t| truecolor(**t) == (r, g, b)).map(|t| format!("{t:?}").to_lowercase())?
+        }
         (Tier::C16, Color::Reset) => "default".into(),
         (Tier::C16, Color::Black) => "black".into(),
         (Tier::C16, Color::DarkGray) => "brightblack".into(),

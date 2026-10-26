@@ -4,7 +4,7 @@
 # repeated in prose here; they are the lines below, and a test fails if any
 # document quotes them differently.
 MAX_BINARY_BYTES   := 10485760
-MAX_CODE_LINES     := 8000
+MAX_CODE_LINES     := 9000
 MAX_COMMENT_RATIO  := 30
 MAX_DOC_RATIO      := 75
 DOC_RATIO_FROM     := 2000
@@ -19,7 +19,7 @@ SOURCES   := $(shell find crates -path '*/src/*' -name '*.rs' -not -name 'tests.
 LIVE_DOCS := $(shell find . -name '*.md' -not -path './target/*' -not -path './.git/*' \
                      -not -path './design/*' -not -path './docs/history/*')
 
-.PHONY: all build test lint fmt budgets golden check clean
+.PHONY: all build test lint fmt budgets golden keymap check clean install-binary release release-tag
 
 all: check
 
@@ -40,6 +40,10 @@ lint:
 # else does, because the tests read the committed output.
 golden:
 	node scripts/gen-golden.mjs
+
+# Regenerates docs/keymap.md from the keymap table.
+keymap:
+	PULLPEN_BLESS=1 cargo test -q -p pullpen-ui --lib keymap::tests::docs_keymap_md
 
 budgets: build
 	@size=$$(wc -c < $(BINARY)); \
@@ -65,3 +69,43 @@ check: lint test budgets
 
 clean:
 	cargo clean
+
+# Named for what it installs, as bothy's is: the release binary, into
+# ~/.local/bin, which is on PATH on most systems and needs no root.
+install-binary: build
+	install -Dm755 $(BINARY) $(HOME)/.local/bin/pullpen
+	@echo "installed to ~/.local/bin/pullpen"
+
+# Step one of a release: open the PR that bumps the version.
+#
+#     make release VERSION=0.2.0
+#
+# main takes changes only through a pull request, and the release workflow
+# refuses a tag that disagrees with Cargo.toml, so the bump lands on main
+# before the tag exists.
+release:
+	@test -n "$(VERSION)" || { echo "usage: make release VERSION=x.y.z"; exit 1; }
+	@echo "$(VERSION)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$$' || { echo "VERSION must be x.y.z"; exit 1; }
+	@git diff --quiet || { echo "working tree is dirty; commit first"; exit 1; }
+	@test "$$(git rev-parse --abbrev-ref HEAD)" = main || { echo "release starts from main"; exit 1; }
+	@! git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null || { echo "v$(VERSION) already exists"; exit 1; }
+	@command -v gh >/dev/null || { echo "gh is not installed"; exit 1; }
+	git switch -c release/$(VERSION)
+	sed -i.bak '/^\[workspace.package\]/,/^\[/s/^version = ".*"/version = "$(VERSION)"/' Cargo.toml && rm Cargo.toml.bak
+	cargo update --workspace --quiet
+	$(MAKE) check
+	git commit -am "build: $(VERSION)"
+	git push -u origin release/$(VERSION)
+	gh pr create --base main --head release/$(VERSION) --title "build: $(VERSION)" \
+	    --body "Bumps the version to $(VERSION). Merging this, then \`make release-tag\`, cuts the release."
+
+# Step two: tag the merged bump. The tag is what the release workflow
+# watches. Branch rules do not cover tags, so this needs no PR.
+release-tag:
+	@test "$$(git rev-parse --abbrev-ref HEAD)" = main || { echo "tag from main"; exit 1; }
+	@git diff --quiet || { echo "working tree is dirty"; exit 1; }
+	git fetch --quiet origin main
+	@test "$$(git rev-parse HEAD)" = "$$(git rev-parse origin/main)" || { echo "main is not level with origin/main"; exit 1; }
+	@v=$$(sed -n '/^\[workspace.package\]/,/^\[/s/^version = "\(.*\)"/\1/p' Cargo.toml); \
+	! git rev-parse -q --verify "refs/tags/v$$v" >/dev/null || { echo "v$$v is already tagged; was the bump merged?"; exit 1; }; \
+	git tag "v$$v" && git push origin "v$$v" && echo "pushed v$$v; the release workflow is building it"

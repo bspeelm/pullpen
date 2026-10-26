@@ -1,0 +1,75 @@
+# pullpen config — copy to ~/.config/pullpen/config.toml. Every key is
+# optional; this file shows the defaults or a typical value for each.
+# `pullpen config check` says what works and how to fix what does not.
+
+[[forge]]                 # one table per host; repeat for GHES or self-managed GitLab
+kind = "github"
+host = "github.com"
+# token_cmd = "gh auth token"
+# scope = "involves:@me"  # what an unscoped query is narrowed to
+
+[[forge]]
+kind = "gitlab"
+host = "gitlab.com"
+# groups = ["platform"]   # searched when a query names no project, group or person
+# token_cmd = "glab auth status -t 2>&1 | awk '/Token:/{print $2}'"
+
+[ui]
+glyphs = "unicode"        # unicode | ascii | nerd
+colors = "auto"           # auto | 16 | 256 | true
+accent = "#7cc4dc"
+# palette = "~/.config/pullpen/palette.toml"   # any other palette, mapped onto the ten tokens (ADR-003)
+preview = "auto"          # auto (hide < 110 cols) | on | off
+short_names_below = 100
+
+[sync]
+interval = "60s"
+on_focus = true
+
+[merge]
+default_method = "repo"   # repo | squash | merge | rebase
+delete_branch = true
+
+[notify]
+bell = true
+osc9 = true
+
+[agents]
+logins = ["claude", "codex", "renovate", "dependabot", "devin", "copilot"]
+
+[checkout]
+worktree = false
+[repos]                    # repo → local path, for :checkout
+"acme/api" = "~/src/api"
+
+[diff]
+pager = "delta"
+
+[keys]                     # optional remaps, e.g.
+# "list.merge" = "M"
+
+[[section]]
+name  = "Mine"
+short = "Mine"
+query = "is:open author:@me"
+
+[[section]]
+name  = "Needs my review"
+short = "Review"
+query = "is:open review-requested:@me"
+
+[[section]]
+name  = "Agent-opened"
+short = "Agent"
+query = "is:open is:agent"
+
+[[section]]
+name  = "Auto-merge armed"
+short = "Armed"
+query = "is:armed"
+view  = "armed"
+
+[[section]]
+name  = "All"
+short = "All"
+query = "is:open"

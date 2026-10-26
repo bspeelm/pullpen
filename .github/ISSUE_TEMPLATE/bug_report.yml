@@ -1,0 +1,42 @@
+name: Bug report
+description: pullpen did the wrong thing, or refused to do the right one
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        `pullpen config check` answers most of what would otherwise need a
+        follow-up question. Please include it: it shows hosts and settings,
+        never a token.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What you did, and what happened
+      description: The keys or command, and what pullpen did instead of what you expected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: check
+    attributes:
+      label: pullpen config check
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: pullpen --version
+      placeholder: "pullpen 0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: where
+    attributes:
+      label: Operating system, terminal, and forge
+      placeholder: "Fedora Silverblue 44, Ghostty, github.com"
+    validations:
+      required: true

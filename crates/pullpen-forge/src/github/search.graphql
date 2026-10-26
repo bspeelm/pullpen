@@ -1,0 +1,19 @@
+query($q: String!, $after: String) {
+  search(query: $q, type: ISSUE, first: 30, after: $after) {
+    issueCount
+    pageInfo { hasNextPage endCursor }
+    nodes {
+      ... on PullRequest {
+        id number title url isDraft createdAt updatedAt additions deletions changedFiles
+        headRefName baseRefName state mergedAt
+        author { login __typename }
+        repository { nameWithOwner squashMergeAllowed mergeCommitAllowed rebaseMergeAllowed viewerDefaultMergeMethod }
+        reviewDecision
+        autoMergeRequest { mergeMethod enabledAt enabledBy { login } }
+        reviewRequests(first: 10) { nodes { requestedReviewer { __typename ... on User { login } ... on Team { slug organization { login } } } } }
+        latestOpinionatedReviews(first: 20) { nodes { state author { login } } }
+        commits(last: 1) { nodes { commit { statusCheckRollup { state contexts(first: 1) { totalCount } } } } }
+      }
+    }
+  }
+}

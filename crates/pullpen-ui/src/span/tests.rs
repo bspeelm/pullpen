@@ -14,11 +14,7 @@ fn fit_pads_short_lines_with_plain_spaces() {
 
 #[test]
 fn fit_truncates_with_an_ellipsis_in_the_cut_spans_style() {
-    let l = fit(
-        &[s("abc", Tok::Fg), s("defgh", Tok::Dim).underline()],
-        6,
-        true,
-    );
+    let l = fit(&[s("abc", Tok::Fg), s("defgh", Tok::Dim).underline()], 6, true);
     assert_eq!(text(&l), "abcde…");
     let last = l.last().unwrap();
     assert_eq!((last.fg, last.underline), (Tok::Dim, false));
@@ -43,14 +39,8 @@ fn fit_to_zero_is_empty() {
 
 #[test]
 fn lr_right_justifies_and_truncates_the_left() {
-    assert_eq!(
-        text(&lr(&[s("left", Tok::Fg)], &[s("R", Tok::Fg)], 8)),
-        "left   R"
-    );
-    assert_eq!(
-        text(&lr(&[s("leftmost", Tok::Fg)], &[s("R", Tok::Fg)], 6)),
-        "left…R"
-    );
+    assert_eq!(text(&lr(&[s("left", Tok::Fg)], &[s("R", Tok::Fg)], 8)), "left   R");
+    assert_eq!(text(&lr(&[s("leftmost", Tok::Fg)], &[s("R", Tok::Fg)], 6)), "left…R");
 }
 
 #[test]

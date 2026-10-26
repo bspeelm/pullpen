@@ -3,35 +3,17 @@ use crate::*;
 
 fn pr() -> Pr {
     Pr {
-        id: PrId {
-            forge: Forge::GitHub,
-            host: "github.com".into(),
-            repo: "acme/api".into(),
-            number: 1,
-        },
+        id: PrId { forge: Forge::GitHub, host: "github.com".into(), repo: "acme/api".into(), number: 1 },
         title: "t".into(),
-        author: Author {
-            login: "a".into(),
-            is_agent: false,
-        },
+        author: Author { login: "a".into(), is_agent: false },
         head: "h".into(),
         base: "main".into(),
         additions: 0,
         deletions: 0,
         files: 0,
         draft: false,
-        checks: Checks {
-            required_total: 2,
-            required_passed: 2,
-            running: 0,
-            failed: vec![],
-        },
-        reviews: Reviews {
-            have: 1,
-            need: 1,
-            changes_requested: false,
-            pending: vec![],
-        },
+        checks: Checks { required_total: 2, required_passed: 2, running: 0, failed: vec![], ..Default::default() },
+        reviews: Reviews { have: 1, need: 1, approved_by: vec![], changes_requested: false, pending: vec![] },
         mergeable: Mergeable::Clean,
         auto_merge: None,
         merge_train: None,
@@ -58,19 +40,13 @@ fn precedence_follows_the_design_order() {
     let mut p = pr();
     p.reviews.have = 0;
     assert_eq!(r(&p), Readiness::Waiting);
-    p.checks.failed.push(CheckRun {
-        name: "e2e".into(),
-        detail: String::new(),
-    });
+    p.checks.failed.push(CheckRun { name: "e2e".into(), detail: String::new() });
     assert_eq!(r(&p), Readiness::Failing);
     p.mergeable = Mergeable::Conflict;
     assert_eq!(r(&p), Readiness::Conflict);
     p.draft = true;
     assert_eq!(r(&p), Readiness::Draft);
-    p.state = PrState::Merged {
-        at: Timestamp(0),
-        method: MergeMethod::Squash,
-    };
+    p.state = PrState::Merged { at: Timestamp(0), method: MergeMethod::Squash };
     assert_eq!(r(&p), Readiness::Merged);
 }
 
@@ -87,10 +63,7 @@ fn behind_base_blocks_only_where_the_repo_requires_up_to_date() {
     let mut p = pr();
     p.mergeable = Mergeable::Behind;
     assert_eq!(r(&p), Readiness::Ready);
-    let strict = Capabilities {
-        requires_up_to_date: true,
-        ..Default::default()
-    };
+    let strict = Capabilities { requires_up_to_date: true, ..Default::default() };
     assert_eq!(readiness(&p, &strict), Readiness::Waiting);
 }
 

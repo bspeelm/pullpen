@@ -243,7 +243,7 @@ function detailScreen(){
  const bodyH=Hh-L.length-2;
  for(let i=0;i<bodyH;i++) L.push([sp(2),...fit(left[i]||[],LW),S(' │ ','faint'),...fit(right[i]||[],RW),sp(1)]);
  L.push(status(W,{mode:'NORMAL',section:'#4821',pos:'overview'}));
- L.push([]);
+ L.push(M('{d|n next file   b previous file   F all files   d widen the diff   q back to the list}'));
  return L.map(l=>fit(l,W,false));
 }
 
@@ -262,7 +262,7 @@ function helpScreen(){
   [['h l','prev / next section'],['Tab S-Tab','next / prev section'],['1–5','go to section'],['p','toggle preview'],[':','command line'],['?','this help'],['q','back / quit']]]));
  pl.push(pad([]));
  pl.push(...block(['detail view','command line','confirm prompt'],[
-  [['h l','focus pane'],[']f [f','next / prev file'],[']c [c','next / prev hunk'],['zo zc','expand / fold'],['q Esc','back to list']],
+  [['h l','focus pane'],['n b','next / prev file'],['F','all files'],[']c [c','next / prev hunk'],['zo zc','expand / fold'],['q Esc','back to list']],
   [['Tab S-Tab','complete'],['↑ ↓','history'],['^r #','insert selected'],['Enter','run'],['Esc','cancel']],
   [['y Enter','confirm'],['n Esc','cancel'],['s m r','pick method'],['','other key cancels']]]));
  pl.push(pad([]));
@@ -290,7 +290,7 @@ function armedScreen(){
  const W=120,L=[tabs(3,W,{right:'is:armed + merged since last visit'}),[]];
  const grp=(t,rows,first)=>{L.push([sp(2),S(t,'fg',{b:1}),S('  '+rows.length,'dim')]);rows.forEach((p,i)=>L.push(rowArm(p,W-1,{sel:first&&i===0})));L.push([]);};
  grp('needs attention',[A(2290,{why:'{r|failing}{d|  e2e/chromium · 2 retries}',when:'18m'}),A(4818,{why:'{r|conflict}{d|  with main after #4815}',when:'25m'})],true);
- grp('waiting',[A(4821,{why:'{y|review}{d|  @mara · 1 of 2}',when:'2h'}),A(809,{why:'{y|ci}{d|  6/9 running · ~4m left}',when:'30m'}),A(377,{armed:1,why:'{y|ci}{d|  4/9 running, then review}',when:'12m'}),A(145,{armed:1,why:'{y|merge train}{d|  position 2 of 3}',when:'1h'}),A(4809,{why:'{y|ci}{d|  required check sbom queued}',when:'5d'})]);
+ grp('waiting',[A(4821,{why:'{y|review}{d|  @mara · 1 of 2}',when:'2h'}),A(809,{why:'{y|ci}{d|  6/9 running · ~4m left}',when:'30m'}),A(377,{armed:1,why:'{y|ci}{d|  4/9 running, then review}',when:'12m'}),A(145,{armed:1,why:'{y|merge train}{d|  position 2 of 3}',when:'1h'}),A(4809,{ci:'run',why:'{y|ci}{d|  required check sbom queued}',when:'5d'})]);
  grp('merged since 09:14',[A(2288,{merged:1,why:'{d|merged · squash}',when:'22m'}),A(812,{merged:1,why:'{d|merged · squash}',when:'41m'}),A(1199,{merged:1,why:'{d|merged · squash}',when:'1h'}),A(4815,{merged:1,why:'{d|merged · rebase}',when:'1h'})]);
  while(L.length<38) L.push([]);
  L.push(status(W,{mode:'NORMAL',section:'Auto-merge armed',pos:'1/7'}));
@@ -370,12 +370,12 @@ function build(mode){
   {k:'A · on armed PR',cap:'Disarm',note:'A toggles. Disarming is not destructive, so it does not ask.',
    lines:strip({prs:R4,sel:3,cmd:M('{f|Auto-merge off for #377}{d|   A to re-arm}')})},
  ];
- const MK=[812,145,96,1203,4815,375], R13=P.slice(0,13);
+ const MK=[812,377,143,1203,375], R13=P.slice(0,13);
  out.batch=[
   {k:'Space × 6, then A',cap:'Batch arm',note:'Space marks rows (• in the gutter); V marks a range. With marks present, every action and command targets the marks.',
-   lines:strip({prs:R13,sel:12,marks:MK,st:{mode:'CONFIRM',modeK:'warn',pos:'13/23',extra:[S('6 marked','acc')]},cmd:M('{f|Arm auto-merge on }{B|6 PRs}{f| with }{yB|squash}{f|?}   {d|y/Enter yes   m merge   r rebase   n/Esc cancel}')})},
+   lines:strip({prs:R13,sel:12,marks:MK,st:{mode:'CONFIRM',modeK:'warn',pos:'13/23',extra:[S('5 marked','acc')]},cmd:M('{f|Arm auto-merge on }{B|5 PRs}{f| with }{yB|squash}{f|?}   {d|y/Enter yes   m merge   r rebase   n/Esc cancel}')})},
   {k:'y',cap:'Result',note:'Rows that are already green merge right away. Ineligible rows are skipped and named, never silently dropped.',
-   lines:strip({prs:R13.map(p=>MK.includes(p.n)&&!p.draft?{...p,armed:1}:p),sel:12,spin:812,st:{pos:'13/23',armed:12},cmd:M('{a|◆} {f|Armed 5 PRs}{d|   #812 merging now (already green) · skipped #1203: draft}')})},
+   lines:strip({prs:R13.map(p=>MK.includes(p.n)&&!p.draft?{...p,armed:1}:p),sel:12,spin:812,st:{pos:'13/23',armed:11},cmd:M('{a|◆} {f|Armed 4 PRs}{d|   #812 merging now (already green) · skipped #1203: draft}')})},
  ];
  const R5=P.slice(0,5), CM={mode:'COMMAND'};
  out.cmd=[

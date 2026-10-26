@@ -1,8 +1,12 @@
 //! Screens as lines of spans. Every function here is pure: state in, lines
 //! out, no terminal. That is what lets the golden tests render them.
 
+pub mod armed;
 pub mod chrome;
+pub mod detail;
+pub mod help;
 pub mod list;
+pub mod markdown;
 pub mod preview;
 pub mod words;
 
@@ -24,10 +28,7 @@ pub struct Ctx<'a> {
 
 impl Ctx<'_> {
     pub fn caps(&self, pr: &Pr) -> Capabilities {
-        self.caps
-            .get(&format!("{}/{}", pr.id.host, pr.id.repo))
-            .cloned()
-            .unwrap_or_default()
+        self.caps.get(&format!("{}/{}", pr.id.host, pr.id.repo)).cloned().unwrap_or_default()
     }
     pub fn readiness(&self, pr: &Pr) -> Readiness {
         readiness(pr, &self.caps(pr))
