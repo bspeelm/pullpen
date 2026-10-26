@@ -31,6 +31,8 @@ the change that broke it.
 
 - The **Merged** tab counts only what needs attention.
 - The status line shows `✗ 1 broken` from any tab while a branch is failing.
+- The terminal's own tab title reads `pullpen ✗1`, so it shows from another
+  terminal tab too.
 - The bell rings, and a desktop notification goes out if you turned them on,
   when a branch starts failing after a merge and again when it passes.
 

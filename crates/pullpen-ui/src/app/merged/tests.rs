@@ -129,3 +129,11 @@ fn the_summary_leads_with_what_needs_attention() {
     let line: String = a.lines(120, 40)[39].iter().map(|s| s.text.as_str()).collect();
     assert_eq!(line.trim_end(), "✗ 1 needs attention   ·   2 running   ·   4 done");
 }
+
+#[test]
+fn the_tab_title_carries_what_needs_attention() {
+    let mut a = app();
+    assert_eq!(a.title(), "pullpen ✗1", "the fixtures hold one broken branch");
+    a.synced(MERGED, vec![fixed(landed(4815, 1, PipelineState::Failed))], 1);
+    assert_eq!(a.title(), "pullpen");
+}

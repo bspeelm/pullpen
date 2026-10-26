@@ -35,6 +35,8 @@ const HISTORY_MAX: usize = 500;
 
 struct Term {
     kitty: bool,
+    /// The window title last sent, so it is sent again only when it changes.
+    title: String,
 }
 
 impl Term {
@@ -51,7 +53,7 @@ impl Term {
         // so leaving can put back whatever the shell had; a terminal without
         // the stack ignores it, and the shell's next prompt retitles anyway.
         execute!(stdout(), Print("\x1b[22;0t"), SetTitle("pullpen"))?;
-        Ok((terminal, Term { kitty }))
+        Ok((terminal, Term { kitty, title: "pullpen".into() }))
     }
 
     /// Best effort: the terminal may already be gone, and an error here
@@ -116,6 +118,11 @@ fn event_loop(terminal: &mut DefaultTerminal, term: &mut Term, l: &mut Loop) -> 
     }
     while !l.app.quit {
         l.app.sync = l.backend.sync_label();
+        let title = l.app.title();
+        if title != term.title {
+            execute!(stdout(), SetTitle(&title))?;
+            term.title = title;
+        }
         draw(terminal, l.app)?;
         let mut effects = Vec::new();
         if event::poll(TICK)? {
