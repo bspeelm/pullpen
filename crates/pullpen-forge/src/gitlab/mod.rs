@@ -217,9 +217,13 @@ impl GitLab {
         let pending = names(n, "/reviewers/nodes").into_iter().filter(|r| !approved.contains(r)).collect();
         let approved_by = approved.clone();
         let status = s(n, "/detailedMergeStatus");
+        // GitLab can report detailedMergeStatus CONFLICT for a merge request
+        // its own page calls ready to merge, with `conflicts` false: the status
+        // lags a fresh check, and the flag does not. So only the flag decides a
+        // conflict; the status still says when the branch is behind or GitLab
+        // is still checking.
         let mergeable = match status {
             _ if n["conflicts"] == true => Mergeable::Conflict,
-            "CONFLICT" => Mergeable::Conflict,
             "NEED_REBASE" => Mergeable::Behind,
             "UNCHECKED" | "CHECKING" | "PREPARING" | "APPROVALS_SYNCING" => Mergeable::Unknown,
             _ => Mergeable::Clean,
