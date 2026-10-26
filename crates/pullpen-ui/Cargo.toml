@@ -12,3 +12,7 @@ workspace = true
 [dependencies]
 pullpen-core.workspace = true
 ratatui.workspace = true
+unicode-width.workspace = true
+
+[dev-dependencies]
+pullpen-fixtures.workspace = true

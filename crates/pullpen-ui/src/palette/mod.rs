@@ -126,3 +126,19 @@ pub fn hex(t: Tok) -> String {
     let (r, g, b) = truecolor(t);
     format!("#{r:02x}{g:02x}{b:02x}")
 }
+
+/// The tier the terminal can show, from the environment the way most
+/// terminals advertise it: `COLORTERM=truecolor` (or `24bit`), else a
+/// `TERM` naming 256 colours, else 16.
+pub fn detect(colorterm: Option<&str>, term: Option<&str>) -> Tier {
+    if matches!(colorterm, Some("truecolor" | "24bit")) {
+        Tier::True
+    } else if term.is_some_and(|t| t.contains("256color")) {
+        Tier::C256
+    } else {
+        Tier::C16
+    }
+}
+
+#[cfg(test)]
+mod tests;

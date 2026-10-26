@@ -3,4 +3,10 @@
 //! Depends on `pullpen-core` only, so every screen renders from fixtures with
 //! no network.
 
+pub mod app;
+pub mod glyphs;
+pub mod paint;
 pub mod palette;
+pub mod snapshot;
+pub mod span;
+pub mod views;
