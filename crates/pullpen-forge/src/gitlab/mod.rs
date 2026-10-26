@@ -278,32 +278,37 @@ impl GitLab {
         }
     }
 
-    /// Each merged MR's pipeline on its merge commit, in one query. Without
-    /// it the rows still show, as merged with no pipeline, so a failure here
-    /// is logged rather than failing the section.
+    /// Each merged MR's pipeline on its merge commit and target branch (the
+    /// MR's own pipeline can share the SHA). Asked a few at a time: GitLab
+    /// refuses a query over 250 complexity, which twenty MRs exceed. Without
+    /// it a row still shows, as merged with no pipeline, so a failure is
+    /// logged rather than failing the section.
     async fn post_merge(&self, prs: &mut [Pr], landed: &[(PrId, String)]) {
-        let landed: Vec<&(PrId, String)> = landed.iter().filter(|(id, _)| prs.iter().any(|p| &p.id == id)).collect();
-        if landed.is_empty() {
-            return;
-        }
-        let (mut decl, mut body, mut vars) = (Vec::new(), String::new(), Map::new());
-        for (i, (id, sha)) in landed.iter().enumerate() {
-            decl.push(format!("$r{i}: ID!, $s{i}: String!"));
-            body += &format!(
-                " p{i}: project(fullPath: $r{i}) {{ pipelines(sha: $s{i}, first: 1) {{ nodes {{ status path jobs {{ nodes {{ name status }} }} }} }} }}"
-            );
-            vars.insert(format!("r{i}"), json!(id.repo));
-            vars.insert(format!("s{i}"), json!(sha));
-        }
-        let query = format!("query({}) {{{body} }}", decl.join(", "));
-        let d = match self.gql(&query, Value::Object(vars)).await {
-            Ok(d) => d,
-            Err(e) => return tracing::warn!(host = %self.host, error = %e, "post-merge pipelines"),
-        };
-        for (i, (id, _)) in landed.iter().enumerate() {
-            let Some(pl) = d.pointer(&format!("/p{i}/pipelines/nodes/0")) else { continue };
-            if let Some(p) = prs.iter_mut().find(|p| &p.id == id) {
-                p.post_merge = Some(pipeline(pl, &self.base));
+        let landed: Vec<(&PrId, &String, String)> = landed
+            .iter()
+            .filter_map(|(id, sha)| prs.iter().find(|p| &p.id == id).map(|p| (id, sha, p.base.clone())))
+            .collect();
+        for chunk in landed.chunks(8) {
+            let (mut decl, mut body, mut vars) = (Vec::new(), String::new(), Map::new());
+            for (i, (id, sha, base)) in chunk.iter().enumerate() {
+                decl.push(format!("$r{i}: ID!, $s{i}: String!, $b{i}: String!"));
+                body += &format!(
+                    " p{i}: project(fullPath: $r{i}) {{ pipelines(sha: $s{i}, ref: $b{i}, first: 1) {{ nodes {{ status path jobs(first: 50) {{ nodes {{ name status }} }} }} }} }}"
+                );
+                vars.insert(format!("r{i}"), json!(id.repo));
+                vars.insert(format!("s{i}"), json!(sha));
+                vars.insert(format!("b{i}"), json!(base));
+            }
+            let query = format!("query({}) {{{body} }}", decl.join(", "));
+            let d = match self.gql(&query, Value::Object(vars)).await {
+                Ok(d) => d,
+                Err(e) => return tracing::warn!(host = %self.host, error = %e, "post-merge pipelines"),
+            };
+            for (i, (id, ..)) in chunk.iter().enumerate() {
+                let Some(pl) = d.pointer(&format!("/p{i}/pipelines/nodes/0")) else { continue };
+                if let Some(p) = prs.iter_mut().find(|p| &p.id == *id) {
+                    p.post_merge = Some(pipeline(pl, &self.base));
+                }
             }
         }
     }

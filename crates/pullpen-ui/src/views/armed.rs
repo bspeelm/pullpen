@@ -136,7 +136,9 @@ pub fn row(p: &Pr, w: usize, sel: bool, why: &str, when: Timestamp, lit: bool, c
     ];
     l.extend(fit(&[title], tw.saturating_sub(2), true));
     l.push(sp(2));
-    l.extend(fit(&[s(p.id.repo_name(), Tok::Dim)], 12, true));
+    // One cell is kept clear, so a long name cannot run into the reason.
+    l.extend(fit(&[s(p.id.repo_name(), Tok::Dim)], 11, true));
+    l.push(sp(1));
     l.extend(fit(&markup(why), RW, true));
     l.push(s(pad_start(&age(when, ctx.now), 5), Tok::Dim));
     let l = fit(&l, w, false);

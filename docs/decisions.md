@@ -320,5 +320,18 @@ rings the bell when it finishes. The design changed first (ADR-002): a
 `mergedScreen`, the sixth tab, and pipeline glyphs on the armed view's
 merged rows; the armed view's tab text shortened to fit six tabs.
 
-**What it cost.** The code reached the 9,000-line cap exactly, after folding
-two view checks into one. The next feature needs a record raising the cap.
+**What it cost.** About 330 lines of code, which took it past the 9,000-line
+cap; ADR-018 raises it.
+
+## ADR-018 — The code cap rises to 10,000
+
+ADR-013 set 9,000 lines with room for the publishing work. What came after
+was the maintainer's: `u` to update a branch (ADR-015), Windows (ADR-016),
+and the Merged section (ADR-017), which with its fixes from running it
+against live forges took the code to 9,004 lines. Each was asked for, and
+none is padding: the last trim available, folding two view checks into one,
+was already made.
+
+The cap rises to 10,000 lines. That is about 1,000 lines of room, roughly
+three features the size of the Merged section, and the next raise needs its
+own record again, measured as this one is.

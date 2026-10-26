@@ -284,7 +284,7 @@ const A=(n,x)=>({...byN(n),...x});
 function rowArm(p,w,o={}){
  const sel=o.sel,RW=34,tw=w-2-3-2-2-6-12-RW-5;
  let l=[gut(o),S(p.f+' ','dim'),stateG(p),sp(1),p.merged?sp(1):S('◆','acc'),sp(1),S(('#'+p.n).padStart(5)+' ',sel?'fg':'dim'),
-  ...fit([S(p.t,p.merged&&!o.lit?'dim':'fg',{b:sel})],tw-2),sp(2),...fit([S(p.r.split('/').pop(),'dim')],12),...fit(M(p.why),RW),S(p.when.padStart(5),'dim')];
+  ...fit([S(p.t,p.merged&&!o.lit?'dim':'fg',{b:sel})],tw-2),sp(2),...fit([S(p.r.split('/').pop(),'dim')],11),sp(1),...fit(M(p.why),RW),S(p.when.padStart(5),'dim')];
  l=fit(l,w,false); return sel?withBg(l,'sel'):l;
 }
 function armedScreen(){

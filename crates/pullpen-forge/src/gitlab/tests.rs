@@ -255,7 +255,7 @@ async fn a_merged_request_carries_the_pipeline_on_its_merge_commit() {
         .mount(&server)
         .await;
     Mock::given(method("POST"))
-        .and(body_partial_json(json!({ "variables": { "r0": "platform/runner", "s0": "abc123" } })))
+        .and(body_partial_json(json!({ "variables": { "r0": "platform/runner", "s0": "abc123", "b0": "main" } })))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "p0": { "pipelines": { "nodes": [ {
             "status": "RUNNING", "path": "/platform/runner/-/pipelines/9",
             "jobs": { "nodes": [ { "name": "build", "status": "SUCCESS" }, { "name": "deploy-staging", "status": "RUNNING" } ] }
