@@ -21,6 +21,10 @@ permissions. If anything makes it readable by others, pullpen refuses to use
 it and prints the `chmod` that fixes it. It is kept apart from `config.toml`
 so that file can be shared.
 
+On Windows it is `%APPDATA%\pullpen\credentials.toml`. Windows has no file
+mode to set, so the protection there is the folder's own permissions, which
+admit only your account; pullpen does not check them (ADR-016).
+
 Setup reads a token with echo off. pullpen never writes one to the log, the
 cache, the history or the screen, and a test holds it to that.
 

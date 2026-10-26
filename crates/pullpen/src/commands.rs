@@ -129,10 +129,9 @@ fn menu(cfg_path: &Path, creds_path: &Path, mut cfg: Config) -> Result<i32> {
                 if !cfg_path.exists() {
                     cfg.save(cfg_path)?;
                 }
-                let editor =
-                    std::env::var("VISUAL").or_else(|_| std::env::var("EDITOR")).unwrap_or_else(|_| "vi".into());
+                let editor = crate::term::editor();
                 let mut parts = editor.split_whitespace();
-                let status = Command::new(parts.next().unwrap_or("vi")).args(parts).arg(cfg_path).status();
+                let status = Command::new(parts.next().unwrap_or_default()).args(parts).arg(cfg_path).status();
                 if let Err(e) = status {
                     eprintln!("starting {editor}: {e}");
                 }

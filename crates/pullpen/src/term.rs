@@ -218,7 +218,7 @@ fn run_effect(e: Effect, terminal: &mut DefaultTerminal, term: &mut Term, l: &mu
     Ok(())
 }
 
-/// Opens $EDITOR (or $VISUAL, or vi) on a scratch file in the cache
+/// Opens the editor (see `editor`) on a scratch file in the cache
 /// directory and returns what was written, minus the comment lines.
 fn edit(dirs: &Dirs, targets: &[PrId]) -> Result<String> {
     fs::create_dir_all(&dirs.cache)?;
@@ -231,15 +231,23 @@ fn edit(dirs: &Dirs, targets: &[PrId]) -> Result<String> {
             refs.join(", ")
         ),
     )?;
-    let editor = std::env::var("VISUAL").or_else(|_| std::env::var("EDITOR")).unwrap_or_else(|_| "vi".into());
+    let editor = editor();
     let mut parts = editor.split_whitespace();
-    let bin = parts.next().unwrap_or("vi");
+    let bin = parts.next().unwrap_or(FALLBACK_EDITOR);
     let status = Command::new(bin).args(parts).arg(&path).status().with_context(|| format!("starting {editor}"))?;
     anyhow::ensure!(status.success(), "{editor} exited with {status}; nothing posted");
     let text = fs::read_to_string(&path)?;
     // Removing the scratch file is tidiness; a leftover is overwritten next time.
     let _ = fs::remove_file(&path);
     Ok(text.lines().filter(|l| !l.starts_with('#')).collect::<Vec<_>>().join("\n").trim().to_string())
+}
+
+/// Windows has no vi; Notepad is the editor every Windows machine has.
+const FALLBACK_EDITOR: &str = if cfg!(windows) { "notepad" } else { "vi" };
+
+/// $VISUAL, then $EDITOR, then the platform's fallback.
+pub fn editor() -> String {
+    std::env::var("VISUAL").or_else(|_| std::env::var("EDITOR")).unwrap_or_else(|_| FALLBACK_EDITOR.into())
 }
 
 fn load_history(path: &Path) -> Vec<String> {

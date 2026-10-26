@@ -44,6 +44,8 @@ pub fn load(path: &Path) -> Result<Credentials, String> {
         Err(e) => return Err(format!("{}: {e}", path.display())),
         Ok(t) => t,
     };
+    // On Windows the file lives in %APPDATA%, whose ACL already admits only
+    // its owner, and there is no mode to check without a new crate (ADR-016).
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;

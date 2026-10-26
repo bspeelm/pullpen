@@ -4,6 +4,7 @@ mod backend;
 mod cache;
 mod checkout;
 mod cli;
+mod clock;
 mod commands;
 mod config;
 mod credentials;
@@ -109,7 +110,7 @@ fn main() -> Result<()> {
     for p in cfg_err.iter().chain(&creds_err) {
         app.error(p, Mode::Normal);
     }
-    app.tz_offset = utc_offset();
+    app.tz_offset = clock::utc_offset();
     let remap = remap(&mut app, &cfg);
     term::run(term::Loop {
         app: &mut app,
@@ -178,21 +179,6 @@ fn theme(args: &cli::Args, cfg: &Config) -> Theme {
         .and_then(|p| std::fs::read_to_string(config::expand(p)).ok())
         .and_then(|t| pullpen_ui::palette::parse_file(&t).ok());
     Theme { palette, glyphs }
-}
-
-/// Seconds east of UTC, from `date +%z` (`+0200`). The standard library has
-/// no time zones and none of the allowed crates does either (ADR-005); a
-/// clock shown in UTC is the fallback, and only the armed view shows one.
-fn utc_offset() -> i64 {
-    let out = std::process::Command::new("date").arg("+%z").output().ok();
-    let z = out.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string()).unwrap_or_default();
-    let (sign, digits) = match z.split_at_checked(1) {
-        Some(("-", d)) => (-1, d),
-        Some(("+", d)) => (1, d),
-        _ => return 0,
-    };
-    let n: i64 = digits.parse().unwrap_or(0);
-    sign * (n / 100 * 3600 + n % 100 * 60)
 }
 
 /// Logs go to a file and never to stdout or stderr, which belong to the TUI.

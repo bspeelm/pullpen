@@ -32,6 +32,7 @@
         "required_status_checks": [
           { "context": "check", "integration_id": 15368 },
           { "context": "macos", "integration_id": 15368 },
+          { "context": "windows", "integration_id": 15368 },
           { "context": "golden", "integration_id": 15368 },
           { "context": "one-palette", "integration_id": 15368 },
           { "context": "token", "integration_id": 15368 },
