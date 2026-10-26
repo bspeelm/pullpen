@@ -16,6 +16,14 @@ If the PR is only waiting on CI or a review, `M` offers to arm auto-merge
 instead. If the forge would refuse, because of failing checks, a conflict or
 a draft, pullpen refuses first and names the key that helps.
 
+## Behind the base
+
+A repo can require a branch to be up to date with its base before merging.
+A PR that is only behind says `behind main: u updates it`, and `M` refuses
+with the same hint, since arming would wait for an update nobody makes. `u`
+asks the forge to update it: GitHub merges the base into the branch, GitLab
+rebases it. CI then runs again on the result.
+
 ## Auto-merge
 
 `A` arms auto-merge, so the forge merges the PR by itself once it is ready,

@@ -315,3 +315,15 @@ async fn rows_the_token_may_not_read_are_counted_and_explained_not_dropped_silen
         Some("SimplySF hides its PRs from classic tokens; run `pullpen setup` and use your gh login")
     );
 }
+
+#[tokio::test]
+async fn update_merges_the_base_in_through_the_update_branch_endpoint() {
+    let server = MockServer::start().await;
+    Mock::given(method("PUT"))
+        .and(path("/repos/o/r/pulls/7/update-branch"))
+        .respond_with(ResponseTemplate::new(202).set_body_json(json!({ "message": "Updating pull request branch." })))
+        .expect(1)
+        .mount(&server)
+        .await;
+    gh(&server).update(&id()).await.unwrap();
+}

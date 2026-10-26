@@ -258,7 +258,7 @@ function helpScreen(){
  const pl=[pad([]),pad(lr(M('{B|keys}'),M('{d|? or Esc to close}'),PW-6)),pad([])];
  pl.push(...block(['move','act on selection','sections & views'],[
   [['j k','down / up'],['gg G','top / bottom'],['^d ^u','half page'],['/','filter list'],['n N','next / prev match'],['Esc','clear, cancel'],['Space','mark row'],['V','mark range'],['Enter','open detail']],
-  [['M','merge…'],['A','arm / disarm auto'],['a','approve'],['c','comment'],['d','open diff'],['o','open in browser'],['x','close…'],['r','refresh']],
+  [['M','merge…'],['A','arm / disarm auto'],['a','approve'],['c','comment'],['d','open diff'],['o','open in browser'],['x','close…'],['u','update branch'],['r','refresh']],
   [['h l','prev / next section'],['Tab S-Tab','next / prev section'],['1–5','go to section'],['p','toggle preview'],[':','command line'],['?','this help'],['q','back / quit']]]));
  pl.push(pad([]));
  pl.push(...block(['detail view','command line','confirm prompt'],[

@@ -28,6 +28,7 @@ The same table drives the `?` overlay.
 | `d` | open diff |
 | `o` | open in browser |
 | `x` | close… |
+| `u` | update branch |
 | `r` | refresh |
 
 ## sections & views

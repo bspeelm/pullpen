@@ -248,3 +248,17 @@ bottom row, empty in the design, names those keys. `]f` and `[f` still work.
 The design changed first, as ADR-002 requires: `design/tui.js` gained the
 bottom row and the help overlay's entries, and the goldens were regenerated
 from it.
+
+## ADR-015 — `u` updates a branch that is behind its base
+
+A repository that requires branches to be up to date leaves a PR waiting
+with nothing for pullpen to do: arming it waits for an update nobody makes,
+and the forge's own button was the only way on. So `u` and `:update` ask
+the forge to bring the branch up to date, by its own means: GitHub merges
+the base in, GitLab rebases, and the message says which happened.
+
+It does not confirm for one PR, since it adds nothing that was not already
+on the base, and asks once for several. `M` on a PR whose only wait is the
+base refuses and names `u` instead of offering to arm. The design changed
+first, as ADR-002 requires: the help overlay's Act column gained `u`, and
+the goldens were regenerated from it.

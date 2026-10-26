@@ -95,6 +95,8 @@ pub trait Forge: Send + Sync {
     async fn approve(&self, id: &PrId) -> Result<()>;
     async fn comment(&self, id: &PrId, body: &str) -> Result<()>;
     async fn close(&self, id: &PrId) -> Result<()>;
+    /// Brings the branch up to date with its base.
+    async fn update(&self, id: &PrId) -> Result<()>;
     /// Description, checks and timeline, for the preview and detail view.
     async fn detail(&self, id: &PrId) -> Result<PrDetail>;
     async fn diff(&self, id: &PrId) -> Result<Vec<FileDiff>>;
@@ -123,6 +125,7 @@ pub async fn run(f: &dyn Forge, job: &Job) -> Result<Option<String>> {
         Action::Approve => f.approve(id).await,
         Action::Comment(body) => f.comment(id, body).await,
         Action::Close => f.close(id).await,
+        Action::Update => f.update(id).await,
         Action::Checkout { .. } | Action::Open | Action::Refresh { .. } => Ok(()),
     };
     done.map(|()| None)

@@ -48,6 +48,7 @@ pub enum PromptKind {
     Close,
     Approve,
     Comment(String),
+    Update,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -107,6 +108,7 @@ pub fn verb(a: &Action) -> &'static str {
         Action::Approve => "Approving",
         Action::Comment(_) => "Commenting on",
         Action::Close => "Closing",
+        Action::Update => "Updating",
         Action::Checkout { .. } => "Checking out",
         Action::Open => "Opening",
         Action::Refresh { .. } => "Refreshing",
@@ -282,6 +284,16 @@ impl App {
                 let allowed = first.repo_allowed_methods.clone();
                 self.ask(PromptKind::Merge { method, allowed }, ids, origin, typed)
             }
+            // Behind its base and nothing else: auto-merge would wait on an
+            // update nobody asked for, so say which key makes one.
+            Verdict::Waiting(w) if w.iter().all(|x| matches!(x, Wait::Behind { .. })) => {
+                let line = markup(&format!(
+                    "{{r|E  #{} is behind {}}}{{d|      u updates the branch}}",
+                    first.id.number,
+                    esc(&first.base)
+                ));
+                self.say(line, mode);
+            }
             Verdict::Waiting(_) => self.ask(PromptKind::ArmInstead, ids, origin, typed),
             Verdict::Blocked(_) => {
                 let (why, hint) = blockers(&first);
@@ -359,6 +371,7 @@ impl App {
     ) -> Vec<Effect> {
         let kind = match &action {
             Action::Close => Some(PromptKind::Close),
+            Action::Update if ids.len() > 1 => Some(PromptKind::Update),
             Action::Approve if ids.len() > 1 => Some(PromptKind::Approve),
             Action::Comment(t) if ids.len() > 1 => Some(PromptKind::Comment(t.clone())),
             _ => None,
@@ -406,6 +419,7 @@ impl App {
             }
             (PromptKind::ArmInstead, Key::Char('y' | 'A')) => self.request_arm(ids, None, origin, typed),
             (PromptKind::Close, Key::Char('y') | Key::Enter) => self.run_batch(ids, Action::Close, origin, typed),
+            (PromptKind::Update, Key::Char('y') | Key::Enter) => self.run_batch(ids, Action::Update, origin, typed),
             (PromptKind::Approve, Key::Char('y') | Key::Enter) => self.run_batch(ids, Action::Approve, origin, typed),
             (PromptKind::Comment(t), Key::Char('y') | Key::Enter) => {
                 let t = t.clone();
@@ -640,6 +654,16 @@ impl App {
                 self.remove_pr(id);
                 markup(&format!("{{g|✓}} {{f|Closed #{n}}}{{d|   without merging}}"))
             }
+            Action::Update => {
+                // The forge rewrites the branch; until the next sync says how
+                // it stands, its mergeability is not known.
+                self.each_pr(id, |p| p.mergeable = pullpen_core::Mergeable::Unknown);
+                let how = match id.forge {
+                    pullpen_core::Forge::GitHub => format!("merged {} into it", esc(&p.base)),
+                    pullpen_core::Forge::GitLab => format!("rebased onto {}", esc(&p.base)),
+                };
+                markup(&format!("{{g|✓}} {{f|Updated #{n}}}{{d|   {how}}}"))
+            }
             Action::Checkout { branch } => {
                 let wher = note.map_or(String::new(), |n| format!(" {}", esc(n)));
                 markup(&format!("{{g|✓}} {{f|Checked out #{n}}}{{d|   {}{wher}}}", esc(branch)))
@@ -660,6 +684,7 @@ impl App {
             Some(Action::Merge { .. }) => ("{g|✓}", "Merged"),
             Some(Action::Approve) => ("{g|✓}", "Approved"),
             Some(Action::Close) => ("{g|✓}", "Closed"),
+            Some(Action::Update) => ("{g|✓}", "Updated"),
             Some(Action::Comment(_)) => ("{g|✓}", "Commented on"),
             _ => ("{g|✓}", "Done:"),
         };
@@ -723,6 +748,9 @@ impl App {
                 format!("{{f|Close }}{{B|{what}}}{{f| without merging?}}   {{d|y/Enter yes   n/Esc cancel}}")
             }
             PromptKind::Approve => format!("{{f|Approve }}{{B|{what}}}{{f|?}}   {{d|y/Enter yes   n/Esc cancel}}"),
+            PromptKind::Update => {
+                format!("{{f|Bring }}{{B|{what}}}{{f| up to date with their base?}}   {{d|y/Enter yes   n/Esc cancel}}")
+            }
             PromptKind::Comment(_) => {
                 format!("{{f|Comment on }}{{B|{what}}}{{f|?}}   {{d|y/Enter yes   n/Esc cancel}}")
             }
