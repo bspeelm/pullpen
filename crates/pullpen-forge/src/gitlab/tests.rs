@@ -204,3 +204,25 @@ async fn a_group_that_does_not_exist_is_named_and_the_others_still_show() {
     let alone = gl(&server, &["a5434"]).search(&Query::parse("is:open"), "me", 50).await.err().unwrap();
     assert!(alone.to_string().contains("not a username"), "{alone}");
 }
+
+#[tokio::test]
+async fn a_conflict_status_without_the_conflicts_flag_is_not_a_conflict() {
+    // What gitlab.com sent for a merge request its page called ready to merge.
+    let server = MockServer::start().await;
+    let mut stale = node();
+    stale["conflicts"] = json!(false);
+    stale["detailedMergeStatus"] = json!("CONFLICT");
+    let mut real = node();
+    real["iid"] = json!("813");
+    real["conflicts"] = json!(true);
+    real["detailedMergeStatus"] = json!("CONFLICT");
+    Mock::given(method("POST"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "x": { "mergeRequests": {
+            "count": 2, "pageInfo": { "hasNextPage": false, "endCursor": null }, "nodes": [stale, real]
+        } } } })))
+        .mount(&server)
+        .await;
+    let page = gl(&server, &["platform"]).search(&Query::parse("is:open"), "me", 50).await.unwrap();
+    assert_eq!(page.prs[0].mergeable, Mergeable::Clean, "the status lagged; the flag was right");
+    assert_eq!(page.prs[1].mergeable, Mergeable::Conflict);
+}
