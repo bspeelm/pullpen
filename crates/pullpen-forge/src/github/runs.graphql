@@ -1,0 +1,21 @@
+query($o: String!, $n: String!, $num: Int!) {
+  repository(owner: $o, name: $n) {
+    pullRequest(number: $num) {
+      url
+      commits(last: 1) { nodes { commit { ...run } } }
+      mergeCommit { ...run }
+    }
+  }
+}
+fragment run on Commit {
+  oid
+  checkSuites(first: 10) { nodes {
+    app { name }
+    workflowRun { event workflow { name } }
+    checkRuns(first: 30) { nodes {
+      databaseId name status conclusion startedAt completedAt detailsUrl
+      steps(first: 40) { nodes { name status conclusion startedAt completedAt } }
+    } }
+  } }
+  status { contexts { context state createdAt targetUrl } }
+}

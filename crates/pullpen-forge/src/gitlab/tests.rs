@@ -314,3 +314,60 @@ async fn a_failed_pipeline_asks_whether_the_target_branch_passes_now() {
     let pl = page.prs[0].post_merge.as_ref().unwrap();
     assert_eq!((pl.state, pl.branch), (PipelineState::Failed, Some(PipelineState::Failed)), "main is still broken");
 }
+
+fn pl(sha: &str, status: &str, source: &str, jobs: Value) -> Value {
+    json!({ "sha": sha, "status": status, "source": source, "path": format!("/platform/runner/-/pipelines/{sha}"),
+            "startedAt": "2026-10-01T00:00:00Z", "finishedAt": null, "jobs": { "nodes": jobs } })
+}
+
+#[tokio::test]
+async fn a_merged_mr_has_its_pipeline_on_the_target_branch_then_its_own() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(body_string_contains("mergeRequest(iid: $iid)"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "project": { "mergeRequest": {
+            "mergeCommitSha": "3f2a91c4e", "diffHeadSha": "9c01e7a2", "targetBranch": "main", "state": "merged",
+            "headPipeline": pl("9c01e7a2", "SUCCESS", "merge_request_event", json!([]))
+        } } } })))
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(body_partial_json(json!({ "variables": { "sha": "3f2a91c4e", "ref": "main" } })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "project": { "pipelines": { "nodes": [
+            pl("3f2a91c4e", "RUNNING", "push", json!([
+                { "id": "gid://gitlab/Ci::Build/77", "name": "build", "status": "RUNNING", "startedAt": "2026-10-01T00:01:00Z",
+                  "finishedAt": null, "webPath": "/platform/runner/-/jobs/77", "stage": { "name": "build" } },
+                { "id": "gid://gitlab/Ci::Build/78", "name": "publish", "status": "MANUAL", "startedAt": null,
+                  "finishedAt": null, "webPath": "/platform/runner/-/jobs/78", "stage": { "name": "deploy" } }
+            ]))
+        ] } } } })))
+        .mount(&server)
+        .await;
+    let runs = gl(&server, &[]).runs(&id()).await.unwrap();
+    let shape: Vec<(Which, &str, &str, CheckState)> =
+        runs.iter().map(|r| (r.which, r.sha.as_str(), r.event.as_str(), r.state)).collect();
+    assert_eq!(
+        shape,
+        [
+            (Which::AfterMerge, "3f2a91c", "push", CheckState::Running),
+            (Which::BeforeMerge, "9c01e7a", "merge request", CheckState::Passed)
+        ]
+    );
+    let j = &runs[0].jobs;
+    assert_eq!((j[0].id.as_str(), j[0].group.as_str(), j[0].state), ("77", "build", CheckState::Running));
+    assert_eq!(j[1].state, CheckState::Queued, "a manual job has not run");
+    assert!(j[0].url.ends_with("/platform/runner/-/jobs/77"));
+}
+
+#[tokio::test]
+async fn a_jobs_log_is_asked_for_by_its_tail() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v4/projects/platform%2Frunner/jobs/77/trace"))
+        .and(wiremock::matchers::header("Range", format!("bytes=-{LOG_TAIL}").as_str()))
+        .respond_with(ResponseTemplate::new(206).set_body_string("42\n"))
+        .mount(&server)
+        .await;
+    let log = gl(&server, &[]).log(&id(), "77").await.unwrap();
+    assert_eq!(log, "42\n", "a log that parses as JSON stays text");
+}

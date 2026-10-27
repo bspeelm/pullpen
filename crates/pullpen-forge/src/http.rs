@@ -52,6 +52,13 @@ fn explanation(body: &Value) -> Option<String> {
 }
 
 pub async fn send(host: &str, req: RequestBuilder) -> Result<Value> {
+    let text = text(host, req).await?;
+    Ok(if text.is_empty() { Value::Null } else { serde_json::from_str(&text).unwrap_or(Value::String(text)) })
+}
+
+/// The body as text, for a job's log: a log that happens to be valid JSON
+/// must stay a log.
+pub async fn text(host: &str, req: RequestBuilder) -> Result<String> {
     let resp = req.send().await.map_err(|e| Error::Network(format!("{host}: {}", without_url(&e))))?;
     check(host, resp).await
 }
@@ -66,17 +73,16 @@ fn without_url(e: &reqwest::Error) -> String {
     msg.trim().trim_end_matches(['(', ')', ' ', ':']).to_string()
 }
 
-async fn check(host: &str, resp: Response) -> Result<Value> {
+async fn check(host: &str, resp: Response) -> Result<String> {
     let status = resp.status();
     let retry_after = header_secs(&resp, "retry-after");
     let reset = header_secs(&resp, "x-ratelimit-reset");
     let exhausted = resp.headers().get("x-ratelimit-remaining").is_some_and(|v| v == "0");
     let text = resp.text().await.map_err(|e| Error::Network(format!("{host}: {}", without_url(&e))))?;
-    let body: Value =
-        if text.is_empty() { Value::Null } else { serde_json::from_str(&text).unwrap_or(Value::String(text)) };
     if status.is_success() {
-        return Ok(body);
+        return Ok(text);
     }
+    let body: Value = serde_json::from_str(&text).unwrap_or(Value::String(text));
     let why = explanation(&body);
     Err(match status {
         StatusCode::UNAUTHORIZED => Error::Auth(host.into()),

@@ -7,15 +7,19 @@ use std::sync::Mutex;
 use async_trait::async_trait;
 use pullpen_core::diff::FileDiff;
 use pullpen_core::query::{Is, Query, Term};
-use pullpen_core::time::{Timestamp, parse_rfc3339, rfc3339};
+use pullpen_core::time::{Timestamp, duration, parse_rfc3339, rfc3339};
 use pullpen_core::*;
 use serde_json::{Map, Value, json};
 
 use crate::http::{self, encode_path, graphql, send};
-use crate::{Agents, Error, Forge as ForgeTrait, Page, Result, duration, failed_branches, set_branch};
+use crate::{Agents, Error, Forge as ForgeTrait, Page, Result, failed_branches, set_branch};
 
 const FRAGMENT: &str = include_str!("mr.graphql");
 const DETAIL: &str = include_str!("detail.graphql");
+const RUNS: &str = include_str!("runs.graphql");
+const LANDED: &str = include_str!("landed.graphql");
+/// A running job's log is asked for every few seconds; its tail is enough.
+const LOG_TAIL: usize = 256 * 1024;
 
 pub struct GitLab {
     http: reqwest::Client,
@@ -382,6 +386,52 @@ fn pipeline(p: &Value, base: &str) -> Pipeline {
     }
 }
 
+/// A pipeline as the pipeline screen shows it. A pipeline stopped at a
+/// manual job is still running, as `pipeline` above says.
+fn run(which: Which, p: &Value, base: &str) -> Run {
+    let opt = |v: &Value, k: &str| parse_rfc3339(s(v, k));
+    let jobs: Vec<JobRun> = p
+        .pointer("/jobs/nodes")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .map(|j| JobRun {
+            id: s(j, "/id").rsplit('/').next().unwrap_or_default().into(),
+            name: s(j, "/name").into(),
+            group: s(j, "/stage/name").into(),
+            state: match s(j, "/status") {
+                "SUCCESS" | "SKIPPED" => CheckState::Passed,
+                "FAILED" | "CANCELED" => CheckState::Failed,
+                "RUNNING" => CheckState::Running,
+                _ => CheckState::Queued,
+            },
+            started: opt(j, "/startedAt"),
+            finished: opt(j, "/finishedAt"),
+            steps: vec![],
+            url: format!("{base}{}", s(j, "/webPath")),
+            log: true,
+        })
+        .collect();
+    let state = match status(s(p, "/status")) {
+        PipelineState::Passed => CheckState::Passed,
+        PipelineState::Failed => CheckState::Failed,
+        PipelineState::Running => CheckState::Running,
+    };
+    Run {
+        which,
+        sha: s(p, "/sha").chars().take(7).collect(),
+        event: match s(p, "/source") {
+            "merge_request_event" => "merge request".into(),
+            other => other.replace('_', " "),
+        },
+        state,
+        started: opt(p, "/startedAt"),
+        finished: opt(p, "/finishedAt"),
+        url: format!("{base}{}", s(p, "/path")),
+        jobs,
+    }
+}
+
 /// What to say when a group or project is not there, which GitLab reports
 /// by answering with nothing at all.
 fn missing(root: &Root, host: &str) -> String {
@@ -525,6 +575,31 @@ impl ForgeTrait for GitLab {
 
     async fn update(&self, id: &PrId) -> Result<()> {
         send(&self.host, self.rest(reqwest::Method::PUT, id, "/rebase")).await.map(|_| ())
+    }
+
+    async fn runs(&self, id: &PrId) -> Result<Vec<Run>> {
+        let d = self.gql(RUNS, json!({ "path": id.repo, "iid": id.number.to_string() })).await?;
+        let m = &d["project"]["mergeRequest"];
+        let mut out = Vec::new();
+        // After a fast-forward the merge commit is the head, as in `post_merge`.
+        let sha = [s(m, "/mergeCommitSha"), s(m, "/diffHeadSha")].into_iter().find(|x| !x.is_empty());
+        if let (Some(sha), "merged") = (sha, s(m, "/state")) {
+            let vars = json!({ "path": id.repo, "sha": sha, "ref": s(m, "/targetBranch") });
+            let d = self.gql(LANDED, vars).await?;
+            if let Some(p) = d.pointer("/project/pipelines/nodes/0") {
+                out.push(run(Which::AfterMerge, p, &self.base));
+            }
+        }
+        if let Some(p) = m.get("headPipeline").filter(|p| !p.is_null()) {
+            out.push(run(Which::BeforeMerge, p, &self.base));
+        }
+        Ok(out)
+    }
+
+    async fn log(&self, id: &PrId, job: &str) -> Result<String> {
+        let url = format!("{}/api/v4/projects/{}/jobs/{job}/trace", self.base, encode_path(&id.repo));
+        let req = self.http.get(url).bearer_auth(&self.token).header("Range", format!("bytes=-{LOG_TAIL}"));
+        http::text(&self.host, req).await
     }
 
     async fn detail(&self, id: &PrId) -> Result<PrDetail> {
