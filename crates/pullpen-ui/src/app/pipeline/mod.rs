@@ -209,6 +209,9 @@ impl App {
         let Some(p) = &self.pipe else { return String::new() };
         if let Some((_, _, v)) = self.open_job() {
             let len = self.current_log().map_or(0, |l| l.lines.len());
+            if len == 0 {
+                return String::new();
+            }
             let bottom = (log_top(v, len, job_rows(self.height)) + job_rows(self.height)).min(len);
             return format!("log {bottom}/{len}");
         }

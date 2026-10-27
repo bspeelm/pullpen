@@ -26,7 +26,9 @@ fn id812() -> PrId {
 }
 
 fn press(a: &mut App, keys: &str) -> Vec<Effect> {
-    keys.chars().flat_map(|c| a.key(if c == '\n' { Key::Enter } else { Key::Char(c) }, Instant::now())).collect()
+    keys.chars()
+        .flat_map(|c| a.key(if matches!(c, '\n' | '\r') { Key::Enter } else { Key::Char(c) }, Instant::now()))
+        .collect()
 }
 
 /// `w`, the runs answered, then Enter on `build`, its log answered.
@@ -114,6 +116,11 @@ fn github_says_why_a_running_job_has_no_log_yet() {
     let job = fx::runs(812)[0].jobs[2].clone();
     let github = PrId { forge: Forge::GitHub, ..id812() };
     assert!(a.no_log(&github, &job).is_some_and(|n| n.contains("when the job finishes")));
+    let mut a = app();
+    press(&mut a, "w");
+    a.runs_loaded(id812(), fx::runs(812));
+    press(&mut a, "\r");
+    assert_eq!(a.pipe_pos(), "", "no log yet: no position in it");
     assert_eq!(a.no_log(&id812(), &job), None, "GitLab serves a running job's log");
 }
 
