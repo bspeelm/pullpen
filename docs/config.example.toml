@@ -25,6 +25,7 @@ short_names_below = 100
 [sync]
 interval = "60s"
 on_focus = true
+watch = "5s"              # how often an open pipeline screen asks again while a job runs (ADR-020)
 
 [merge]
 default_method = "repo"   # repo | squash | merge | rebase

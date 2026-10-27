@@ -10,8 +10,7 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use pullpen_core::diff::FileDiff;
 use pullpen_core::query::Query;
-use pullpen_core::time::Timestamp;
-use pullpen_core::{Action, Capabilities, Forge as Kind, Job, MergeMethod, PipelineState, Pr, PrDetail, PrId};
+use pullpen_core::{Action, Capabilities, Forge as Kind, Job, MergeMethod, PipelineState, Pr, PrDetail, PrId, Run};
 
 #[derive(Debug, thiserror::Error, Clone, PartialEq, Eq)]
 pub enum Error {
@@ -100,6 +99,10 @@ pub trait Forge: Send + Sync {
     /// Description, checks and timeline, for the preview and detail view.
     async fn detail(&self, id: &PrId) -> Result<PrDetail>;
     async fn diff(&self, id: &PrId) -> Result<Vec<FileDiff>>;
+    /// The PR's pipeline runs: after its merge, if merged, then its head's.
+    async fn runs(&self, id: &PrId) -> Result<Vec<Run>>;
+    /// A job's log so far, or its tail when long.
+    async fn log(&self, id: &PrId, job: &str) -> Result<String>;
 }
 
 /// Each (repo, base branch) that a merge failed on, once: whether the branch
@@ -121,16 +124,6 @@ pub fn set_branch(prs: &mut [Pr], (repo, base): &(String, String), state: Pipeli
         if let Some(pl) = p.post_merge.as_mut().filter(|x| x.state == PipelineState::Failed) {
             pl.branch = Some(state);
         }
-    }
-}
-
-/// `1m 52s`, `38s`, `1h 4m`: how long a check took.
-pub fn duration(from: Timestamp, to: Timestamp) -> String {
-    let s = (to.0 - from.0).max(0);
-    match s {
-        0..60 => format!("{s}s"),
-        60..3600 => format!("{}m {:02}s", s / 60, s % 60),
-        _ => format!("{}h {}m", s / 3600, s % 3600 / 60),
     }
 }
 

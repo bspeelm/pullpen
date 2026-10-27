@@ -1,0 +1,12 @@
+query($path: ID!, $iid: String!) {
+  project(fullPath: $path) {
+    mergeRequest(iid: $iid) {
+      mergeCommitSha diffHeadSha targetBranch state
+      headPipeline { ...run }
+    }
+  }
+}
+fragment run on Pipeline {
+  sha status source path startedAt finishedAt
+  jobs(first: 60) { nodes { id name status startedAt finishedAt webPath stage { name } } }
+}

@@ -260,7 +260,7 @@ function helpScreen(){
  pl.push(...block(['move','act on selection','sections & views'],[
   [['j k','down / up'],['gg G','top / bottom'],['^d ^u','half page'],['/','filter list'],['n N','next / prev match'],['Esc','clear, cancel'],['Space','mark row'],['V','mark range'],['Enter','open detail']],
   [['M','merge…'],['A','arm / disarm auto'],['a','approve'],['c','comment'],['d','open diff'],['o','open in browser'],['x','close…'],['u','update branch'],['D','dismiss failure'],['r','refresh']],
-  [['h l','prev / next section'],['Tab S-Tab','next / prev section'],['1–6','go to section'],['p','toggle preview'],[':','command line'],['?','this help'],['q','back / quit']]]));
+  [['h l','prev / next section'],['Tab S-Tab','next / prev section'],['1–6','go to section'],['w','watch pipeline'],['p','toggle preview'],[':','command line'],['?','this help'],['q','back / quit']]]));
  pl.push(pad([]));
  pl.push(...block(['detail view','command line','confirm prompt'],[
   [['h l','focus pane'],['n b','next / prev file'],['F','all files'],[']c [c','next / prev hunk'],['zo zc','expand / fold'],['q Esc','back to list']],
@@ -312,6 +312,76 @@ function mergedScreen(){
  while(L.length<38) L.push([]);
  L.push(status(W,{mode:'NORMAL',section:'Merged',pos:'1/7'}));
  L.push(M('{r|✗} {f|1 needs attention}{d|   ·   2 running   ·   4 done}'));
+ return L.map(l=>fit(l,W,false));
+}
+
+// A PR's pipeline is a subscreen of the PR: the PR stays named on top, its
+// runs below, newest first, each job with its stage, progress and time. Enter
+// opens a job; q walks back to wherever w was pressed.
+function prHead(crumb){
+ return [
+  lr([sp(2),S('Merged','dim'),S('  ›  ','faint'),S('gl  platform/runner  ','dim'),S('#812','fg',{b:1}),S('  ›  ','faint'),S(crumb,'fg')],[S('refreshed 3s ago','dim'),sp(1)],120),
+  [],
+  [sp(2),S('Bump go toolchain to 1.25.3','fg',{b:1})],
+  [sp(2),S('◇ renovate','fg'),S('   renovate/go-1.25.3 → main   merged 41m ago · squash','dim')],
+  [],
+ ];
+}
+const JOBG={ok:S('✓','ok'),fail:S('✗','err'),run:S('○','warn'),wait:S('·','dim')};
+function jobRow(j,o={}){
+ const W=120; let l=[gut(o),JOBG[j[0]],sp(2),...fit([S(j[1],'fg',{b:o.sel})],29),sp(1),...fit([S(j[2],'dim')],11),sp(1),...fit(M(j[3]),W-2-1-2-30-12-9),S(j[4].padStart(8),'dim'),sp(1)];
+ l=fit(l,W,false); return o.sel?withBg(l,'sel'):l;
+}
+function runHead(g,name,what,right){return lr([sp(2),g,sp(1),S(name,'fg',{b:1}),S('   '+what,'dim')],[S(right,'dim'),sp(1)],120);}
+function pipelineScreen(){
+ const W=120,L=prHead('pipeline');
+ L.push(runHead(JOBG.run,'after merge','main @ 3f2a91c   push','2 of 4 passed   running 2m 41s'));
+ [['ok','lint','prepare','{d|passed}','38s'],['ok','go mod verify','prepare','{d|passed}','21s'],
+  ['run','build','build','{y|running}','1m 40s'],['wait','publish-image','deploy','{d|queued}','']]
+  .forEach(j=>L.push(jobRow(j,{sel:j[1]==='build'})));
+ L.push([]);
+ L.push(runHead(JOBG.ok,'before merge','9c01e7a   merge request','4 of 4 passed   3m 05s'));
+ L.push(M('      {d|zo to show its 4 jobs}'));
+ while(L.length<38) L.push([]);
+ L.push(status(W,{mode:'NORMAL',section:'#812',pos:'job 3/4'}));
+ L.push(M('{d|Enter open job   zo zc show / fold a run   o open on gitlab.com   r refresh   q back to #812}'));
+ return L.map(l=>fit(l,W,false));
+}
+// A job: its steps on the left (GitHub's steps, GitLab's log sections), its
+// log on the right, following the tail while it runs.
+function jobScreen(){
+ const W=120,L=prHead('build');
+ L.push(lr([sp(2),S('○','warn'),sp(1),S('build','fg',{b:1}),S('   build stage · after merge · main @ 3f2a91c','dim')],[S('running 1m 40s','dim'),sp(1)],W));
+ L.push([]);
+ const LW=40,RW=W-2-LW-3-1;
+ L.push([sp(2),...fit(lr(M('{B|steps}'),M('{d|4}'),LW),LW),S(' │ ','faint'),...fit(lr(M('{aB|log}'),M('{d|14 lines   }{a|following ↓}'),RW),RW)]);
+ const st=(g,n,t,sel)=>[sel?S('▌ ','acc'):sp(2),...lr(M(g+' '+n),M('{d| '+t+'}'),LW-2)];
+ const left=[
+  st('{g|✓}','Preparing the "docker" executor','4s'),
+  st('{g|✓}','Preparing environment','1s'),
+  st('{g|✓}','Getting source from Git','3s'),
+  st('{y|○}','Executing "step_script" stage of the job script','1m 32s',true),
+ ];
+ const right=[
+  M('{aB|Preparing the "docker" executor}'),
+  M('Using docker image golang:1.25.3 ...'),
+  M('{aB|Preparing environment}'),
+  M('Running on runner-abbey via abbey...'),
+  M('{aB|Getting source from Git}'),
+  M('Fetching changes with git depth set to 20...'),
+  M('Checking out 3f2a91c4 as detached HEAD (ref is main)...'),
+  M('{aB|Executing "step_script" stage of the job script}'),
+  M('{gB|$ go version}'),
+  M('go version go1.25.3 linux/amd64'),
+  M('{gB|$ make build}'),
+  M('go build -trimpath -ldflags "-s -w" -o out/gitlab-runner .'),
+  M('{y|warning: GOFLAGS is set; -mod=mod overrides the vendor directory}'),
+  M('go: downloading golang.org/x/sys v0.37.0'),
+ ];
+ const bodyH=40-L.length-2;
+ for(let i=0;i<bodyH;i++) L.push([sp(2),...fit(left[i]||[],LW),S(' │ ','faint'),...fit(right[i]||[],RW),sp(1)]);
+ L.push(status(W,{mode:'NORMAL',section:'#812',pos:'log 14/14'}));
+ L.push(M('{d|Enter jump to step   G follow   / search   e next error   o open on gitlab.com   q back to the pipeline}'));
  return L.map(l=>fit(l,W,false));
 }
 
@@ -367,6 +437,8 @@ function build(mode){
  out.sHelp=F(helpScreen());
  out.sArmed=F(armedScreen());
  out.sMerged=F(mergedScreen());
+ out.sPipeline=F(pipelineScreen());
+ out.sJob=F(jobScreen());
  const al=alts(); out.altA=F(al.a); out.altB=F(al.b); out.altC=F(al.c);
 
  const R4=[P[0],P[1],P[2],P[3]];

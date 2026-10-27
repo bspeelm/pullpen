@@ -1,5 +1,6 @@
 //! The line editor behind `:` and `/`: cursor, history, completion.
 
+use crate::keymap::Key;
 use crate::palette::Tok;
 use crate::span::{Line, Span, s};
 
@@ -117,6 +118,22 @@ impl Editor {
         self.text.replace_range(a..b, "");
         self.cursor = i;
         self.edited();
+    }
+
+    /// The keys every line edits the same way: cursor, deletion, typing.
+    pub fn edit(&mut self, key: Key) {
+        match key {
+            Key::Backspace => self.backspace(),
+            Key::Delete => self.delete(),
+            Key::Left => self.left(),
+            Key::Right => self.right(),
+            Key::Home => self.home(),
+            Key::End => self.end(),
+            Key::Ctrl('w') => self.delete_word(),
+            Key::Ctrl('u') => self.delete_line(),
+            Key::Char(c) => self.insert(c),
+            _ => {}
+        }
     }
 
     /// `^u`: everything before the cursor.

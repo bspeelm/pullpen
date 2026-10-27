@@ -1,0 +1,40 @@
+  Merged  ›  gl  platform/runner  #812  ›  pipeline                                                    refreshed 3s ago 
+                                                                                                                        
+  Bump go toolchain to 1.25.3                                                                                           
+  ◇ renovate   renovate/go-1.25.3 → main   merged 41m ago · squash                                                      
+                                                                                                                        
+  ○ after merge   main @ 3f2a91c   push                                                  2 of 4 passed   running 2m 41s 
+  ✓  lint                          prepare     passed                                                               38s 
+  ✓  go mod verify                 prepare     passed                                                               21s 
+▌ ○  build                         build       running                                                           1m 40s 
+  ·  publish-image                 deploy      queued                                                                   
+                                                                                                                        
+  ✓ before merge   9c01e7a   merge request                                                       4 of 4 passed   3m 05s 
+      zo to show its 4 jobs                                                                                             
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+ NORMAL   #812  job 3/4                                  ◆ 7 armed   ✗ 3 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
+Enter open job   zo zc show / fold a run   o open on gitlab.com   r refresh   q back to #812                            

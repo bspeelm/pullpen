@@ -360,3 +360,59 @@ attention, the status line adds `✗ 1 broken` while any base branch is
 failing, and the bell rings when a branch starts failing after a merge and
 again when it passes. The design changed first (ADR-002): the group, the
 reason, the dim glyph, `D` in the help overlay and the status line's count.
+
+## ADR-020 — A PR's pipeline is a subscreen of the PR
+
+The maintainer watches pre- and post-merge pipelines as they run, and needs
+each job's output. The forges' web UIs show a pipeline as a page of its own,
+cut off from the merge request that started it, which is the part they do
+poorly. In pullpen, the pipeline belongs to the PR.
+
+**Where it lives.** `w` (or `:watch`) on a PR, from any section or the
+detail view, opens its pipeline screen. The PR's breadcrumb, title and branch
+stay on top. Below them are its runs: after a merge, the merge commit's
+pipeline on the base branch first, then the head's, which `zo` shows. Enter
+on a job opens it, with its steps on the left and its log on the right. `q`
+walks back one level, to wherever `w` was pressed.
+
+**How live.** While the screen is open and anything in it is still running,
+the runs are asked for every `sync.watch` (default 5s), and so is the open
+job's log. Nothing is asked once everything has finished or the screen
+closes. When a run finishes while watched, the PR's cached detail is dropped,
+so the detail view's checks agree with it.
+
+**What each forge can show.** On GitLab, every job's trace is readable while
+it runs, and its tail is fetched with a byte range; the log's sections stand
+in for steps. GitHub's API publishes a job's log only once the job finishes:
+a running job's log answers 404, which was checked against a live Actions
+run. Its steps' states are live in GraphQL, so a running GitHub job shows
+which step it is on, says its log comes when it finishes, and `o` opens the
+live page. A commit status from outside the forge's CI has only its link.
+
+**Which pipeline is the branch's.** GitLab's `ref` filter also matches
+merge-request pipelines: a release MR from the base branch shares its SHA
+and ref, and its failed pipeline was being reported as the branch failing.
+Every lookup of a branch's pipeline, here and in ADR-017's and ADR-019's,
+asks for pushes only, and checks that the answer names the branch.
+
+**How a log is shown.** SGR colours map onto the palette's tokens (red to
+err, green to ok, yellow to warn, blue, cyan and magenta to acc), and no
+background is painted. Every other escape is dropped. A redrawn line keeps
+what a terminal would show. A log keeps its last 10,000 lines. Jobs show in
+the forge's order, not failures first, because a pipeline reads as stages.
+
+The design changed first (ADR-002): `pipelineScreen`, `jobScreen`, and `w` in
+the help overlay.
+
+## ADR-021 — The code cap rises to 11,000
+
+The pipeline screen (ADR-020) measured 1,285 lines. Its own three modules
+(the screens, the log parser, and the keys and refresh) are about 910 of
+them; the rest is each forge's query and mapping, the core types and the
+wiring. It took the code to 10,436 lines, past ADR-018's 10,000. The trims
+available were taken: the line editor's keys and the backend's ask-and-send
+became one helper each, which cost almost what they saved.
+
+The cap rises to 11,000 lines, about 560 lines of room. As before, the next
+raise needs its own record, measured as this one is.
+

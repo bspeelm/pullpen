@@ -364,3 +364,50 @@ async fn a_merged_pr_carries_its_merge_commits_checks_as_the_pipeline() {
     assert_eq!(pl.url, "https://github.com/o/r/commit/abc123");
     assert_eq!(pl.branch, Some(PipelineState::Passed), "main's head passes, so a later merge fixed it");
 }
+
+#[tokio::test]
+async fn runs_read_each_commit_across_workflows_and_statuses() {
+    let server = MockServer::start().await;
+    let step = |name: &str, status: &str, conclusion: Value| json!({ "name": name, "status": status, "conclusion": conclusion, "startedAt": "2026-10-01T00:00:00Z", "completedAt": null });
+    let head = json!({
+        "oid": "9c01e7a2ff",
+        "checkSuites": { "nodes": [
+            { "app": { "name": "GitHub Actions" }, "workflowRun": { "event": "dynamic", "workflow": { "name": "CodeQL" } }, "checkRuns": { "nodes": [] } },
+            { "app": { "name": "GitHub Actions" }, "workflowRun": { "event": "pull_request", "workflow": { "name": "ci" } },
+              "checkRuns": { "nodes": [ {
+                "databaseId": 121, "name": "test", "status": "IN_PROGRESS", "conclusion": null,
+                "startedAt": "2026-10-01T00:00:00Z", "completedAt": null, "detailsUrl": "https://github.com/o/r/actions/runs/1/job/121",
+                "steps": { "nodes": [ step("checkout", "COMPLETED", json!("SUCCESS")), step("cargo test", "IN_PROGRESS", Value::Null), step("upload", "PENDING", Value::Null) ] }
+              } ] } },
+            { "app": { "name": "Dependabot" }, "workflowRun": null, "checkRuns": { "nodes": [] } }
+        ] },
+        "status": { "contexts": [ { "context": "ci/circleci", "state": "SUCCESS", "createdAt": "2026-10-01T00:00:00Z", "targetUrl": "https://circleci.com/x" } ] }
+    });
+    Mock::given(method("POST"))
+        .and(body_string_contains("fragment run on Commit"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "repository": { "pullRequest": {
+            "url": "https://github.com/o/r/pull/7", "commits": { "nodes": [ { "commit": head } ] }, "mergeCommit": null
+        } } } })))
+        .mount(&server)
+        .await;
+    let id = PrId { forge: Forge::GitHub, host: "github.com".into(), repo: "o/r".into(), number: 7 };
+    let runs = gh(&server).runs(&id).await.unwrap();
+    assert_eq!(runs.len(), 1, "an open PR has only its head's run");
+    let r = &runs[0];
+    assert_eq!(
+        (r.which, r.sha.as_str(), r.event.as_str(), r.state),
+        (Which::BeforeMerge, "9c01e7a", "pull request", CheckState::Running)
+    );
+    assert_eq!(r.url, "https://github.com/o/r/commit/9c01e7a2ff/checks");
+    let names: Vec<(&str, &str, bool)> = r.jobs.iter().map(|j| (j.name.as_str(), j.group.as_str(), j.log)).collect();
+    assert_eq!(names, [("test", "ci", true), ("ci/circleci", "status", false)], "an app's empty suite adds nothing");
+    let steps: Vec<CheckState> = r.jobs[0].steps.iter().map(|s| s.state).collect();
+    assert_eq!(steps, [CheckState::Passed, CheckState::Running, CheckState::Queued]);
+
+    Mock::given(method("GET"))
+        .and(path("/repos/o/r/actions/jobs/121/logs"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("\u{feff}2026-10-01T00:00:00.1Z hello\n"))
+        .mount(&server)
+        .await;
+    assert!(gh(&server).log(&id, "121").await.unwrap().ends_with("hello\n"));
+}

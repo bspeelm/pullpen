@@ -99,5 +99,15 @@ fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
     era * 146_097 + doe - 719_468
 }
 
+/// `1m 52s`, `38s`, `1h 4m`: how long a check took.
+pub fn duration(from: Timestamp, to: Timestamp) -> String {
+    let s = (to.0 - from.0).max(0);
+    match s {
+        0..60 => format!("{s}s"),
+        60..3600 => format!("{}m {:02}s", s / 60, s % 60),
+        _ => format!("{}h {}m", s / 3600, s % 3600 / 60),
+    }
+}
+
 #[cfg(test)]
 mod tests;

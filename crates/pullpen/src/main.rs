@@ -136,6 +136,7 @@ fn remap(app: &mut App, cfg: &Config) -> Vec<(pullpen_ui::keymap::Key, pullpen_u
 fn apply(app: &mut App, cfg: &Config, args: &cli::Args) {
     app.ui.default_method = cfg.merge.method().map_or(DefaultMethod::Repo, DefaultMethod::Fixed);
     app.ui.delete_branch = cfg.merge.delete_branch;
+    app.ui.watch = cfg.sync.watch_every();
     app.ui.short_names_below = cfg.ui.short_names_below;
     app.ui.preview = match cfg.ui.preview.as_str() {
         "on" => PreviewMode::On,

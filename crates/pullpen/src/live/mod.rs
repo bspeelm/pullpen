@@ -210,6 +210,24 @@ fn sort(prs: &mut [Pr], by: Sort) {
     }
 }
 
+impl Live {
+    /// Asks the PR's forge something off the UI thread and sends the answer.
+    fn ask<F, Fut>(&self, id: PrId, f: F)
+    where
+        F: FnOnce(Arc<dyn Forge>, PrId) -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Msg> + Send,
+    {
+        let (forges, tx) = (self.forges.clone(), self.tx.clone());
+        self.rt.spawn(async move {
+            let Some(e) = forges.iter().find(|e| e.forge.kind() == id.forge && e.forge.host() == id.host) else {
+                return;
+            };
+            // The receiver is gone only once the app has quit.
+            let _ = tx.send(f(e.forge.clone(), id).await);
+        });
+    }
+}
+
 impl Backend for Live {
     fn run(&mut self, job: Job) {
         let (forges, tx, wake) = (self.forges.clone(), self.tx.clone(), self.wake.clone());
@@ -260,6 +278,24 @@ impl Backend for Live {
                 }
             };
             let _ = tx.send(msg);
+        });
+    }
+
+    fn runs(&mut self, id: PrId) {
+        self.ask(id, |f, id| async move {
+            match f.runs(&id).await {
+                Ok(runs) => Msg::Runs(id, runs),
+                Err(err) => Msg::Unwatched { log: false, why: format!("pipeline of #{}: {err}", id.number) },
+            }
+        });
+    }
+
+    fn log(&mut self, id: PrId, job: String) {
+        self.ask(id, |f, id| async move {
+            match f.log(&id, &job).await {
+                Ok(raw) => Msg::Log(id, job, raw),
+                Err(err) => Msg::Unwatched { log: true, why: format!("log of #{}: {err}", id.number) },
+            }
         });
     }
 

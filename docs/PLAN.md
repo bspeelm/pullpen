@@ -175,7 +175,7 @@ Map forge errors to `ActionFailed{reason, hint}` where `hint` is the next useful
 
 ### 4.3 Sync loop
 
-One task per section. Interval `sync.interval` (default 60s), plus immediate refresh on `r`, after any action, and on focus-in (crossterm `FocusGained`). Each sync writes the section cache file. Cursor stability (design §13): keep cursor on the same `PrId` after refresh; if gone, same index.
+One task per section. An open pipeline screen asks for its runs and log every `sync.watch` (default 5s) while anything runs (ADR-020). Interval `sync.interval` (default 60s), plus immediate refresh on `r`, after any action, and on focus-in (crossterm `FocusGained`). Each sync writes the section cache file. Cursor stability (design §13): keep cursor on the same `PrId` after refresh; if gone, same index.
 
 ---
 
@@ -247,6 +247,7 @@ Header row uses faint lowercase labels (`#  title  repo  author  rev  +/−  age
 2. **Detail** — breadcrumb row (`Section › gh repo #n` left; `1 of 23   updated 12m ago` right), title, meta line, **verdict row** (` READY `/` WAITING `/` BLOCKED ` filled label + sentence), 2×2 fact grid, then two panes split 56/rest: overview (description, checks list with `+ 7 more passed  zo to expand`, conversation) │ diff (file header with `file 2/14 +120 −12`, hunks with old/new line numbers in faint, `+` ok `-` err). `h`/`l` focus; focused pane heading accent. `d` zooms diff full width.
 3. **Armed section** — rows grouped `needs attention` / `waiting` / `merged since HH:MM`; each row's right side is the *why* (`failing  e2e/chromium · 2 retries`, `review  @mara · 1 of 2`, `ci  6/9 running · ~4m left`, `merge train  position 2 of 3`, `merged · squash`). Merged rows dim, stay for the session, `:clear` drops them; their glyph is their merge commit's pipeline. Command line shows the summary: `◆ 4 merged since 09:14 · 2 need attention · 5 still waiting`.
    **Merged section** (ADR-017, ADR-019) — the same layout, grouped `needs attention` / `running` / `done` by the merge commit's pipeline, the failing or running job on the right, summary `✗ 1 needs attention · 2 running · 4 done`. A failure needs attention while its base branch's newest pipeline still fails (`main failing  deploy-production`); once that passes it is done (`fixed  main passes now`, dim ✗). Rows leave 24h after merging, ones needing attention only on `D` or `:clear`; `o` opens the pipeline. The tab counts what needs attention; the status line adds `✗ 1 broken`.
+   **Pipeline and job screens** (ADR-020) — subscreens of a PR, opened with `w`. The PR's breadcrumb, title and branch stay on top. The pipeline screen lists the runs (after merge, then before), each job with its stage, progress and time; the job screen shows steps │ log, following the tail. Refreshed every `sync.watch` while anything runs.
 4. **Help overlay (?)** — base screen faded to faint; 96-wide surface block at x=12, y=5, no border; three-column key tables; typing filters; `?`/Esc closes.
 5. **Wildmenu** — completion list overlays upward over the list rows above the command line, surface bg, selected item sel bg.
 
@@ -430,6 +431,7 @@ short_names_below = 100
 [sync]
 interval = "60s"
 on_focus = true
+watch = "5s"              # how often an open pipeline screen asks again while a job runs (ADR-020)
 
 [merge]
 default_method = "repo"   # repo | squash | merge | rebase

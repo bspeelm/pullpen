@@ -1,0 +1,9 @@
+query($path: ID!, $sha: String!, $ref: String!) {
+  project(fullPath: $path) {
+    pipelines(sha: $sha, ref: $ref, source: "push", first: 1) { nodes { ref ...run } }
+  }
+}
+fragment run on Pipeline {
+  sha status source path startedAt finishedAt
+  jobs(first: 60) { nodes { id name status startedAt finishedAt webPath stage { name } } }
+}

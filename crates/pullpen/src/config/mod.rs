@@ -94,24 +94,35 @@ impl Default for Ui {
 pub struct Sync {
     pub interval: String,
     pub on_focus: bool,
+    /// How often an open pipeline screen asks again while a job runs.
+    pub watch: String,
 }
 
 impl Default for Sync {
     fn default() -> Self {
-        Sync { interval: "60s".into(), on_focus: true }
+        Sync { interval: "60s".into(), on_focus: true, watch: "5s".into() }
+    }
+}
+
+/// `60s`, `5m`, or a bare number of seconds.
+fn secs(s: &str) -> Option<u64> {
+    let s = s.trim();
+    match s.strip_suffix('m') {
+        Some(m) => m.parse::<u64>().map(|m| m * 60).ok(),
+        None => s.trim_end_matches('s').parse().ok(),
     }
 }
 
 impl Sync {
-    /// `60s`, `5m`, or a bare number of seconds; never under 10 s, which is
-    /// as often as a forge's rate limit comfortably allows per section.
+    /// Never under 10 s, which is as often as a forge's rate limit
+    /// comfortably allows per section.
     pub fn every(&self) -> Duration {
-        let s = self.interval.trim();
-        let secs = match s.strip_suffix('m') {
-            Some(m) => m.parse::<u64>().map(|m| m * 60).ok(),
-            None => s.trim_end_matches('s').parse().ok(),
-        };
-        Duration::from_secs(secs.unwrap_or(60).max(10))
+        Duration::from_secs(secs(&self.interval).unwrap_or(60).max(10))
+    }
+
+    /// Never under 2 s: one pipeline, one log, while someone watches.
+    pub fn watch_every(&self) -> Duration {
+        Duration::from_secs(secs(&self.watch).unwrap_or(5).max(2))
     }
 }
 

@@ -7,15 +7,19 @@ use std::sync::Mutex;
 use async_trait::async_trait;
 use pullpen_core::diff::FileDiff;
 use pullpen_core::query::{Is, Query, Term};
-use pullpen_core::time::{Timestamp, parse_rfc3339, rfc3339};
+use pullpen_core::time::{Timestamp, duration, parse_rfc3339, rfc3339};
 use pullpen_core::*;
 use serde_json::{Map, Value, json};
 
 use crate::http::{self, encode_path, graphql, send};
-use crate::{Agents, Error, Forge as ForgeTrait, Page, Result, duration, failed_branches, set_branch};
+use crate::{Agents, Error, Forge as ForgeTrait, Page, Result, failed_branches, set_branch};
 
 const FRAGMENT: &str = include_str!("mr.graphql");
 const DETAIL: &str = include_str!("detail.graphql");
+const RUNS: &str = include_str!("runs.graphql");
+const LANDED: &str = include_str!("landed.graphql");
+/// A running job's log is asked for every few seconds; its tail is enough.
+const LOG_TAIL: usize = 256 * 1024;
 
 pub struct GitLab {
     http: reqwest::Client,
@@ -278,8 +282,10 @@ impl GitLab {
         }
     }
 
-    /// Each merged MR's pipeline on its merge commit and target branch (the
-    /// MR's own pipeline can share the SHA). Asked a few at a time: GitLab
+    /// Each merged MR's pipeline on its merge commit and target branch.
+    /// GitLab's `ref` filter also matches merge-request pipelines, any of
+    /// which can share the SHA, so only pushes count, and the answer must
+    /// name the branch itself (`on_branch`). Asked a few at a time: GitLab
     /// refuses a query over 250 complexity, which twenty MRs exceed. Without
     /// it a row still shows, as merged with no pipeline, so a failure is
     /// logged rather than failing the section.
@@ -293,7 +299,7 @@ impl GitLab {
             for (i, (id, sha, base)) in chunk.iter().enumerate() {
                 decl.push(format!("$r{i}: ID!, $s{i}: String!, $b{i}: String!"));
                 body += &format!(
-                    " p{i}: project(fullPath: $r{i}) {{ pipelines(sha: $s{i}, ref: $b{i}, first: 1) {{ nodes {{ status path jobs(first: 50) {{ nodes {{ name status }} }} }} }} }}"
+                    " p{i}: project(fullPath: $r{i}) {{ pipelines(sha: $s{i}, ref: $b{i}, source: \"push\", first: 1) {{ nodes {{ ref status path jobs(first: 50) {{ nodes {{ name status }} }} }} }} }}"
                 );
                 vars.insert(format!("r{i}"), json!(id.repo));
                 vars.insert(format!("s{i}"), json!(sha));
@@ -304,8 +310,8 @@ impl GitLab {
                 Ok(d) => d,
                 Err(e) => return tracing::warn!(host = %self.host, error = %e, "post-merge pipelines"),
             };
-            for (i, (id, ..)) in chunk.iter().enumerate() {
-                let Some(pl) = d.pointer(&format!("/p{i}/pipelines/nodes/0")) else { continue };
+            for (i, (id, _, base)) in chunk.iter().enumerate() {
+                let Some(pl) = on_branch(&d, i, base) else { continue };
                 if let Some(p) = prs.iter_mut().find(|p| &p.id == *id) {
                     p.post_merge = Some(pipeline(pl, &self.base));
                 }
@@ -314,14 +320,15 @@ impl GitLab {
     }
 
     /// The newest pipeline on each target branch a merge failed on, logged
-    /// rather than failing the section when it cannot be read.
+    /// rather than failing the section when it cannot be read. Only pushes,
+    /// for the reason `post_merge` gives.
     async fn branch_heads(&self, prs: &mut [Pr]) {
         for chunk in failed_branches(prs).chunks(20) {
             let (mut decl, mut body, mut vars) = (Vec::new(), String::new(), Map::new());
             for (i, (repo, base)) in chunk.iter().enumerate() {
                 decl.push(format!("$r{i}: ID!, $b{i}: String!"));
                 body += &format!(
-                    " p{i}: project(fullPath: $r{i}) {{ pipelines(ref: $b{i}, first: 1) {{ nodes {{ status }} }} }}"
+                    " p{i}: project(fullPath: $r{i}) {{ pipelines(ref: $b{i}, source: \"push\", first: 1) {{ nodes {{ ref status }} }} }}"
                 );
                 vars.insert(format!("r{i}"), json!(repo));
                 vars.insert(format!("b{i}"), json!(base));
@@ -331,8 +338,8 @@ impl GitLab {
                 Err(e) => return tracing::warn!(host = %self.host, error = %e, "target branch pipelines"),
             };
             for (i, key) in chunk.iter().enumerate() {
-                if let Some(st) = d.pointer(&format!("/p{i}/pipelines/nodes/0/status")).and_then(Value::as_str) {
-                    set_branch(prs, key, status(st));
+                if let Some(pl) = on_branch(&d, i, &key.1) {
+                    set_branch(prs, key, status(s(pl, "/status")));
                 }
             }
         }
@@ -379,6 +386,57 @@ fn pipeline(p: &Value, base: &str) -> Pipeline {
         job: job.unwrap_or_default(),
         url: format!("{base}{}", s(p, "/path")),
         branch: None,
+    }
+}
+
+/// The `p{i}` pipeline of an aliased query, if it ran for `branch` itself.
+fn on_branch<'a>(d: &'a Value, i: usize, branch: &str) -> Option<&'a Value> {
+    d.pointer(&format!("/p{i}/pipelines/nodes/0")).filter(|p| s(p, "/ref") == branch)
+}
+
+/// A pipeline as the pipeline screen shows it. A pipeline stopped at a
+/// manual job is still running, as `pipeline` above says.
+fn run(which: Which, p: &Value, base: &str) -> Run {
+    let opt = |v: &Value, k: &str| parse_rfc3339(s(v, k));
+    let jobs: Vec<JobRun> = p
+        .pointer("/jobs/nodes")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .map(|j| JobRun {
+            id: s(j, "/id").rsplit('/').next().unwrap_or_default().into(),
+            name: s(j, "/name").into(),
+            group: s(j, "/stage/name").into(),
+            state: match s(j, "/status") {
+                "SUCCESS" | "SKIPPED" => CheckState::Passed,
+                "FAILED" | "CANCELED" => CheckState::Failed,
+                "RUNNING" => CheckState::Running,
+                _ => CheckState::Queued,
+            },
+            started: opt(j, "/startedAt"),
+            finished: opt(j, "/finishedAt"),
+            steps: vec![],
+            url: format!("{base}{}", s(j, "/webPath")),
+            log: true,
+        })
+        .collect();
+    let state = match status(s(p, "/status")) {
+        PipelineState::Passed => CheckState::Passed,
+        PipelineState::Failed => CheckState::Failed,
+        PipelineState::Running => CheckState::Running,
+    };
+    Run {
+        which,
+        sha: s(p, "/sha").chars().take(7).collect(),
+        event: match s(p, "/source") {
+            "merge_request_event" => "merge request".into(),
+            other => other.replace('_', " "),
+        },
+        state,
+        started: opt(p, "/startedAt"),
+        finished: opt(p, "/finishedAt"),
+        url: format!("{base}{}", s(p, "/path")),
+        jobs,
     }
 }
 
@@ -525,6 +583,31 @@ impl ForgeTrait for GitLab {
 
     async fn update(&self, id: &PrId) -> Result<()> {
         send(&self.host, self.rest(reqwest::Method::PUT, id, "/rebase")).await.map(|_| ())
+    }
+
+    async fn runs(&self, id: &PrId) -> Result<Vec<Run>> {
+        let d = self.gql(RUNS, json!({ "path": id.repo, "iid": id.number.to_string() })).await?;
+        let m = &d["project"]["mergeRequest"];
+        let mut out = Vec::new();
+        // After a fast-forward the merge commit is the head, as in `post_merge`.
+        let sha = [s(m, "/mergeCommitSha"), s(m, "/diffHeadSha")].into_iter().find(|x| !x.is_empty());
+        if let (Some(sha), "merged") = (sha, s(m, "/state")) {
+            let vars = json!({ "path": id.repo, "sha": sha, "ref": s(m, "/targetBranch") });
+            let d = self.gql(LANDED, vars).await?;
+            if let Some(p) = d.pointer("/project/pipelines/nodes/0").filter(|p| s(p, "/ref") == s(m, "/targetBranch")) {
+                out.push(run(Which::AfterMerge, p, &self.base));
+            }
+        }
+        if let Some(p) = m.get("headPipeline").filter(|p| !p.is_null()) {
+            out.push(run(Which::BeforeMerge, p, &self.base));
+        }
+        Ok(out)
+    }
+
+    async fn log(&self, id: &PrId, job: &str) -> Result<String> {
+        let url = format!("{}/api/v4/projects/{}/jobs/{job}/trace", self.base, encode_path(&id.repo));
+        let req = self.http.get(url).bearer_auth(&self.token).header("Range", format!("bytes=-{LOG_TAIL}"));
+        http::text(&self.host, req).await
     }
 
     async fn detail(&self, id: &PrId) -> Result<PrDetail> {

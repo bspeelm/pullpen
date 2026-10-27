@@ -36,6 +36,7 @@ names; `↑` `↓` walk history, filtered by what you have typed.
 | `:messages` | the last 200 results and errors |
 | `:clear` | drop merged rows from the armed view; in the Merged section, every finished row |
 | `:dismiss [#n]` | in the Merged section, resolve a failure by hand |
+| `:watch [#n]` | the PR's pipeline and its jobs' logs, live |
 | `:q` `:qa` | back, or quit |
 
 Without a number, a command acts on the selected row, or on every marked row.

@@ -6,12 +6,12 @@ use std::sync::Mutex;
 use async_trait::async_trait;
 use pullpen_core::diff::FileDiff;
 use pullpen_core::query::{Is, Query, Term};
-use pullpen_core::time::{Timestamp, parse_rfc3339, rfc3339};
+use pullpen_core::time::{Timestamp, duration, parse_rfc3339, rfc3339};
 use pullpen_core::*;
 use serde_json::{Value, json};
 
 use crate::http::{self, graphql, send};
-use crate::{Agents, Error, Forge as ForgeTrait, Page, Result, duration, failed_branches, set_branch};
+use crate::{Agents, Error, Forge as ForgeTrait, Page, Result, failed_branches, set_branch};
 
 const SEARCH: &str = include_str!("search.graphql");
 /// Mergeability and check details, asked for separately and a few PRs at a
@@ -20,6 +20,7 @@ const SEARCH: &str = include_str!("search.graphql");
 const DETAILS: &str = include_str!("checks.graphql");
 const DETAIL_BATCH: usize = 10;
 const DETAIL: &str = include_str!("detail.graphql");
+const RUNS: &str = include_str!("runs.graphql");
 
 /// What a branch's rulesets require. Rulesets are readable with read
 /// access, unlike classic branch protection, which only admins can read.
@@ -275,6 +276,94 @@ fn pipeline(commit: &Value, url: String) -> Option<Pipeline> {
         url,
         branch: None,
     })
+}
+
+/// A PR's runs from `runs.graphql`: the merge commit's first, then the
+/// head's. A commit's runs across every workflow and app count as one run,
+/// since that is what decides whether it can merge or has deployed.
+fn runs(pr: &Value) -> Vec<Run> {
+    let web = s(pr, "/url").rsplit_once("/pull/").map_or("", |(w, _)| w);
+    let commits =
+        [(Which::AfterMerge, pr.pointer("/mergeCommit")), (Which::BeforeMerge, pr.pointer("/commits/nodes/0/commit"))];
+    commits.into_iter().filter_map(|(which, c)| run(which, c.filter(|c| !c.is_null())?, web)).collect()
+}
+
+fn run(which: Which, c: &Value, web: &str) -> Option<Run> {
+    let opt = |v: &Value, p: &str| parse_rfc3339(s(v, p));
+    let mut jobs = Vec::new();
+    let mut event = String::new();
+    for suite in c.pointer("/checkSuites/nodes").and_then(Value::as_array).into_iter().flatten() {
+        let wf = &suite["workflowRun"];
+        // CodeQL's default setup says `dynamic`; the PR's own workflows
+        // say what started them.
+        if event.is_empty() || event == "dynamic" {
+            event = s(wf, "/event").replace('_', " ");
+        }
+        let group = if wf.is_null() { s(suite, "/app/name") } else { s(wf, "/workflow/name") };
+        for n in suite.pointer("/checkRuns/nodes").and_then(Value::as_array).into_iter().flatten() {
+            let steps = n.pointer("/steps/nodes").and_then(Value::as_array).into_iter().flatten();
+            jobs.push(JobRun {
+                id: n["databaseId"].as_i64().map_or(String::new(), |i| i.to_string()),
+                name: s(n, "/name").into(),
+                group: group.into(),
+                state: step_state(n),
+                started: opt(n, "/startedAt"),
+                finished: opt(n, "/completedAt"),
+                steps: steps
+                    .map(|st| Step {
+                        name: s(st, "/name").into(),
+                        state: step_state(st),
+                        started: opt(st, "/startedAt"),
+                        finished: opt(st, "/completedAt"),
+                    })
+                    .collect(),
+                url: s(n, "/detailsUrl").into(),
+                log: !wf.is_null(),
+            });
+        }
+    }
+    for n in c.pointer("/status/contexts").and_then(Value::as_array).into_iter().flatten() {
+        jobs.push(JobRun {
+            id: String::new(),
+            name: s(n, "/context").into(),
+            group: "status".into(),
+            state: check_state(n),
+            started: opt(n, "/createdAt"),
+            finished: None,
+            steps: vec![],
+            url: s(n, "/targetUrl").into(),
+            log: false,
+        });
+    }
+    if jobs.is_empty() {
+        return None;
+    }
+    let state = overall(&jobs);
+    Some(Run {
+        which,
+        sha: s(c, "/oid").chars().take(7).collect(),
+        event,
+        started: jobs.iter().filter_map(|j| j.started).min(),
+        finished: if matches!(state, CheckState::Passed | CheckState::Failed) {
+            jobs.iter().filter_map(|j| j.finished).max()
+        } else {
+            None
+        },
+        state,
+        url: format!("{web}/commit/{}/checks", s(c, "/oid")),
+        jobs,
+    })
+}
+
+/// A check run's or a step's state, which share GitHub's status and
+/// conclusion fields.
+fn step_state(n: &Value) -> CheckState {
+    match (s(n, "/status"), s(n, "/conclusion")) {
+        ("COMPLETED", "SUCCESS" | "NEUTRAL" | "SKIPPED") => CheckState::Passed,
+        ("COMPLETED", _) => CheckState::Failed,
+        ("QUEUED" | "PENDING" | "WAITING" | "REQUESTED", _) => CheckState::Queued,
+        _ => CheckState::Running,
+    }
 }
 
 fn time(v: &Value, p: &str) -> Timestamp {
@@ -657,6 +746,19 @@ impl ForgeTrait for GitHub {
         let (owner, name) = id.repo.split_once('/').ok_or_else(|| Error::Decode(format!("repo {}", id.repo)))?;
         let d = self.gql(DETAIL, json!({ "o": owner, "n": name, "num": id.number })).await?;
         Ok(self.to_detail(&d["repository"]["pullRequest"]))
+    }
+
+    async fn runs(&self, id: &PrId) -> Result<Vec<Run>> {
+        let (owner, name) = id.repo.split_once('/').ok_or_else(|| Error::Decode(format!("repo {}", id.repo)))?;
+        let d = self.gql(RUNS, json!({ "o": owner, "n": name, "num": id.number })).await?;
+        Ok(runs(&d["repository"]["pullRequest"]))
+    }
+
+    /// GitHub serves a job's log only once the job finishes; a running job
+    /// answers 404 (ADR-020).
+    async fn log(&self, id: &PrId, job: &str) -> Result<String> {
+        let path = format!("/repos/{}/actions/jobs/{job}/logs", id.repo);
+        http::text(&self.host, self.req(reqwest::Method::GET, &path)).await
     }
 
     async fn diff(&self, id: &PrId) -> Result<Vec<FileDiff>> {
