@@ -522,3 +522,15 @@ fn s_job() {
     a.log_loaded(id, "79".into(), fx::LOG);
     check("sJob", &a.lines(120, 40), 120, Tier::True, Glyphs::Unicode);
 }
+
+/// tui.js `mergedFacts`: #812 after its merge, its pipeline on main building.
+#[test]
+fn s_detail_merged_facts() {
+    use pullpen_ui::span::fit;
+    let caps = HashMap::new();
+    let c = ctx(&caps, Glyphs::Unicode);
+    let pr = fx::merged_prs().into_iter().find(|p| p.id.number == 812).unwrap();
+    let rows: Vec<Line> =
+        pullpen_ui::views::detail::fact_rows(&pr, &fx::detail(812), &c).iter().map(|l| fit(l, 120, false)).collect();
+    check("sDetailMergedFacts", &rows, 120, Tier::True, Glyphs::Unicode);
+}

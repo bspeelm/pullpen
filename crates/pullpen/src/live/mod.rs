@@ -200,6 +200,26 @@ impl Live {
     }
 }
 
+/// One line per finished action in the log, so a report of what happened
+/// has evidence. The reason has no URL in it (`http::without_url`).
+fn logged(job: &Job, outcome: &Outcome) {
+    let (action, pr, host) = (job.action.command(), job.target.number, &job.target.host);
+    match outcome {
+        Outcome::Done => tracing::info!(action, pr, %host, "job done"),
+        Outcome::Failed { reason } => tracing::info!(action, pr, %host, %reason, "job failed"),
+    }
+}
+
+/// When to sync again after an action whose result a read can lag behind.
+const SETTLE: [Duration; 2] = [Duration::from_secs(5), Duration::from_secs(15)];
+
+fn settle(a: &Action) -> &'static [Duration] {
+    match a {
+        Action::Merge { .. } | Action::Arm { .. } | Action::Close => &SETTLE,
+        _ => &[],
+    }
+}
+
 /// Section indices grouped by query, in order of first appearance.
 fn shared(sections: &[Section]) -> Vec<Vec<usize>> {
     let mut groups: Vec<Vec<usize>> = Vec::new();
@@ -274,11 +294,20 @@ impl Backend for Live {
                     Err(err) => (Outcome::Failed { reason: err.to_string() }, None),
                 },
             };
+            logged(&job, &outcome);
             if outcome == Outcome::Done {
                 // After an action, every section may have changed (PLAN.md §4.3).
                 wake.iter().for_each(|w| w.notify_one());
             }
+            let delays = settle(&job.action);
+            // The receiver is gone only once the app has quit.
             let _ = tx.send(Msg::Job(JobResult { job, outcome, note }));
+            // A forge can answer before what it did shows in a read, or do
+            // more than was asked (an arm that merges at once): ask again soon.
+            for d in delays {
+                tokio::time::sleep(*d).await;
+                wake.iter().for_each(|w| w.notify_one());
+            }
         });
     }
 

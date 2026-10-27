@@ -504,3 +504,44 @@ already happened. A PR pullpen merged or closed now stays out of open lists
 until the forge reports it merged or closed, or for five minutes, whichever
 comes first.
 
+## ADR-025 — What a merge leaves behind is read again, not assumed
+
+The maintainer kept seeing merged MRs stay in the list. The spinner stopped,
+the row came back with a yellow ○, a second `M` was told it was already
+merged, and `r` made it go. GitLab's records showed direct merges, with
+auto-merge never set, of MRs whose pipelines had passed long before. A
+merge on GitHub also failed because pullpen asked for a merge commit on a
+branch whose ruleset allows only squash or rebase.
+
+**GitLab's `UNCHECKED` is not waiting.** When an MR's target branch moves, as
+it does each time another MR merges into it, GitLab marks every other open
+MR `UNCHECKED`. It does not check again until something asks. pullpen read
+that as unknown, so waiting, and `M` on a waiting MR offers to arm it: `y`
+armed an MR GitLab then merged at once, and pullpen showed it armed until
+its next sync. `UNCHECKED` now reads as clean. A merge makes GitLab check,
+and GitLab refuses with the reason if it has one. `CHECKING`, `PREPARING`
+and `APPROVALS_SYNCING` still read as waiting: they mean GitLab is mid-check,
+for seconds. A conflict is still decided by the `conflicts` flag (ADR-008).
+The cause is inferred from GitLab's records and the code, not caught live,
+so each finished action is now logged, which the next report can be checked
+against.
+
+**Rules are read again.** pullpen read a branch's rules once per session. A
+ruleset created after that, five minutes after the PR opened in this case,
+was never seen, and the merge used a method it refuses. Rules now expire
+after ten minutes, and a refused merge or arm drops that repo's rules so
+the next sync reads them again.
+
+**Sync again after acting.** A forge can answer before a read shows what it
+did, and an arm can merge at once. After a merge, arm or close, every
+section syncs at once, as before, and again 5 and 20 seconds later.
+
+**A merged PR says what is true after the merge.** GitHub does not report
+which method merged a PR, so the detail view, the preview and the pipeline
+screen say "merged 1m ago" and no longer name a method pullpen only
+guessed. A merged PR's facts show **after merge**, its pipeline on the base
+branch, in place of mergeability and auto-merge, which no longer apply. A
+merge under ten minutes old with no pipeline yet reads "pipeline not
+started", not "no pipeline". The design changed first (ADR-002):
+`mergedFacts`, and the pipeline screen's header.
+

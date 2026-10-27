@@ -407,3 +407,21 @@ async fn another_merge_requests_pipeline_on_the_same_sha_is_not_the_branchs() {
     let page = gl(&server, &["platform"]).search(&Query::parse("is:merged merged:7d"), "me", 50).await.unwrap();
     assert_eq!(page.prs[0].post_merge, None, "no failure is reported for main from another MR's pipeline");
 }
+
+/// After a merge into the target branch, GitLab marks every other open MR
+/// UNCHECKED until something asks. That is not "waiting": the MR merges.
+#[tokio::test]
+async fn an_unchecked_merge_request_is_ready_and_a_checking_one_is_not() {
+    let server = MockServer::start().await;
+    let g = gl(&server, &[]);
+    let mr = |status: &str| {
+        let mut n = node();
+        n["headPipeline"] = json!({ "status": "SUCCESS" });
+        (n["approvalsRequired"], n["approvalsLeft"]) = (json!(0), json!(0));
+        n["detailedMergeStatus"] = json!(status);
+        g.to_pr(&n)
+    };
+    let ready = |p: &Pr| readiness(p, &Capabilities::default());
+    assert_eq!(ready(&mr("UNCHECKED")), Readiness::Ready);
+    assert_eq!(ready(&mr("CHECKING")), Readiness::Waiting, "GitLab is mid-check: seconds, not until asked");
+}
