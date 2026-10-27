@@ -308,9 +308,11 @@ impl App {
         let url = self.open_job().map(|(_, j, _)| j.url.clone());
         let top = log_top(&v, len, rows);
         let last = len.saturating_sub(rows);
+        // Scrolling moves the step marker to the step the top row is in.
         let at = |v: &mut JobView, line: usize| {
             v.follow = false;
             v.scroll = line.min(last);
+            v.step = starts.iter().rposition(|s| s.is_some_and(|l| l <= v.scroll)).unwrap_or(0);
         };
         let mut out = vec![];
         match (pending, key) {
@@ -323,7 +325,11 @@ impl App {
             (_, Key::Char('k') | Key::Up) if v.steps => v.step = v.step.saturating_sub(1),
             (_, Key::Enter) if v.steps => match starts.get(v.step) {
                 Some(Some(line)) => {
+                    let chosen = v.step;
                     at(&mut v, *line);
+                    // A short log cannot scroll that far; the marker stays
+                    // on the step chosen.
+                    v.step = chosen;
                     v.steps = false;
                 }
                 _ => self.refused("that step has nothing in the log yet"),

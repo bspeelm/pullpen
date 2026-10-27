@@ -294,7 +294,9 @@ fn run(which: Which, c: &Value, web: &str) -> Option<Run> {
     let mut event = String::new();
     for suite in c.pointer("/checkSuites/nodes").and_then(Value::as_array).into_iter().flatten() {
         let wf = &suite["workflowRun"];
-        if event.is_empty() {
+        // CodeQL's default setup says `dynamic`; the PR's own workflows
+        // say what started them.
+        if event.is_empty() || event == "dynamic" {
             event = s(wf, "/event").replace('_', " ");
         }
         let group = if wf.is_null() { s(suite, "/app/name") } else { s(wf, "/workflow/name") };

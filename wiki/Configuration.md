@@ -12,7 +12,7 @@ shows every key. The parts:
 | `[[section]]` | `name`, `short`, `query`, and optionally `sort`, `view = "armed"` or `"merged"`, and `counts` |
 | `[merge]` | `default_method` (`repo`, `squash`, `merge`, `rebase`) and `delete_branch` |
 | `[notify]` | `bell`, and `osc9` for desktop notifications |
-| `[sync]` | `interval` and `on_focus` |
+| `[sync]` | `interval`, `on_focus`, and `watch`, how often an open pipeline screen asks again (default `5s`) |
 | `[ui]` | `glyphs`, `colors`, `accent`, `preview`, `palette` |
 | `[repos]` and `[checkout]` | clone paths for `:checkout`, and `worktree` |
 | `[keys]` | extra keys for actions, by name |

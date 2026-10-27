@@ -164,3 +164,22 @@ fn a_run_finishing_refetches_the_prs_detail() {
     a.runs_loaded(id812(), done);
     assert!(!a.details.contains_key(&id812()), "the overview's checks would disagree with the pipeline");
 }
+
+fn screen_of(a: &App) -> Vec<String> {
+    a.lines(120, 40).iter().map(|l| l.iter().map(|x| x.text.as_str()).collect()).collect()
+}
+
+#[test]
+fn a_finished_jobs_log_does_not_claim_to_follow_and_the_marker_stays_where_it_was_put() {
+    let mut a = in_job();
+    let mut done = fx::runs(812);
+    done[0].jobs[2].state = CheckState::Failed;
+    a.runs_loaded(id812(), done);
+    let heading = &screen_of(&a)[7];
+    assert!(!heading.contains("following"), "{heading}");
+    // The log fits on screen, so the jump cannot scroll; the marker moves.
+    press(&mut a, "hjj\r");
+    let marked: Vec<String> = screen_of(&a).into_iter().filter(|l| l.starts_with("  ▌")).collect();
+    assert_eq!(marked.len(), 1);
+    assert!(marked[0].contains("Getting source from Git"), "{}", marked[0]);
+}

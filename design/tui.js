@@ -329,7 +329,7 @@ function prHead(crumb){
 }
 const JOBG={ok:S('✓','ok'),fail:S('✗','err'),run:S('○','warn'),wait:S('·','dim')};
 function jobRow(j,o={}){
- const W=120; let l=[gut(o),JOBG[j[0]],sp(2),...fit([S(j[1],'fg',{b:o.sel})],30),...fit([S(j[2],'dim')],12),...fit(M(j[3]),W-2-1-2-30-12-9),S(j[4].padStart(8),'dim'),sp(1)];
+ const W=120; let l=[gut(o),JOBG[j[0]],sp(2),...fit([S(j[1],'fg',{b:o.sel})],29),sp(1),...fit([S(j[2],'dim')],11),sp(1),...fit(M(j[3]),W-2-1-2-30-12-9),S(j[4].padStart(8),'dim'),sp(1)];
  l=fit(l,W,false); return o.sel?withBg(l,'sel'):l;
 }
 function runHead(g,name,what,right){return lr([sp(2),g,sp(1),S(name,'fg',{b:1}),S('   '+what,'dim')],[S(right,'dim'),sp(1)],120);}
@@ -355,7 +355,7 @@ function jobScreen(){
  L.push([]);
  const LW=40,RW=W-2-LW-3-1;
  L.push([sp(2),...fit(lr(M('{B|steps}'),M('{d|4}'),LW),LW),S(' │ ','faint'),...fit(lr(M('{aB|log}'),M('{d|14 lines   }{a|following ↓}'),RW),RW)]);
- const st=(g,n,t,sel)=>{const l=[sel?S('▌ ','acc'):sp(2),...lr(M(g+' '+n),M('{d|'+t+'}'),LW-2)];return l;};
+ const st=(g,n,t,sel)=>[sel?S('▌ ','acc'):sp(2),...lr(M(g+' '+n),M('{d| '+t+'}'),LW-2)];
  const left=[
   st('{g|✓}','Preparing the "docker" executor','4s'),
   st('{g|✓}','Preparing environment','1s'),

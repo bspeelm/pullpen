@@ -31,6 +31,7 @@ assume them.
 - **[Merging and auto-merge](Merging-and-auto-merge)**: confirming, methods, batches.
 - **[The armed view](The-armed-view)**: coming back to what you armed.
 - **[The merged view](The-merged-view)**: whether each merge's pipeline, and its deploy, went through.
+- **[Watching pipelines](Watching-pipelines)**: a PR's jobs and their logs, live.
 - **[Keys](Keys)** and **[Commands](Commands)**: everything there is.
 
 ## When something is off

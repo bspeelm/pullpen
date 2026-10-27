@@ -143,6 +143,9 @@ fn markers(content: &str) -> (String, Vec<(bool, i64, String)>) {
 
 /// One line as spans, or `None` for a marker that shows nothing.
 fn render(content: &str, at: Option<Timestamp>) -> Option<LogLine> {
+    // A downloaded GitHub log writes `[command]` without its `##`.
+    let content = content.strip_prefix("[command]").map_or(content.to_string(), |c| format!("##[command]{c}"));
+    let content = content.as_str();
     let (tag, content) = match content.strip_prefix("##[") {
         Some(rest) => match rest.split_once(']') {
             Some(("endgroup", _)) => return None,

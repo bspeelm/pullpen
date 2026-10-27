@@ -372,6 +372,7 @@ async fn runs_read_each_commit_across_workflows_and_statuses() {
     let head = json!({
         "oid": "9c01e7a2ff",
         "checkSuites": { "nodes": [
+            { "app": { "name": "GitHub Actions" }, "workflowRun": { "event": "dynamic", "workflow": { "name": "CodeQL" } }, "checkRuns": { "nodes": [] } },
             { "app": { "name": "GitHub Actions" }, "workflowRun": { "event": "pull_request", "workflow": { "name": "ci" } },
               "checkRuns": { "nodes": [ {
                 "databaseId": 121, "name": "test", "status": "IN_PROGRESS", "conclusion": null,

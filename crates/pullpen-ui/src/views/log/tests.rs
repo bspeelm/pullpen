@@ -60,13 +60,21 @@ fn github_markers_are_read_and_its_times_kept() {
 2026-10-27T01:59:07.0225473Z ##[endgroup]
 2026-10-27T01:59:09.0000000Z ##[error]Process completed with exit code 101.
 2026-10-27T01:59:09.5000000Z ##[warning]Node 16 is deprecated
+2026-10-27T01:59:10.0000000Z [command]/usr/bin/git version
 ";
     let l = parse(raw, false);
     assert_eq!(
         texts(&l),
-        ["Run cargo test", "cargo test --workspace", "Process completed with exit code 101.", "Node 16 is deprecated"]
+        [
+            "Run cargo test",
+            "cargo test --workspace",
+            "Process completed with exit code 101.",
+            "Node 16 is deprecated",
+            "/usr/bin/git version"
+        ]
     );
     assert_eq!(l.lines[0].spans[0].fg, Tok::Acc);
+    assert_eq!(l.lines[4].spans[0].fg, Tok::Acc, "a command, as the download writes it");
     assert!(l.lines[2].error);
     assert_eq!(l.lines[3].spans[0].fg, Tok::Warn);
     assert_eq!(l.lines[2].at, parse_rfc3339("2026-10-27T01:59:09Z"));

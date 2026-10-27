@@ -185,8 +185,10 @@ fn job_row(j: &JobRun, sel: bool, w: usize, ctx: &Ctx) -> Line {
     let mut l = vec![if sel { s("▌ ", Tok::Acc) } else { sp(2) }];
     l.extend(markup(glyph(j.state)));
     l.push(sp(2));
-    l.extend(fit(&[name], 30, true));
-    l.extend(fit(&[s(&j.group, Tok::Dim)], 12, true));
+    l.extend(fit(&[name], 29, true));
+    l.push(sp(1));
+    l.extend(fit(&[s(&j.group, Tok::Dim)], 11, true));
+    l.push(sp(1));
     l.extend(fit(&markup(&progress(j)), w.saturating_sub(2 + 1 + 2 + 30 + 12 + 9), true));
     let t = if j.state == CheckState::Queued { String::new() } else { took(j.started, j.finished, ctx.now) };
     l.push(s(format!("{t:>8}"), Tok::Dim));
@@ -326,28 +328,30 @@ pub fn job_screen(o: &JobScreen, ctx: &Ctx) -> Vec<Line> {
         Some(l) if l.trimmed => format!("{{d|last {} lines}}", lines.len()),
         Some(_) => format!("{{d|{} lines}}", lines.len()),
     };
-    let tail = if v.follow && o.log.is_some() { format!("{tail}{{d|   }}{{a|following ↓}}") } else { tail };
+    let following = v.follow && o.log.is_some() && j.state == CheckState::Running;
+    let tail = if following { format!("{tail}{{d|   }}{{a|following ↓}}") } else { tail };
     let mut l = vec![sp(2)];
     l.extend(fit(&lr(&markup(&heading("steps", v.steps)), &markup(&format!("{{d|{}}}", st.len())), LW), LW, true));
     l.push(s(" │ ", Tok::Faint));
     l.extend(fit(&lr(&markup(&heading("log", !v.steps)), &markup(&tail), rw), rw, true));
     out.push(l);
-    // The step the cursor is on when the steps have focus; otherwise the
-    // one the log's last shown row is in, or the one running.
+    // While following, the step the newest line is in, or the one running;
+    // otherwise the one chosen or scrolled to.
     let bottom = (top + rows).min(lines.len()).saturating_sub(1);
-    let current = if v.steps {
-        Some(v.step)
-    } else {
+    let current = if v.follow && !v.steps {
         st.iter()
             .rposition(|x| x.line.is_some_and(|l| l <= bottom))
             .or_else(|| st.iter().position(|x| x.state == CheckState::Running))
+    } else {
+        Some(v.step)
     };
     let left: Vec<Line> = st
         .iter()
         .enumerate()
         .map(|(i, x)| {
             let mut l = vec![if current == Some(i) { s("▌ ", Tok::Acc) } else { sp(2) }];
-            l.extend(lr(&markup(&format!("{} {}", glyph(x.state), esc(&x.name))), &[s(&x.took, Tok::Dim)], LW - 2));
+            let took = s(format!(" {}", x.took), Tok::Dim);
+            l.extend(lr(&markup(&format!("{} {}", glyph(x.state), esc(&x.name))), &[took], LW - 2));
             l
         })
         .collect();

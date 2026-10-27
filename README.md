@@ -96,10 +96,13 @@ If a PR is only waiting, `M` offers to arm auto-merge instead. If the forge
 would refuse, pullpen refuses first and says why. `A` arms or disarms.
 After a merge, the Merged section shows what the base branch's pipeline did,
 so you can see a deploy go through or fail. A failure needs attention until
-its branch passes again, and the status line says so from any tab.
+its branch passes again, and the status line says so from any tab. `w` on any
+PR opens its pipeline, before or after the merge, refreshed every few seconds
+while it runs. Enter on a job shows its steps and its log.
 [Merging and auto-merge](https://github.com/bspeelm/pullpen/wiki/Merging-and-auto-merge) ·
 [the armed view](https://github.com/bspeelm/pullpen/wiki/The-armed-view) ·
-[the merged view](https://github.com/bspeelm/pullpen/wiki/The-merged-view)
+[the merged view](https://github.com/bspeelm/pullpen/wiki/The-merged-view) ·
+[watching pipelines](https://github.com/bspeelm/pullpen/wiki/Watching-pipelines)
 
 ## What it touches
 
