@@ -295,7 +295,7 @@ pub fn sections() -> Vec<FixtureSection> {
             4,
         ),
         section("Auto-merge armed", "Armed", "is:armed", View::Armed, true, armed.clone(), armed.len()),
-        section("Deploys", "Deploys", "is:merged merged:7d", View::Deploys, false, merged_prs(), 1),
+        section("Deploys", "Deploys", "is:merged merged:7d", View::Deploys, false, merged_prs(), 2),
         section("Merged", "Merged", "is:merged merged:7d", View::Merged, false, merged_prs(), 7),
         section("Open", "Open", "is:open", View::List, false, all_prs(), 96),
     ]

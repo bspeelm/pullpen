@@ -1,7 +1,10 @@
 use pullpen_fixtures as fx;
 
+use std::time::Instant;
+
 use super::*;
 use crate::glyphs::Glyphs;
+use crate::keymap::Key;
 use crate::palette::{Palette, Tier};
 
 fn app() -> App {
@@ -76,4 +79,39 @@ fn a_forge_error_clears_when_that_forge_recovers() {
     assert!(a.err.is_some(), "a different forge recovering changes nothing");
     a.forge_up(Forge::GitLab);
     assert!(a.err.is_none());
+}
+
+/// Merging #812, then a sync that has not caught up lists it open again:
+/// it stays gone, so it cannot be merged twice.
+#[test]
+fn a_pr_pullpen_merged_stays_gone_while_the_forge_catches_up() {
+    use pullpen_core::{JobResult, Outcome, PrState};
+    let mut a = with_agents();
+    a.active = AGENT;
+    let at = a.section().prs.iter().position(|p| p.id.number == 812).unwrap();
+    a.section_mut().sel = at;
+    let stale = a.section().prs.clone();
+    let effects: Vec<Effect> =
+        [Key::Char('M'), Key::Char('y')].iter().flat_map(|k| a.key(*k, Instant::now())).collect();
+    for e in effects {
+        if let Effect::Run(job) = e {
+            a.job_done(JobResult { job, outcome: Outcome::Done, note: None });
+        }
+    }
+    let shown = |a: &App| a.sections[AGENT].prs.iter().any(|p| p.id.number == 812);
+    assert!(!shown(&a));
+    a.synced(AGENT, stale.clone(), 23);
+    assert!(!shown(&a), "a stale read does not bring it back");
+    assert_eq!(a.sections[AGENT].total, 22);
+
+    let mut merged = stale.iter().find(|p| p.id.number == 812).unwrap().clone();
+    merged.state = PrState::Merged { at: fx::NOW, method: pullpen_core::MergeMethod::Squash };
+    a.synced(4, vec![merged], 1);
+    assert!(a.ended.is_empty(), "the forge agreed: nothing is held back any more");
+
+    let held = stale[0].id.clone();
+    a.ended.insert(held.clone(), fx::NOW);
+    a.now = pullpen_core::time::Timestamp(fx::NOW.0 + 301);
+    a.synced(AGENT, stale, 23);
+    assert!(a.sections[AGENT].prs.iter().any(|p| p.id == held), "after five minutes the forge is believed");
 }

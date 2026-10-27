@@ -1,4 +1,4 @@
-{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Auto-merge armed{faint} 7{fg}    {dim}Deploys{faint} 1{fg}    {acc b}Merged{acc} 7{fg}    {dim}Open{faint} 96{fg}             {faint}is:merged merged:7d{fg} 
+{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Auto-merge armed{faint} 7{fg}    {dim}Deploys{faint} 2{fg}    {acc b}Merged{acc} 7{fg}    {dim}Open{faint} 96{fg}             {faint}is:merged merged:7d{fg} 
 {fg}                                                                                                                        
 {fg}  {fg b}last 7 days{dim}  7{fg}                                                                                                        
 {acc bg=sel}▌ {dim bg=sel}gh {warn bg=sel}○{fg bg=sel}   #2288 {fg bg=sel b}chore(deps): update dependency vite to v7.1.4{fg bg=sel}        {dim bg=sel}web{fg bg=sel}         {warn bg=sel}running{dim bg=sel}  5/7 · deploy-staging{fg bg=sel}     {dim bg=sel}  22m{fg} 

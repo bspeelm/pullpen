@@ -13,7 +13,7 @@ fn all_interleaves_like_tui_js() {
 fn the_design_counts_hold() {
     let s = sections();
     let totals: Vec<usize> = s.iter().map(|x| x.total).collect();
-    assert_eq!(totals, [6, 4, 7, 1, 7, 96], "tui.js SECS");
+    assert_eq!(totals, [6, 4, 7, 2, 7, 96], "tui.js SECS");
     assert_eq!(agent_section().total, 23);
 }
 

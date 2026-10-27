@@ -1,4 +1,4 @@
-{fg}  {dim}Mine{faint} 6{fg}   {dim}Review{faint} 4{fg}   {dim}Armed{faint} 7{fg}   {dim}Deploys{faint} 1{fg}   {dim}Merged{faint} 7{fg}   {acc b}Open{acc} 96{fg}                  
+{fg}  {dim}Mine{faint} 6{fg}   {dim}Review{faint} 4{fg}   {dim}Armed{faint} 7{fg}   {dim}Deploys{faint} 2{fg}   {dim}Merged{faint} 7{fg}   {acc b}Open{acc} 96{fg}                  
 {fg}                                                                                
 {fg}         {faint}    #{fg} {faint}title{fg}                     {faint}repo{fg}               {faint}author{fg}    {faint}rev{fg}  {faint} age{fg} 
 {fg}  {dim}gh {warn}○{fg}   {dim}#4823 {fg}Rate limit per API key…   {dim}acme/api{fg}           {dim}mara{fg}      {warn}0/1{fg}  {dim} 20m{fg} 

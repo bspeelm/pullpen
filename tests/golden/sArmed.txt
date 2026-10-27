@@ -1,4 +1,4 @@
-  Mine 6    Needs my review 4    Auto-merge armed 7    Deploys 1    Merged 7    Open 96                        is:armed 
+  Mine 6    Needs my review 4    Auto-merge armed 7    Deploys 2    Merged 7    Open 96                        is:armed 
                                                                                                                         
   needs attention  2                                                                                                    
 ▌ gh ✗ ◆ #2290 Fix hydration mismatch on settings page when local…  web         failing  e2e/chromium · 2 retries   18m 

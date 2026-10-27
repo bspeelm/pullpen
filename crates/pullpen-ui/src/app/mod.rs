@@ -176,6 +176,8 @@ pub enum Effect {
 }
 
 pub const LOG_MAX: usize = 200;
+/// Seconds a PR pullpen ended stays out of open lists while the forge catches up.
+const ENDED_FOR: i64 = 300;
 
 pub struct App {
     pub sections: Vec<SectionState>,
@@ -195,6 +197,8 @@ pub struct App {
     pub watches: HashMap<PrId, armed::Watch>,
     /// Merged PRs `:clear` dropped, oldest first.
     pub cleared: Vec<PrId>,
+    /// PRs pullpen merged or closed itself, and when: see `synced`.
+    pub ended: HashMap<PrId, Timestamp>,
     /// Each merged PR's group as last seen, to ring when it changes.
     pub landings: HashMap<PrId, crate::views::armed::Landed>,
     pub notify: Vec<String>,
@@ -244,6 +248,7 @@ impl App {
             poll: pipeline::Poll::default(),
             watches: HashMap::new(),
             cleared: Vec::new(),
+            ended: HashMap::new(),
             landings: HashMap::new(),
             notify: Vec::new(),
             last_visit: None,
@@ -639,6 +644,17 @@ impl App {
     /// if it is still there, else at the same index (design §13); marks on
     /// PRs that left are dropped.
     pub fn synced(&mut self, i: usize, mut prs: Vec<Pr>, total: usize) {
+        // A PR pullpen merged or closed can come back open from a read the
+        // forge has not caught up on yet; it stays gone until the forge
+        // agrees, or for a few minutes at most.
+        self.ended.retain(|_, at| self.now.0 - at.0 < ENDED_FOR);
+        let open = |p: &Pr| p.state == pullpen_core::PrState::Open;
+        for p in prs.iter().filter(|p| !open(p)) {
+            self.ended.remove(&p.id);
+        }
+        let before = prs.len();
+        prs.retain(|p| !open(p) || !self.ended.contains_key(&p.id));
+        let total = total.saturating_sub(before - prs.len());
         self.track(i, &mut prs);
         let total = self.shape(i, &mut prs).unwrap_or(total);
         // A PR that changed has a stale detail and diff; a fetch that failed

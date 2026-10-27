@@ -539,6 +539,7 @@ impl App {
     /// Drops a merged or closed PR from every section. The cursor stays at
     /// the same index (design §05).
     fn remove_pr(&mut self, id: &PrId) {
+        self.ended.insert(id.clone(), self.now);
         for s in &mut self.sections {
             let before = s.prs.len();
             s.prs.retain(|p| p.id != *id);

@@ -1,4 +1,4 @@
-  Mine 6    Needs my review 4    Auto-merge armed 7    Deploys 1    Merged 7    Open 96             is:merged merged:7d 
+  Mine 6    Needs my review 4    Auto-merge armed 7    Deploys 2    Merged 7    Open 96             is:merged merged:7d 
                                                                                                                         
   last 7 days  7                                                                                                        
 ▌ gh ○   #2288 chore(deps): update dependency vite to v7.1.4        web         running  5/7 · deploy-staging       22m 

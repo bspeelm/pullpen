@@ -1,4 +1,4 @@
-{default}  {brightblack}Mine 6{default}   {brightblack}Review 4{default}   {brightblack}Armed 7{default}   {brightblack}Deploys 1{default}   {brightblack}Merged 7{default}   {cyan b}Open{cyan} 96{default}                  
+{default}  {brightblack}Mine 6{default}   {brightblack}Review 4{default}   {brightblack}Armed 7{default}   {brightblack}Deploys 2{default}   {brightblack}Merged 7{default}   {cyan b}Open{cyan} 96{default}                  
 {default}                                                                                
 {default}         {brightblack}    #{default} {brightblack}title{default}                     {brightblack}repo{default}               {brightblack}author{default}    {brightblack}rev{default}  {brightblack} age{default} 
 {default}  {brightblack}gh {yellow}o{default}   {brightblack}#4823 {default}Rate limit per API key~   {brightblack}acme/api{default}           {brightblack}mara{default}      {yellow}0/1{default}  {brightblack} 20m{default} 
