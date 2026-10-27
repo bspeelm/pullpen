@@ -73,3 +73,12 @@ fn a_token_never_reaches_a_file() {
     }
     fs::remove_dir_all(dir).unwrap();
 }
+
+/// Ages count from the moment drawn, not from launch: the loop sets
+/// `App::now` from this before every frame.
+#[test]
+fn the_clock_is_the_wall_clock() {
+    let dir = std::env::temp_dir().join(format!("pullpen-clock-{}", std::process::id()));
+    let (live, _, _) = Live::start(&Config::default(), &[], dir, Timestamp(0), &Credentials::default()).unwrap();
+    assert!((live.now().0 - Timestamp::now().0).abs() <= 1);
+}
