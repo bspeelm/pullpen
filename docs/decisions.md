@@ -389,6 +389,12 @@ run. Its steps' states are live in GraphQL, so a running GitHub job shows
 which step it is on, says its log comes when it finishes, and `o` opens the
 live page. A commit status from outside the forge's CI has only its link.
 
+**Which pipeline is the branch's.** GitLab's `ref` filter also matches
+merge-request pipelines: a release MR from the base branch shares its SHA
+and ref, and its failed pipeline was being reported as the branch failing.
+Every lookup of a branch's pipeline, here and in ADR-017's and ADR-019's,
+asks for pushes only, and checks that the answer names the branch.
+
 **How a log is shown.** SGR colours map onto the palette's tokens (red to
 err, green to ok, yellow to warn, blue, cyan and magenta to acc), and no
 background is painted. Every other escape is dropped. A redrawn line keeps

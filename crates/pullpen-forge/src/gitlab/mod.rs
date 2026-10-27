@@ -282,8 +282,10 @@ impl GitLab {
         }
     }
 
-    /// Each merged MR's pipeline on its merge commit and target branch (the
-    /// MR's own pipeline can share the SHA). Asked a few at a time: GitLab
+    /// Each merged MR's pipeline on its merge commit and target branch.
+    /// GitLab's `ref` filter also matches merge-request pipelines, any of
+    /// which can share the SHA, so only pushes count, and the answer must
+    /// name the branch itself (`on_branch`). Asked a few at a time: GitLab
     /// refuses a query over 250 complexity, which twenty MRs exceed. Without
     /// it a row still shows, as merged with no pipeline, so a failure is
     /// logged rather than failing the section.
@@ -297,7 +299,7 @@ impl GitLab {
             for (i, (id, sha, base)) in chunk.iter().enumerate() {
                 decl.push(format!("$r{i}: ID!, $s{i}: String!, $b{i}: String!"));
                 body += &format!(
-                    " p{i}: project(fullPath: $r{i}) {{ pipelines(sha: $s{i}, ref: $b{i}, first: 1) {{ nodes {{ status path jobs(first: 50) {{ nodes {{ name status }} }} }} }} }}"
+                    " p{i}: project(fullPath: $r{i}) {{ pipelines(sha: $s{i}, ref: $b{i}, source: \"push\", first: 1) {{ nodes {{ ref status path jobs(first: 50) {{ nodes {{ name status }} }} }} }} }}"
                 );
                 vars.insert(format!("r{i}"), json!(id.repo));
                 vars.insert(format!("s{i}"), json!(sha));
@@ -308,8 +310,8 @@ impl GitLab {
                 Ok(d) => d,
                 Err(e) => return tracing::warn!(host = %self.host, error = %e, "post-merge pipelines"),
             };
-            for (i, (id, ..)) in chunk.iter().enumerate() {
-                let Some(pl) = d.pointer(&format!("/p{i}/pipelines/nodes/0")) else { continue };
+            for (i, (id, _, base)) in chunk.iter().enumerate() {
+                let Some(pl) = on_branch(&d, i, base) else { continue };
                 if let Some(p) = prs.iter_mut().find(|p| &p.id == *id) {
                     p.post_merge = Some(pipeline(pl, &self.base));
                 }
@@ -318,14 +320,15 @@ impl GitLab {
     }
 
     /// The newest pipeline on each target branch a merge failed on, logged
-    /// rather than failing the section when it cannot be read.
+    /// rather than failing the section when it cannot be read. Only pushes,
+    /// for the reason `post_merge` gives.
     async fn branch_heads(&self, prs: &mut [Pr]) {
         for chunk in failed_branches(prs).chunks(20) {
             let (mut decl, mut body, mut vars) = (Vec::new(), String::new(), Map::new());
             for (i, (repo, base)) in chunk.iter().enumerate() {
                 decl.push(format!("$r{i}: ID!, $b{i}: String!"));
                 body += &format!(
-                    " p{i}: project(fullPath: $r{i}) {{ pipelines(ref: $b{i}, first: 1) {{ nodes {{ status }} }} }}"
+                    " p{i}: project(fullPath: $r{i}) {{ pipelines(ref: $b{i}, source: \"push\", first: 1) {{ nodes {{ ref status }} }} }}"
                 );
                 vars.insert(format!("r{i}"), json!(repo));
                 vars.insert(format!("b{i}"), json!(base));
@@ -335,8 +338,8 @@ impl GitLab {
                 Err(e) => return tracing::warn!(host = %self.host, error = %e, "target branch pipelines"),
             };
             for (i, key) in chunk.iter().enumerate() {
-                if let Some(st) = d.pointer(&format!("/p{i}/pipelines/nodes/0/status")).and_then(Value::as_str) {
-                    set_branch(prs, key, status(st));
+                if let Some(pl) = on_branch(&d, i, &key.1) {
+                    set_branch(prs, key, status(s(pl, "/status")));
                 }
             }
         }
@@ -384,6 +387,11 @@ fn pipeline(p: &Value, base: &str) -> Pipeline {
         url: format!("{base}{}", s(p, "/path")),
         branch: None,
     }
+}
+
+/// The `p{i}` pipeline of an aliased query, if it ran for `branch` itself.
+fn on_branch<'a>(d: &'a Value, i: usize, branch: &str) -> Option<&'a Value> {
+    d.pointer(&format!("/p{i}/pipelines/nodes/0")).filter(|p| s(p, "/ref") == branch)
 }
 
 /// A pipeline as the pipeline screen shows it. A pipeline stopped at a
@@ -586,7 +594,7 @@ impl ForgeTrait for GitLab {
         if let (Some(sha), "merged") = (sha, s(m, "/state")) {
             let vars = json!({ "path": id.repo, "sha": sha, "ref": s(m, "/targetBranch") });
             let d = self.gql(LANDED, vars).await?;
-            if let Some(p) = d.pointer("/project/pipelines/nodes/0") {
+            if let Some(p) = d.pointer("/project/pipelines/nodes/0").filter(|p| s(p, "/ref") == s(m, "/targetBranch")) {
                 out.push(run(Which::AfterMerge, p, &self.base));
             }
         }
