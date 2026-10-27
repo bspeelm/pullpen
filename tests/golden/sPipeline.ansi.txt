@@ -1,0 +1,40 @@
+{fg}  {dim}Merged{faint}  ›  {dim}gl  platform/runner  {fg b}#812{faint}  ›  {fg}pipeline                                                    {dim}refreshed 3s ago{fg} 
+{fg}                                                                                                                        
+{fg}  {fg b}Bump go toolchain to 1.25.3{fg}                                                                                           
+{fg}  ◇ renovate{dim}   renovate/go-1.25.3 → main   merged 41m ago · squash{fg}                                                      
+{fg}                                                                                                                        
+{fg}  {warn}○{fg} {fg b}after merge{dim}   main @ 3f2a91c   push{fg}                                                  {dim}2 of 4 passed   running 2m 41s{fg} 
+{fg}  {ok}✓{fg}  lint                          {dim}prepare{fg}     {dim}passed{fg}                                                          {dim}     38s{fg} 
+{fg}  {ok}✓{fg}  go mod verify                 {dim}prepare{fg}     {dim}passed{fg}                                                          {dim}     21s{fg} 
+{acc bg=sel}▌ {warn bg=sel}○{fg bg=sel}  {fg bg=sel b}build{fg bg=sel}                         {dim bg=sel}build{fg bg=sel}       {warn bg=sel}running{fg bg=sel}                                                         {dim bg=sel}  1m 40s{fg bg=sel} 
+{fg}  {dim}·{fg}  publish-image                 {dim}deploy{fg}      {dim}queued{fg}                                                          {dim}        {fg} 
+{fg}                                                                                                                        
+{fg}  {ok}✓{fg} {fg b}before merge{dim}   9c01e7a   merge request{fg}                                                       {dim}4 of 4 passed   3m 05s{fg} 
+{fg}      {dim}zo to show its 4 jobs{fg}                                                                                             
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{bg bg=acc b} NORMAL {fg bg=surf}  #812  {dim bg=surf}job 3/4{fg bg=surf}                                  {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
+{dim}Enter open job   zo zc show / fold a run   o open on gitlab.com   r refresh   q back to #812{fg}                            

@@ -10,11 +10,11 @@
   gh ✓     #   j k        down / up          M          merge…             h l        prev / next section               
   gh ○ ◆ #22   gg G       top / bottom       A          arm / disarm auto  Tab S-Tab  next / prev section               
   gl ○ ◆  #8   ^d ^u      half page          a          approve            1–6        go to section                     
-  gh ◌   #12   /          filter list        c          comment            p          toggle preview                    
-  gh ✓   #48   n N        next / prev match  d          open diff          :          command line                      
-  gl ✗    #1   Esc        clear, cancel      o          open in browser    ?          this help                         
-  gh ○    #3   Space      mark row           x          close…             q          back / quit           r v2        
-  gh ✓ ◆ #11   V          mark range         u          update branch                                       uns as an   
+  gh ◌   #12   /          filter list        c          comment            w          watch pipeline                    
+  gh ✓   #48   n N        next / prev match  d          open diff          p          toggle preview                    
+  gl ✗    #1   Esc        clear, cancel      o          open in browser    :          command line                      
+  gh ○    #3   Space      mark row           x          close…             ?          this help             r v2        
+  gh ✓ ◆ #11   V          mark range         u          update branch      q          back / quit           uns as an   
   gl ○    #8   Enter      open detail        D          dismiss failure                                     0 with a    
   gh ○   #22                                 r          refresh                                             anly after  
   gh ✓ ◆ #48                                                                                                            

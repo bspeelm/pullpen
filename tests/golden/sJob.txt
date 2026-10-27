@@ -1,0 +1,40 @@
+  Merged  ›  gl  platform/runner  #812  ›  build                                                       refreshed 3s ago 
+                                                                                                                        
+  Bump go toolchain to 1.25.3                                                                                           
+  ◇ renovate   renovate/go-1.25.3 → main   merged 41m ago · squash                                                      
+                                                                                                                        
+  ○ build   build stage · after merge · main @ 3f2a91c                                                   running 1m 40s 
+                                                                                                                        
+  steps                                  4 │ log                                                 14 lines   following ↓ 
+    ✓ Preparing the "docker" executor   4s │ Preparing the "docker" executor                                            
+    ✓ Preparing environment             1s │ Using docker image golang:1.25.3 ...                                       
+    ✓ Getting source from Git           3s │ Preparing environment                                                      
+  ▌ ○ Executing "step_script"       1m 32s │ Running on runner-abbey via abbey...                                       
+                                           │ Getting source from Git                                                    
+                                           │ Fetching changes with git depth set to 20...                               
+                                           │ Checking out 3f2a91c4 as detached HEAD (ref is main)...                    
+                                           │ Executing "step_script" stage of the job script                            
+                                           │ $ go version                                                               
+                                           │ go version go1.25.3 linux/amd64                                            
+                                           │ $ make build                                                               
+                                           │ go build -trimpath -ldflags "-s -w" -o out/gitlab-runner .                 
+                                           │ warning: GOFLAGS is set; -mod=mod overrides the vendor directory           
+                                           │ go: downloading golang.org/x/sys v0.37.0                                   
+                                           │                                                                            
+                                           │                                                                            
+                                           │                                                                            
+                                           │                                                                            
+                                           │                                                                            
+                                           │                                                                            
+                                           │                                                                            
+                                           │                                                                            
+                                           │                                                                            
+                                           │                                                                            
+                                           │                                                                            
+                                           │                                                                            
+                                           │                                                                            
+                                           │                                                                            
+                                           │                                                                            
+                                           │                                                                            
+ NORMAL   #812  log 14/14                                ◆ 7 armed   ✗ 3 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
+Enter jump to step   G follow   / search   e next error   o open on gitlab.com   q back to the pipeline                 
