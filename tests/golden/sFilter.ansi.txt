@@ -1,4 +1,4 @@
-{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Auto-merge armed{faint} 7{fg}    {dim}Deploys{faint} 5{fg}    {dim}Merged{faint} 7{fg}    {acc b}Open{acc} 96{fg}         {faint}is:open   sort: updated{fg} 
+{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Auto-merge armed{faint} 7{fg}    {dim}Deploys{faint} 2{fg}    {dim}Merged{faint} 7{fg}    {acc b}Open{acc} 96{fg}         {faint}is:open   sort: updated{fg} 
 {fg}                                                                                                                        
 {fg}         {faint}    #{fg} {faint}title{fg}                                       {faint}repo{fg}             {faint}target{fg}      {faint}author{fg}    {faint}rev{fg}  {faint}  +/−{fg}       {faint} age{fg} 
 {faint}  gh ○   #4823 Rate limit per API key instead of per IP    acme/api         main        mara      0/1   +140 −31    20m{fg} 

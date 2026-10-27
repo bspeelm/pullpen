@@ -1,4 +1,4 @@
-  Mine 6   Review 4   Armed 7   Deploys 5   Merged 7   Open 96                  
+  Mine 6   Review 4   Armed 7   Deploys 2   Merged 7   Open 96                  
                                                                                 
              # title                     repo               author    rev   age 
   gh o   #4823 Rate limit per API key~   acme/api           mara      0/1   20m 

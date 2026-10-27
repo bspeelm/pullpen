@@ -122,7 +122,7 @@ function headA(w){
 }
 
 // ---------- chrome
-const SECS=[['Mine','Mine',6],['Needs my review','Review',4],['Auto-merge armed','Armed',7],['Deploys','Deploys',5],['Merged','Merged',7],['Open','Open',96]];
+const SECS=[['Mine','Mine',6],['Needs my review','Review',4],['Auto-merge armed','Armed',7],['Deploys','Deploys',2],['Merged','Merged',7],['Open','Open',96]];
 function tabs(active,W,o={}){
  const l=[sp(2)];
  SECS.forEach((s,i)=>{const nm=o.short?s[1]:s[0];

@@ -485,15 +485,16 @@ lines of code.
 The design changed first (ADR-002): the tab row, `deploysScreen`,
 `mergedScreen` and `armedScreen`, and the list screens moved onto Open.
 
-## ADR-024 — Every tab counts its rows; pullpen believes its own merges
+## ADR-024 — Deploys counts what is deploying; pullpen believes its own merges
 
 Two things the maintainer met in the first hour of ADR-023.
 
 **The Deploys tab read 0 with lanes on screen.** ADR-023 had it count
 failing lanes, as Merged once counted what needed attention, and next to
-"Deploys" a 0 reads as nothing deploying. Every tab now counts the rows it
-shows. A failing branch is still on the status line (`✗ 1 broken`) and in
-the terminal title, from any tab.
+"Deploys" a 0 reads as nothing deploying. It now counts the lanes deploying
+right now: a deployed lane needs nobody, so it is not in the number. A
+failing branch is still on the status line (`✗ 1 broken`) and in the
+terminal title, from any tab.
 
 **A merged MR came back as open.** After a merge, pullpen removes the row and
 syncs every section. A read that has not caught up with the write, on

@@ -1,4 +1,4 @@
-{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Auto-merge armed{faint} 7{fg}    {dim}Deploys{faint} 5{fg}    {dim}Merged{faint} 7{fg}    {acc b}Open{acc} 96{fg}                         {faint}is:open{fg} 
+{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Auto-merge armed{faint} 7{fg}    {dim}Deploys{faint} 2{fg}    {dim}Merged{faint} 7{fg}    {acc b}Open{acc} 96{fg}                         {faint}is:open{fg} 
 {fg}                                                                                                                        
 {fg}         {faint}    #{fg} {faint}title{fg}                      {faint}repo{fg}               {faint}rev{fg}  {faint} age │ {fg b}Migrate invoices to ledger v2{fg}                  
 {fg}  {dim}gh {warn}○{fg}   {dim}#4823 {fg}Rate limit per API key i…  {dim}acme/api{fg}           {warn}0/1{fg}  {dim} 20m{faint} │ {dim}gh  acme/api #4821   {fg}◇ claude{dim}   3h{fg}             
