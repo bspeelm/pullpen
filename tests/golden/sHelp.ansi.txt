@@ -1,4 +1,4 @@
-{faint}  Mine 6    Needs my review 4    Auto-merge armed 7    Deploys 1    Merged 7    Open 96                         is:open 
+{faint}  Mine 6    Needs my review 4    Auto-merge armed 7    Deploys 5    Merged 7    Open 96                         is:open 
 {fg}                                                                                                                        
 {faint}             # title                      repo               rev   age │ Migrate invoices to ledger v2                  
 {faint}  gh ○   #4823 Rate limit per API key i…  acme/api           0/1   20m │ gh  acme/api #4821   ◇ claude   3h             

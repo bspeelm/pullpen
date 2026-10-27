@@ -55,7 +55,7 @@ impl App {
         prs.sort_by_key(|p| (order(p), Reverse(merged_at(p)), p.id.repo.clone()));
     }
 
-    /// What the Deploys tab counts: the lanes that need you.
+    /// The lanes that need you, for the status line and the title.
     pub(super) fn failing(&self, prs: &[Pr]) -> usize {
         prs.iter().filter(|p| self.lane(p) == Landed::Attention).count()
     }
@@ -93,7 +93,7 @@ impl App {
             if self.view_is(i, View::Deploys) {
                 let mut prs = std::mem::take(&mut self.sections[i].prs);
                 self.lanes(&mut prs);
-                self.sections[i].total = self.failing(&prs);
+                self.sections[i].total = prs.len();
                 self.sections[i].prs = prs;
             }
         }

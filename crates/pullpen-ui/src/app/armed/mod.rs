@@ -86,9 +86,11 @@ impl App {
     pub(super) fn shape(&mut self, i: usize, prs: &mut Vec<Pr>) -> Option<usize> {
         match self.sections.get(i).map(|s| s.section.view)? {
             View::Armed => Some(self.armed_count(prs)),
+            // Every tab counts the rows it shows; a failing lane is on the
+            // status line and in the title.
             View::Deploys => {
                 self.lanes(prs);
-                Some(self.failing(prs))
+                Some(prs.len())
             }
             View::Merged => {
                 self.history(prs);

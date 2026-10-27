@@ -31,7 +31,7 @@ pipeline on the forge instead.
 
 ## Knowing something needs you
 
-- The **Deploys** tab counts the failing lanes.
+- The **Deploys** tab counts its lanes, as every tab counts its rows.
 - The status line shows `✗ 1 broken` from any tab while a branch is failing.
 - The terminal's tab title reads `pullpen ✗1`, so it shows from another
   terminal tab too.

@@ -83,7 +83,7 @@ fn lanes_are_deploying_failing_then_deployed_and_a_fixed_branch_is_deployed() {
     ];
     a.synced(DEPLOYS, rows, 4);
     assert_eq!(numbers(&a), [812, 2290, 4815, 1199]);
-    assert_eq!(a.sections[DEPLOYS].total, 1, "the tab counts failing lanes");
+    assert_eq!(a.sections[DEPLOYS].total, 4, "the tab counts lanes, as every tab counts its rows");
     assert_eq!((a.broken(), a.title().as_str()), (1, "pullpen ✗1"));
     let s = screen(&a);
     assert!(
@@ -112,7 +112,7 @@ fn d_dismisses_a_failing_lane_quietly_until_a_newer_merge_lands() {
     a.sections[DEPLOYS].sel = 1;
     let fx = a.key(Key::Char('D'), Instant::now());
     assert!(fx.iter().any(|e| matches!(e, Effect::SaveCleared)));
-    assert_eq!((a.broken(), a.sections[DEPLOYS].total), (0, 0));
+    assert_eq!((a.broken(), a.sections[DEPLOYS].total), (0, 2), "nothing broken; both lanes still show");
     assert!(screen(&a).iter().any(|l| l.contains("dismissed  deploy")));
     a.synced(DEPLOYS, vec![landed(4815, 2, PipelineState::Failed), landed(812, 1, PipelineState::Running)], 2);
     assert!(notes(&mut a).is_empty(), "dismissing is not the branch passing");
