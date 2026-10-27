@@ -118,6 +118,7 @@ fn event_loop(terminal: &mut DefaultTerminal, term: &mut Term, l: &mut Loop) -> 
     }
     while !l.app.quit {
         l.app.sync = l.backend.sync_label();
+        l.app.now = l.backend.now();
         let title = l.app.title();
         if title != term.title {
             execute!(stdout(), SetTitle(&title))?;

@@ -4,6 +4,7 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 use std::thread;
 use std::time::Duration;
 
+use pullpen_core::time::Timestamp;
 use pullpen_core::{Action, Job, JobResult, Outcome, PrId};
 use pullpen_fixtures as fx;
 use pullpen_ui::app::{App, SectionState};
@@ -84,6 +85,11 @@ impl Backend for Fake {
 
     fn sync_label(&self) -> String {
         "fixtures".into()
+    }
+
+    /// The fixtures' own moment, so the screens match the design's ages.
+    fn now(&self) -> Timestamp {
+        fx::NOW
     }
 
     fn open(&mut self, url: &str) -> Result<(), String> {
