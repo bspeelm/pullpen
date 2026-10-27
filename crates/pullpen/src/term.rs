@@ -172,6 +172,12 @@ fn event_loop(terminal: &mut DefaultTerminal, term: &mut Term, l: &mut Loop) -> 
                 Msg::Caps(c) => l.app.caps.extend(c),
                 Msg::Detail(id, d) => l.app.detail_loaded(id, d),
                 Msg::Diff(id, f) => l.app.diff_loaded(id, f),
+                Msg::Runs(id, runs) => l.app.runs_loaded(id, runs),
+                Msg::Log(id, job, raw) => l.app.log_loaded(id, job, &raw),
+                Msg::Unwatched { log, why } => {
+                    tracing::warn!(log, %why, "pipeline fetch failed");
+                    l.app.watch_failed(log, &why);
+                }
                 Msg::Unfetched { id, diff, why } => {
                     tracing::warn!(pr = id.number, diff, %why, "fetch failed");
                     l.app.fetch_failed(&id, diff);
@@ -179,6 +185,7 @@ fn event_loop(terminal: &mut DefaultTerminal, term: &mut Term, l: &mut Loop) -> 
             }
         }
         effects.extend(l.app.wants());
+        effects.extend(l.app.watch(Instant::now()));
         for e in effects {
             run_effect(e, terminal, term, l)?;
         }
@@ -215,6 +222,8 @@ fn run_effect(e: Effect, terminal: &mut DefaultTerminal, term: &mut Term, l: &mu
         Effect::Refresh { all } => l.backend.refresh(if all { None } else { Some(l.app.active) }),
         Effect::FetchDetail(id) => l.backend.fetch(id, false),
         Effect::FetchDiff(id) => l.backend.fetch(id, true),
+        Effect::FetchRuns(id) => l.backend.runs(id),
+        Effect::FetchLog(id, job) => l.backend.log(id, job),
         Effect::Notify(text) => {
             // The bell, then OSC 9, which terminals that support it turn into
             // a desktop notification (design §06).

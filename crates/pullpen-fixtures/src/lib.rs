@@ -142,6 +142,7 @@ fn expand(x: &Raw) -> Pr {
     };
     let head = match x.n {
         4821 => "claude/ledger-v2".to_string(),
+        812 => "renovate/go-1.25.3".to_string(),
         n => format!("{}/{n}", x.a),
     };
     let sep = if x.f == Forge::GitHub { "pull" } else { "-/merge_requests" };
@@ -407,3 +408,75 @@ pub fn golden(name: &str) -> (String, String) {
         |f: String| std::fs::read_to_string(dir.join(&f)).unwrap_or_else(|e| panic!("{f}: {e}; run `make golden`"));
     (read(format!("{name}.txt")), read(format!("{name}.ansi.txt")))
 }
+
+/// The pipeline screen's runs (tui.js `pipelineScreen`): #812's merge
+/// building on main, and its merge request's pipeline, which passed.
+pub fn runs(n: u64) -> Vec<pullpen_core::Run> {
+    if n != 812 {
+        return vec![];
+    }
+    let t = |secs: i64| Some(Timestamp(NOW.0 - secs));
+    let job = |id: u32, name: &str, group: &str, state, started, finished| JobRun {
+        id: id.to_string(),
+        name: name.into(),
+        group: group.into(),
+        state,
+        started,
+        finished,
+        steps: vec![],
+        url: format!("https://gitlab.com/platform/runner/-/jobs/{id}"),
+        log: true,
+    };
+    let after = vec![
+        job(77, "lint", "prepare", CheckState::Passed, t(161), t(123)),
+        job(78, "go mod verify", "prepare", CheckState::Passed, t(161), t(140)),
+        job(79, "build", "build", CheckState::Running, t(100), None),
+        job(80, "publish-image", "deploy", CheckState::Queued, None, None),
+    ];
+    let before = vec![
+        job(61, "lint", "prepare", CheckState::Passed, t(3000), t(2960)),
+        job(62, "go mod verify", "prepare", CheckState::Passed, t(3000), t(2975)),
+        job(63, "build", "build", CheckState::Passed, t(2955), t(2850)),
+        job(64, "test", "test", CheckState::Passed, t(2850), t(2815)),
+    ];
+    vec![
+        pullpen_core::Run {
+            which: Which::AfterMerge,
+            sha: "3f2a91c".into(),
+            event: "push".into(),
+            state: CheckState::Running,
+            started: t(161),
+            finished: None,
+            url: "https://gitlab.com/platform/runner/-/pipelines/4402".into(),
+            jobs: after,
+        },
+        pullpen_core::Run {
+            which: Which::BeforeMerge,
+            sha: "9c01e7a".into(),
+            event: "merge request".into(),
+            state: CheckState::Passed,
+            started: t(3000),
+            finished: t(2815),
+            url: "https://gitlab.com/platform/runner/-/pipelines/4391".into(),
+            jobs: before,
+        },
+    ]
+}
+
+/// #812's `build` log so far, as GitLab's runner writes it (tui.js
+/// `jobScreen`): its sections began 100, 96, 95 and 92 seconds before `NOW`.
+pub const LOG: &str = "section_start:1789999900:prepare_executor\r\x1b[0K\x1b[36;1mPreparing the \"docker\" executor\x1b[0;m
+Using docker image golang:1.25.3 ...
+section_end:1789999904:prepare_executor\r\x1b[0Ksection_start:1789999904:prepare_script\r\x1b[0K\x1b[36;1mPreparing environment\x1b[0;m
+Running on runner-abbey via abbey...
+section_end:1789999905:prepare_script\r\x1b[0Ksection_start:1789999905:get_sources\r\x1b[0K\x1b[36;1mGetting source from Git\x1b[0;m
+Fetching changes with git depth set to 20...
+Checking out 3f2a91c4 as detached HEAD (ref is main)...
+section_end:1789999908:get_sources\r\x1b[0Ksection_start:1789999908:step_script\r\x1b[0K\x1b[36;1mExecuting \"step_script\" stage of the job script\x1b[0;m
+\x1b[32;1m$ go version\x1b[0;m
+go version go1.25.3 linux/amd64
+\x1b[32;1m$ make build\x1b[0;m
+go build -trimpath -ldflags \"-s -w\" -o out/gitlab-runner .
+\x1b[0;33mwarning: GOFLAGS is set; -mod=mod overrides the vendor directory\x1b[0;m
+go: downloading golang.org/x/sys v0.37.0
+";

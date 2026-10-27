@@ -11,6 +11,7 @@ pub mod command;
 mod detail;
 pub mod input;
 mod mouse;
+mod pipeline;
 pub use mouse::Mouse;
 
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -104,6 +105,8 @@ pub struct UiConfig {
     pub short_names_below: usize,
     pub default_method: DefaultMethod,
     pub delete_branch: bool,
+    /// How often a watched pipeline is asked for while it runs.
+    pub watch: std::time::Duration,
 }
 
 impl Default for UiConfig {
@@ -113,6 +116,7 @@ impl Default for UiConfig {
             short_names_below: 100,
             default_method: DefaultMethod::Repo,
             delete_branch: true,
+            watch: pipeline::WATCH,
         }
     }
 }
@@ -124,6 +128,8 @@ pub enum Input {
     Normal,
     Command(Editor),
     Filter(Editor),
+    /// `/` in a job's log.
+    Search(Editor),
     Confirm(Prompt),
     Help(String),
     Messages,
@@ -156,6 +162,10 @@ pub enum Effect {
     },
     FetchDetail(PrId),
     FetchDiff(PrId),
+    /// A PR's pipeline runs, for the pipeline screen.
+    FetchRuns(PrId),
+    /// A job's log, by the job's id.
+    FetchLog(PrId, String),
     /// Ring the bell and send an OSC 9 notification, as configured.
     Notify(String),
     Redraw,
@@ -175,6 +185,12 @@ pub struct App {
     pub requested: HashSet<(PrId, bool)>,
     pub failed: HashSet<(PrId, bool)>,
     pub detail: Option<crate::views::detail::Detail>,
+    /// The pipeline screen, over the list or the detail view (ADR-020).
+    pub pipe: Option<crate::views::pipeline::Pipe>,
+    pub runs: HashMap<PrId, Vec<pullpen_core::Run>>,
+    /// Parsed logs, by PR and job id.
+    pub logs: HashMap<(PrId, String), crate::views::log::Log>,
+    pub poll: pipeline::Poll,
     pub watches: HashMap<PrId, armed::Watch>,
     /// Merged PRs `:clear` dropped, oldest first.
     pub cleared: Vec<PrId>,
@@ -221,6 +237,10 @@ impl App {
             requested: HashSet::new(),
             failed: HashSet::new(),
             detail: None,
+            pipe: None,
+            runs: HashMap::new(),
+            logs: HashMap::new(),
+            poll: pipeline::Poll::default(),
             watches: HashMap::new(),
             cleared: Vec::new(),
             landings: HashMap::new(),
@@ -325,7 +345,7 @@ impl App {
     pub fn mode(&self) -> Mode {
         match (&self.input, &self.message) {
             (Input::Command(_) | Input::CommandError { .. }, _) => Mode::Command,
-            (Input::Filter(_), _) => Mode::Filter,
+            (Input::Filter(_) | Input::Search(_), _) => Mode::Filter,
             (Input::Confirm(_), _) => Mode::Confirm,
             (_, Some(m)) => m.mode,
             _ => Mode::Normal,
@@ -352,12 +372,13 @@ impl App {
         let (armed, failing) = self.counts();
         // The detail view names the PR where the list names the section, and
         // the focused pane where the list gives a position (design §04).
-        let (section, pos) = match &self.detail {
-            Some(d) => {
+        let (section, pos) = match (&self.pipe, &self.detail) {
+            (Some(p), _) => (format!("#{}", p.id.number), self.pipe_pos()),
+            (_, Some(d)) => {
                 let pane = if d.focus == crate::views::detail::Pane::Diff { "diff" } else { "overview" };
                 (format!("#{}", d.id.number), pane.to_string())
             }
-            None => (if narrow { sec.section.short.clone() } else { sec.section.name.clone() }, pos),
+            (None, None) => (if narrow { sec.section.short.clone() } else { sec.section.name.clone() }, pos),
         };
         Status {
             mode: self.mode(),
@@ -390,9 +411,11 @@ impl App {
                 lr(&e.line(':'), &right, w)
             }
             Input::Filter(e) => lr(&e.line('/'), &markup("{d|n N jump   Enter hide non-matches   Esc clear}"), w),
+            Input::Search(e) => lr(&e.line('/'), &markup("{d|n N jump   Enter keep   Esc clear}"), w),
             Input::Confirm(p) => self.prompt_line(p),
             _ => match &self.message {
                 Some(m) => m.line.clone(),
+                None if self.jobs.is_empty() && self.pipe.is_some() => self.pipe_hint(),
                 None if self.jobs.is_empty() && self.detail.is_some() => {
                     markup("{d|n next file   b previous file   F all files   d widen the diff   q back to the list}")
                 }
@@ -515,11 +538,15 @@ impl App {
             status: self.status(w),
             cmd: self.cmd_line(w),
         };
-        let mut lines =
-            match self.detail_lines(w, h).or_else(|| self.armed_lines(w, h)).or_else(|| self.merged_lines(w, h)) {
-                Some(l) => l,
-                None => list_screen(&screen, &ctx),
-            };
+        let mut lines = match self
+            .pipe_lines(w, h)
+            .or_else(|| self.detail_lines(w, h))
+            .or_else(|| self.armed_lines(w, h))
+            .or_else(|| self.merged_lines(w, h))
+        {
+            Some(l) => l,
+            None => list_screen(&screen, &ctx),
+        };
         if let Some((menu, mw)) = self.menu() {
             let bottom = lines.len().saturating_sub(2);
             let top = bottom.saturating_sub(menu.len());

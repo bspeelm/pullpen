@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 
 use pullpen_core::diff::FileDiff;
-use pullpen_core::{Capabilities, Forge, Job, JobResult, Pr, PrDetail, PrId};
+use pullpen_core::{Capabilities, Forge, Job, JobResult, Pr, PrDetail, PrId, Run};
 
 pub enum Msg {
     Job(JobResult),
@@ -18,6 +18,14 @@ pub enum Msg {
     Caps(HashMap<String, Capabilities>),
     Detail(PrId, PrDetail),
     Diff(PrId, Vec<FileDiff>),
+    Runs(PrId, Vec<Run>),
+    /// A job's log, by PR and job id, as the forge sent it.
+    Log(PrId, String, String),
+    /// A runs (`log: false`) or log fetch that failed, with why.
+    Unwatched {
+        log: bool,
+        why: String,
+    },
     /// A detail (`diff: false`) or diff fetch that failed, with why.
     Unfetched {
         id: PrId,
@@ -32,6 +40,10 @@ pub trait Backend {
     fn refresh(&mut self, section: Option<usize>);
     /// Fetches a PR's detail, or its diff.
     fn fetch(&mut self, id: PrId, diff: bool);
+    /// Fetches a PR's pipeline runs.
+    fn runs(&mut self, id: PrId);
+    /// Fetches a job's log.
+    fn log(&mut self, id: PrId, job: String);
     fn messages(&mut self) -> Vec<Msg>;
     /// `synced 40s`, for the status line.
     fn sync_label(&self) -> String;

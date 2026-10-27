@@ -6,17 +6,17 @@
 {fg}  {warn}○{fg} {fg b}build{dim}   build stage · after merge · main @ 3f2a91c{fg}                                                   {dim}running 1m 40s{fg} 
 {fg}                                                                                                                        
 {fg}  {fg b}steps{fg}                                  {dim}4{faint} │ {acc b}log{fg}                                                 {dim}14 lines   {acc}following ↓{fg} 
-{fg}    {ok}✓{fg} Preparing the "docker" executor   {dim}4s{faint} │ {acc}Preparing the "docker" executor{fg}                                            
+{fg}    {ok}✓{fg} Preparing the "docker" executor   {dim}4s{faint} │ {acc b}Preparing the "docker" executor{fg}                                            
 {fg}    {ok}✓{fg} Preparing environment             {dim}1s{faint} │ {fg}Using docker image golang:1.25.3 ...                                       
-{fg}    {ok}✓{fg} Getting source from Git           {dim}3s{faint} │ {acc}Preparing environment{fg}                                                      
-{fg}  {acc}▌ {warn}○{fg} Executing "step_script"       {dim}1m 32s{faint} │ {fg}Running on runner-abbey via abbey...                                       
-{fg}                                          {faint} │ {acc}Getting source from Git{fg}                                                    
+{fg}    {ok}✓{fg} Getting source from Git           {dim}3s{faint} │ {acc b}Preparing environment{fg}                                                      
+{fg}  {acc}▌ {warn}○{fg} Executing "step_script" stage…{dim}1m 32s{faint} │ {fg}Running on runner-abbey via abbey...                                       
+{fg}                                          {faint} │ {acc b}Getting source from Git{fg}                                                    
 {fg}                                          {faint} │ {fg}Fetching changes with git depth set to 20...                               
 {fg}                                          {faint} │ {fg}Checking out 3f2a91c4 as detached HEAD (ref is main)...                    
-{fg}                                          {faint} │ {acc}Executing "step_script" stage of the job script{fg}                            
-{fg}                                          {faint} │ {ok}$ go version{fg}                                                               
+{fg}                                          {faint} │ {acc b}Executing "step_script" stage of the job script{fg}                            
+{fg}                                          {faint} │ {ok b}$ go version{fg}                                                               
 {fg}                                          {faint} │ {fg}go version go1.25.3 linux/amd64                                            
-{fg}                                          {faint} │ {ok}$ make build{fg}                                                               
+{fg}                                          {faint} │ {ok b}$ make build{fg}                                                               
 {fg}                                          {faint} │ {fg}go build -trimpath -ldflags "-s -w" -o out/gitlab-runner .                 
 {fg}                                          {faint} │ {warn}warning: GOFLAGS is set; -mod=mod overrides the vendor directory{fg}           
 {fg}                                          {faint} │ {fg}go: downloading golang.org/x/sys v0.37.0                                   

@@ -39,6 +39,7 @@ The same table drives the `?` overlay.
 | `h l` | prev / next section |
 | `Tab S-Tab` | next / prev section |
 | `1–N` | go to section |
+| `w` | watch pipeline |
 | `p` | toggle preview |
 | `:` | command line |
 | `?` | this help |
@@ -83,5 +84,11 @@ The same table drives the `?` overlay.
 | `^w ^u` | delete word / line (command line) |
 | `d` | zoom the diff (detail) |
 | `j k ^d ^u gg G` | scroll the focused pane (detail) |
+| `Enter` | open a job (pipeline), or jump to a step (job) |
+| `zo zc` | show / fold a run (pipeline) |
+| `h l` | focus steps / log (job) |
+| `G` | follow the log as it grows (job) |
+| `/ n N` | search the log (job) |
+| `e` | next error line (job) |
 
 Any other key at a confirm prompt cancels it and is discarded.

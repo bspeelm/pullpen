@@ -472,3 +472,32 @@ fn s_merged() {
     a.active = 5;
     check("sMerged", &a.lines(120, 40), 120, Tier::True, Glyphs::Unicode);
 }
+
+/// The design's pipeline screen: #812 in the Merged section, `w`, and the
+/// runs as they were three seconds ago.
+fn piped() -> App {
+    let mut a = app();
+    a.active = 5;
+    let at = a.sections[5].prs.iter().position(|p| p.id.number == 812).unwrap();
+    a.sections[5].sel = at;
+    keys(&mut a, &[Key::Char('w')]);
+    let id = a.pipe.as_ref().unwrap().id.clone();
+    a.runs_loaded(id, fx::runs(812));
+    a.poll.runs_at = Some(pullpen_core::time::Timestamp(fx::NOW.0 - 3));
+    a
+}
+
+#[test]
+fn s_pipeline() {
+    check("sPipeline", &piped().lines(120, 40), 120, Tier::True, Glyphs::Unicode);
+}
+
+#[test]
+fn s_job() {
+    let mut a = piped();
+    a.height = 40;
+    keys(&mut a, &[Key::Enter]);
+    let id = a.pipe.as_ref().unwrap().id.clone();
+    a.log_loaded(id, "79".into(), fx::LOG);
+    check("sJob", &a.lines(120, 40), 120, Tier::True, Glyphs::Unicode);
+}

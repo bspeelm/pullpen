@@ -46,6 +46,7 @@ impl App {
                 }
             }
             Input::Filter(e) => self.filter_key(e, key),
+            Input::Search(e) => self.search_key(e, key),
             Input::Help(f) => {
                 self.help_key(f, key);
                 vec![]
@@ -58,6 +59,12 @@ impl App {
             }
             Input::Normal => {
                 self.message = None;
+                if let Some(effects) = self.pipe_key(key, now) {
+                    return effects;
+                }
+                if self.pipe.is_some() {
+                    return self.normal_key(key, now);
+                }
                 match self.detail_key(key, now) {
                     Some(effects) => effects,
                     None => self.normal_key(key, now),
@@ -155,6 +162,7 @@ impl App {
             Key::Char('o') => return self.urls(&self.targets(None)).into_iter().map(Effect::Open).collect(),
             Key::Enter => self.open_detail(false),
             Key::Char('d') => self.open_detail(true),
+            Key::Char('w') => self.open_pipe(),
             _ => {}
         }
         vec![]
@@ -240,14 +248,7 @@ impl App {
                 s.sel = id.and_then(|id| vis.iter().position(|v| *v == id)).unwrap_or(0);
                 return vec![];
             }
-            Key::Backspace => e.backspace(),
-            Key::Delete => e.delete(),
-            Key::Left => e.left(),
-            Key::Right => e.right(),
-            Key::Ctrl('w') => e.delete_word(),
-            Key::Ctrl('u') => e.delete_line(),
-            Key::Char(c) => e.insert(c),
-            _ => {}
+            k => e.edit(k),
         }
         let text = e.text.clone();
         if let Some(f) = &mut self.section_mut().filter {
@@ -280,17 +281,8 @@ impl App {
             Key::Up => e.walk(&self.history, true),
             Key::Down => e.walk(&self.history, false),
             Key::Backspace if e.text.is_empty() => return vec![],
-            Key::Backspace => e.backspace(),
-            Key::Delete => e.delete(),
-            Key::Left => e.left(),
-            Key::Right => e.right(),
-            Key::Home => e.home(),
-            Key::End => e.end(),
-            Key::Ctrl('w') => e.delete_word(),
-            Key::Ctrl('u') => e.delete_line(),
             Key::Ctrl('r') => e.register = true,
-            Key::Char(c) => e.insert(c),
-            _ => {}
+            k => e.edit(k),
         }
         self.input = Input::Command(e);
         vec![]
@@ -407,6 +399,12 @@ impl App {
             Cmd::Close => self.request_simple(ids, Action::Close, o, typed),
             Cmd::Update => self.request_simple(ids, Action::Update, o, typed),
             Cmd::Dismiss => self.dismiss_here(&ids),
+            Cmd::Watch => {
+                if let Some(id) = ids.into_iter().next() {
+                    self.watch_pr(id);
+                }
+                vec![]
+            }
             Cmd::Diff => {
                 if let Some(i) = ids.first().and_then(|id| self.section().visible().iter().position(|p| p.id == *id)) {
                     self.section_mut().sel = i;

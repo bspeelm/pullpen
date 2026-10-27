@@ -87,6 +87,7 @@ pub const ENTRIES: &[Entry] = &[
     e("h l", "prev / next section", Group::Sections),
     e("Tab S-Tab", "next / prev section", Group::Sections),
     e("1–N", "go to section", Group::Sections),
+    e("w", "watch pipeline", Group::Sections),
     e("p", "toggle preview", Group::Sections),
     e(":", "command line", Group::Sections),
     e("?", "this help", Group::Sections),
@@ -111,6 +112,12 @@ pub const ENTRIES: &[Entry] = &[
     e("^w ^u", "delete word / line (command line)", Group::More),
     e("d", "zoom the diff (detail)", Group::More),
     e("j k ^d ^u gg G", "scroll the focused pane (detail)", Group::More),
+    e("Enter", "open a job (pipeline), or jump to a step (job)", Group::More),
+    e("zo zc", "show / fold a run (pipeline)", Group::More),
+    e("h l", "focus steps / log (job)", Group::More),
+    e("G", "follow the log as it grows (job)", Group::More),
+    e("/ n N", "search the log (job)", Group::More),
+    e("e", "next error line (job)", Group::More),
 ];
 
 /// Actions `[keys]` in config.toml can rebind, by name, with the key each
@@ -125,6 +132,7 @@ pub const NAMED: &[(&str, Key)] = &[
     ("dismiss", Key::Char('D')),
     ("open", Key::Char('o')),
     ("diff", Key::Char('d')),
+    ("watch", Key::Char('w')),
     ("detail", Key::Enter),
     ("refresh", Key::Char('r')),
     ("refresh_all", Key::Char('R')),

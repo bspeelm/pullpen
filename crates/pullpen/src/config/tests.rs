@@ -44,8 +44,10 @@ fn an_unreadable_file_is_reported_and_the_defaults_used() {
 
 #[test]
 fn intervals() {
-    let every = |s: &str| Sync { interval: s.into(), on_focus: true }.every().as_secs();
+    let every = |s: &str| Sync { interval: s.into(), ..Sync::default() }.every().as_secs();
     assert_eq!((every("60s"), every("5m"), every("90"), every("1s"), every("junk")), (60, 300, 90, 10, 60));
+    let watch = |s: &str| Sync { watch: s.into(), ..Sync::default() }.watch_every().as_secs();
+    assert_eq!((watch("5s"), watch("1"), watch("junk"), Sync::default().watch_every().as_secs()), (5, 2, 5, 5));
 }
 
 #[test]

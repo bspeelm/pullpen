@@ -78,6 +78,16 @@ impl Backend for Fake {
         });
     }
 
+    fn runs(&mut self, id: PrId) {
+        // The receiver is gone only once the app has quit.
+        let _ = self.tx.send(Msg::Runs(id.clone(), fx::runs(id.number)));
+    }
+
+    fn log(&mut self, id: PrId, job: String) {
+        // The receiver is gone only once the app has quit.
+        let _ = self.tx.send(Msg::Log(id, job, fx::LOG.into()));
+    }
+
     fn messages(&mut self) -> Vec<Msg> {
         self.rx.try_iter().collect()
     }
