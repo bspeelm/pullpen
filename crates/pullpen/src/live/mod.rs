@@ -320,6 +320,10 @@ impl Backend for Live {
         }
     }
 
+    fn now(&self) -> Timestamp {
+        Timestamp::now()
+    }
+
     fn open(&mut self, url: &str) -> Result<(), String> {
         open::that_detached(url).map_err(|e| format!("opening {url}: {e}"))
     }
