@@ -228,11 +228,13 @@ impl GitLab {
         // its own page calls ready to merge, with `conflicts` false: the status
         // lags a fresh check, and the flag does not. So only the flag decides a
         // conflict; the status still says when the branch is behind or GitLab
-        // is still checking.
+        // is mid-check. UNCHECKED is not mid-check: every open MR goes back to
+        // it when its target branch moves, and stays there until something asks,
+        // which a merge does; GitLab then refuses with the reason if it must.
         let mergeable = match status {
             _ if n["conflicts"] == true => Mergeable::Conflict,
             "NEED_REBASE" => Mergeable::Behind,
-            "UNCHECKED" | "CHECKING" | "PREPARING" | "APPROVALS_SYNCING" => Mergeable::Unknown,
+            "CHECKING" | "PREPARING" | "APPROVALS_SYNCING" => Mergeable::Unknown,
             _ => Mergeable::Clean,
         };
         if let Ok(mut c) = self.caps.lock() {

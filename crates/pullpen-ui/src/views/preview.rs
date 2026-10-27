@@ -139,9 +139,7 @@ pub fn preview(pr: &Pr, d: &PrDetail, w: usize, ctx: &Ctx) -> Vec<Line> {
         vec![],
     ];
     let vl = match &pr.state {
-        PrState::Merged { at, method } => {
-            markup(&format!("{{d|● merged  {} · {} ago}}", method.word(), age(*at, ctx.now)))
-        }
+        PrState::Merged { at, .. } => markup(&format!("{{d|● merged  {} ago}}", age(*at, ctx.now))),
         PrState::Closed => markup("{d|● closed without merging}"),
         PrState::Open => {
             let mut vl = verdict_word(&v);

@@ -1,0 +1,2 @@
+{fg}  {ok}✓{fg}  {dim}checks      {fg}9/9 passed                                  {warn}○{fg}  {dim}after merge {warn}running{dim}  2/4 · build{fg}                        
+{fg}  {ok}✓{fg}  {dim}reviews     {fg}1 of 1 required                                                                                        

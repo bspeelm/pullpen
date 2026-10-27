@@ -1,7 +1,7 @@
 {fg}  {dim}Merged{faint}  ›  {dim}gl  platform/runner  {fg b}#812{faint}  ›  {fg}build                                                       {dim}refreshed 3s ago{fg} 
 {fg}                                                                                                                        
 {fg}  {fg b}Bump go toolchain to 1.25.3{fg}                                                                                           
-{fg}  ◇ renovate{dim}   renovate/go-1.25.3 → main   merged 41m ago · squash{fg}                                                      
+{fg}  ◇ renovate{dim}   renovate/go-1.25.3 → main   merged 41m ago{fg}                                                               
 {fg}                                                                                                                        
 {fg}  {warn}○{fg} {fg b}build{dim}   build stage · after merge · main @ 3f2a91c{fg}                                                   {dim}running 1m 40s{fg} 
 {fg}                                                                                                                        

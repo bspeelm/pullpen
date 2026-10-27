@@ -9,7 +9,7 @@ where you pressed `w`.
   Merged  ›  gl  platform/runner  #812  ›  pipeline                refreshed 3s ago
 
   Bump go toolchain to 1.25.3
-  ◇ renovate   renovate/go-1.25.3 → main   merged 41m ago · squash
+  ◇ renovate   renovate/go-1.25.3 → main   merged 41m ago
 
   ○ after merge   main @ 3f2a91c   push              2 of 4 passed   running 2m 41s
   ✓  lint                 prepare     passed                                   38s
