@@ -9,9 +9,14 @@ use crate::paint::Theme;
 use crate::palette::{Palette, Tier};
 
 fn app() -> App {
-    let sections = fx::sections().into_iter().map(|s| SectionState::new(s.section, s.prs, s.total)).collect();
+    // The agent-opened rows, as a section of their own (not a default).
+    let sections = fx::sections()
+        .into_iter()
+        .chain([fx::agent_section()])
+        .map(|s| SectionState::new(s.section, s.prs, s.total))
+        .collect();
     let mut a = App::new(sections, Theme { palette: Palette::new(Tier::True), glyphs: Glyphs::Unicode }, fx::NOW);
-    a.active = 2;
+    a.active = 6;
     a
 }
 
@@ -95,7 +100,7 @@ fn section_command_takes_short_names() {
     press(&mut a, &[Key::Char(':')]);
     text(&mut a, "section armed");
     press(&mut a, &[Key::Enter]);
-    assert_eq!(a.active, 3);
+    assert_eq!(a.active, 2);
 }
 
 #[test]

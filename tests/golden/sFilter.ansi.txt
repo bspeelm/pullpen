@@ -1,4 +1,4 @@
-{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Agent-opened{faint} 23{fg}    {dim}Auto-merge armed{faint} 7{fg}    {acc b}All{acc} 96{fg}    {dim}Merged{faint} 1{fg}    {faint}is:open   sort: updated{fg} 
+{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Auto-merge armed{faint} 7{fg}    {dim}Deploys{faint} 1{fg}    {dim}Merged{faint} 7{fg}    {acc b}Open{acc} 96{fg}         {faint}is:open   sort: updated{fg} 
 {fg}                                                                                                                        
 {fg}         {faint}    #{fg} {faint}title{fg}                                       {faint}repo{fg}             {faint}target{fg}      {faint}author{fg}    {faint}rev{fg}  {faint}  +/−{fg}       {faint} age{fg} 
 {faint}  gh ○   #4823 Rate limit per API key instead of per IP    acme/api         main        mara      0/1   +140 −31    20m{fg} 
@@ -36,5 +36,5 @@
 {faint}  gl ✓    #139 Bump ingress-nginx to 4.13.1                platform/charts  main      ◇ renovate  1/1     +2 −2      1w{fg} 
 {faint}  gl ✓    #801 Shell executor: honor umask from config     platform/runner  main        lena      1/1    +15 −2      1w{fg} 
 {faint}  gh ○   #4796 Trace context propagation for outbound HT…  acme/api         main      ◇ codex     0/1    +95 −18     2w{fg} 
-{bg bg=acc b} FILTER {fg bg=surf}  All  {dim bg=surf}1/5 matches{fg bg=surf}                               {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
+{bg bg=acc b} FILTER {fg bg=surf}  Open  {dim bg=surf}1/5 matches{fg bg=surf}                              {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 failing{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
 {fg}/ledger{bg bg=fg} {fg}                                                                   {dim}n N jump   Enter hide non-matches   Esc clear

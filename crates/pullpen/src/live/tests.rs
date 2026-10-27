@@ -79,6 +79,26 @@ fn a_token_never_reaches_a_file() {
 #[test]
 fn the_clock_is_the_wall_clock() {
     let dir = std::env::temp_dir().join(format!("pullpen-clock-{}", std::process::id()));
-    let (live, _, _) = Live::start(&Config::default(), &[], dir, Timestamp(0), &Credentials::default()).unwrap();
+    let (live, _, _) = Live::start(&Config::default(), &[], dir, &Credentials::default()).unwrap();
     assert!((live.now().0 - Timestamp::now().0).abs() <= 1);
+}
+
+/// Deploys and Merged ask the same thing: one search, an answer for each.
+#[test]
+fn sections_that_ask_the_same_thing_share_one_search() {
+    let sec = |name: &str, query: &str| Section {
+        name: name.into(),
+        short: name.into(),
+        query: query.into(),
+        sort: Sort::Updated,
+        view: View::List,
+        counts: true,
+    };
+    let s = [
+        sec("Mine", "is:open author:@me"),
+        sec("Deploys", "is:merged merged:7d"),
+        sec("Merged", "is:merged merged:7d"),
+        sec("Open", "is:open"),
+    ];
+    assert_eq!(shared(&s), [vec![0], vec![1, 2], vec![3]]);
 }

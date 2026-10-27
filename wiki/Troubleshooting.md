@@ -10,7 +10,7 @@ where you run pullpen: on an image-based system, a `gh` inside a toolbox is
 not on the host. Otherwise run `pullpen setup` and give it a token.
 
 **A section says 0, or fewer than you expect.** Its query may be narrower than
-you think: its text is on the right of the tabs. A section such as *All*
+you think: its text is on the right of the tabs. A section such as *Open*
 searches what you chose to watch in setup; change it with `pullpen settings`.
 
 **The status line says an org hides its PRs from classic tokens.** That org

@@ -238,6 +238,10 @@ pub fn merged_prs() -> Vec<Pr> {
             p.auto_merge = None;
             p.state = PrState::Merged { at: ago(at), method: MergeMethod::Squash };
             p.post_merge = post_merge;
+            // A second lane on acme/api, so Deploys shows one repo twice.
+            if n == 4811 {
+                p.base = "develop".into();
+            }
             Some(p)
         })
         .collect()
@@ -290,11 +294,18 @@ pub fn sections() -> Vec<FixtureSection> {
             pick(&[2291, 1205, 378, 146]),
             4,
         ),
-        section("Agent-opened", "Agent", "author:@agents", View::List, true, agent_prs(), 23),
         section("Auto-merge armed", "Armed", "is:armed", View::Armed, true, armed.clone(), armed.len()),
-        section("All", "All", "is:open", View::List, false, all_prs(), 96),
-        section("Merged", "Merged", "is:merged merged:7d", View::Merged, false, merged_prs(), 1),
+        section("Deploys", "Deploys", "is:merged merged:7d", View::Deploys, false, merged_prs(), 1),
+        section("Merged", "Merged", "is:merged merged:7d", View::Merged, false, merged_prs(), 7),
+        section("Open", "Open", "is:open", View::List, false, all_prs(), 96),
     ]
+}
+
+/// The design's row strips are drawn from a section of agent-opened PRs:
+/// not a default (ADR-023), but one `[[section]]` brings it back, and it
+/// counts toward the status line as a configured section does.
+pub fn agent_section() -> FixtureSection {
+    section("Agent-opened", "Agent", "is:open is:agent", View::List, true, agent_prs(), 23)
 }
 
 /// The preview and detail data the design shows for #4821. Other PRs get an

@@ -36,5 +36,5 @@
                                            │                                                                            
                                            │                                                                            
                                            │                                                                            
- NORMAL   #812  log 14/14                                ◆ 7 armed   ✗ 3 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
+ NORMAL   #812  log 14/14                                ◆ 7 armed   ✗ 1 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
 Enter jump to step   G follow   / search   e next error   o open on gitlab.com   q back to the pipeline                 

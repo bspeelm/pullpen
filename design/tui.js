@@ -122,7 +122,7 @@ function headA(w){
 }
 
 // ---------- chrome
-const SECS=[['Mine','Mine',6],['Needs my review','Review',4],['Agent-opened','Agent',23],['Auto-merge armed','Armed',7],['All','All',96],['Merged','Merged',1]];
+const SECS=[['Mine','Mine',6],['Needs my review','Review',4],['Auto-merge armed','Armed',7],['Deploys','Deploys',1],['Merged','Merged',7],['Open','Open',96]];
 function tabs(active,W,o={}){
  const l=[sp(2)];
  SECS.forEach((s,i)=>{const nm=o.short?s[1]:s[0];
@@ -133,7 +133,7 @@ function tabs(active,W,o={}){
 function status(W,o){
  const left=[S(' '+o.mode+' ','bg',{k:o.modeK||'acc',b:1}),sp(2),S(o.section,'fg'),sp(2),S(o.pos||'','dim')];
  if(o.extra) left.push(sp(3),...o.extra);
- const r=[]; const ar=o.armed??7, fl=o.failing??3, br=o.broken??1;
+ const r=[]; const ar=o.armed??7, fl=o.failing??1, br=o.broken??1;
  if(o.err) r.push(S('E ','err',{b:1}),S(o.err,'err'),sp(3));
  if(o.narrow) r.push(S('◆','acc'),S(''+ar,'dim'),sp(1),S('✗','err'),S(''+fl,'dim'),...(br?[sp(1),S('✗','err'),S(br+' broken','dim')]:[]),sp(3));
  else r.push(S('◆ ','acc'),S(ar+' armed','dim'),sp(3),S('✗ ','err'),S(fl+' failing','dim'),sp(3),...(br?[S('✗ ','err'),S(br+' broken','dim'),sp(3)]:[]));
@@ -210,7 +210,7 @@ function dline(d){ if(d[0]==='b') return []; if(d[0]==='h') return [S(d[1],'dim'
  return [S(String(o).padStart(3)+' '+String(n).padStart(3)+'  ','faint'),S(s,f),S(' '+c,f)]; }
 function detailScreen(){
  const W=120,Hh=40,L=[];
- L.push(lr([sp(2),S('Agent-opened','dim'),S('  ›  ','faint'),S('gh  acme/api  ','dim'),S('#4821','fg',{b:1})],[S('1 of 23','dim'),sp(4),S('updated 12m ago','dim'),sp(1)],W));
+ L.push(lr([sp(2),S('Open','dim'),S('  ›  ','faint'),S('gh  acme/api  ','dim'),S('#4821','fg',{b:1})],[S('2 of 96','dim'),sp(4),S('updated 12m ago','dim'),sp(1)],W));
  L.push([]);
  L.push([sp(2),S('Migrate invoices to ledger v2','fg',{b:1})]);
  L.push([sp(2),S('◇ claude','fg'),S('   claude/ledger-v2 → main   +412 −88   14 files   opened 3h ago','dim')]);
@@ -254,7 +254,7 @@ function detailScreen(){
 
 // ---------- help overlay
 function helpScreen(){
- const base=listScreen({W:120,H:40,tab:2,prs:P,sel:0,preview:preview4821(46),right:'author:@agents',st:{mode:'NORMAL',section:'Agent-opened',pos:'1/23'}});
+ const base=listScreen({W:120,H:40,tab:5,prs:ALL,sel:1,preview:preview4821(46),right:'is:open',st:{mode:'NORMAL',section:'Open',pos:'2/96'}});
  const L=base.map((l,i)=>i>=38?l:l.map(s=>({...s,f:'faint',k:null,b:false,u:false})));
  const PW=96, pad=l=>withBg(fit([sp(3),...l],PW),'surf');
  const K=(k,d)=>k?[...fit([S(k,'fg',{b:1})],11),...fit([S(d,'dim')],19)]:sp(30);
@@ -282,7 +282,9 @@ function menuPR(p,sel,w){let l=fit([sp(1),stateG(p),sp(1),S(('#'+p.n).padEnd(7),
 function strip(o){
  const W=120; const L=o.prs.map((p,i)=>fit(rowA(p,W-1,{sel:i===o.sel,mark:o.marks&&o.marks.includes(p.n),spin:o.spin}),W,false));
  if(o.menu){const n=o.menu.length;o.menu.forEach((m,i)=>{const ix=L.length-n+i;L[ix]=overlay(L[ix],0,withBg(fit(m,o.menuW||72),'surf'));});}
- L.push(status(W,{section:'Agent-opened',mode:'NORMAL',...o.st})); L.push(fit(o.cmd||[],W)); return L;
+ // The strips are an Agent-opened section added back in config, which counts
+ // its failures too: #2290, #143, #371.
+ L.push(status(W,{section:'Agent-opened',mode:'NORMAL',failing:3,...o.st})); L.push(fit(o.cmd||[],W)); return L;
 }
 const A=(n,x)=>({...byN(n),...x});
 function rowArm(p,w,o={}){
@@ -292,30 +294,50 @@ function rowArm(p,w,o={}){
  l=fit(l,w,false); return sel?withBg(l,'sel'):l;
 }
 function armedScreen(){
- const W=120,L=[tabs(3,W,{right:'is:armed + recent merges'}),[]];
+ const W=120,L=[tabs(2,W,{right:'is:armed'}),[]];
  const grp=(t,rows,first)=>{L.push([sp(2),S(t,'fg',{b:1}),S('  '+rows.length,'dim')]);rows.forEach((p,i)=>L.push(rowArm(p,W-1,{sel:first&&i===0})));L.push([]);};
  grp('needs attention',[A(2290,{why:'{r|failing}{d|  e2e/chromium · 2 retries}',when:'18m'}),A(4818,{why:'{r|conflict}{d|  with main after #4815}',when:'25m'})],true);
  grp('waiting',[A(4821,{why:'{y|review}{d|  @mara · 1 of 2}',when:'2h'}),A(809,{why:'{y|ci}{d|  6/9 running · ~4m left}',when:'30m'}),A(377,{armed:1,why:'{y|ci}{d|  4/9 running, then review}',when:'12m'}),A(145,{armed:1,why:'{y|merge train}{d|  position 2 of 3}',when:'1h'}),A(4809,{ci:'run',why:'{y|ci}{d|  required check sbom queued}',when:'5d'})]);
- grp('merged since 09:14',[A(2288,{merged:1,pl:'run',why:'{d|merged · squash}',when:'22m'}),A(812,{merged:1,pl:'run',why:'{d|merged · squash}',when:'41m'}),A(1199,{merged:1,pl:'ok',why:'{d|merged · squash}',when:'1h'}),A(4815,{merged:1,pl:'fail',why:'{d|merged · rebase}',when:'1h'})]);
  while(L.length<38) L.push([]);
  L.push(status(W,{mode:'NORMAL',section:'Auto-merge armed',pos:'1/7'}));
- L.push(M('{a|◆} {f|4 merged since 09:14}{d|   ·   2 need attention   ·   5 still waiting}'));
+ L.push(lr(M('{a|◆} {f|5 merged since 09:14}{d| → Merged   ·   2 need attention   ·   5 still waiting}'),M('{d|Enter detail   A disarm   w pipeline}'),W));
  return L.map(l=>fit(l,W,false));
 }
 
-// The Merged section: each merged PR by what its merge commit's pipeline
-// did on the base branch. A failure needs attention while the branch is still
-// failing, and stays until D or :clear; one a later merge fixed is done, and
-// leaves after 24h with the rest.
+// Deploys: one lane per repo and branch that merges landed on, showing the
+// newest merge there that ran a pipeline. A failing lane is what needs you:
+// it stays failing until the branch passes again or D dismisses it.
+function rowLane(p,w,o={}){
+ const sel=o.sel,RW=34,tw=w-2-3-2-12-10-6-RW-5;
+ let l=[gut(o),S(p.f+' ','dim'),stateG(p),sp(1),...fit([S(p.r.split('/').pop(),'fg',{b:sel})],11),sp(1),...fit([S(p.b||'main','fg',{b:sel})],9),sp(1),
+  S(('#'+p.n).padStart(5)+' ','dim'),...fit([S(p.t,'dim')],tw-2),sp(2),...fit(M(p.why),RW),S(p.when.padStart(5),'dim')];
+ l=fit(l,w,false); return sel?withBg(l,'sel'):l;
+}
+function deploysScreen(){
+ const W=120,L=[tabs(3,W,{right:'is:merged merged:7d'}),[]];
+ let first=true;
+ const grp=(t,rows)=>{L.push([sp(2),S(t,'fg',{b:1}),S('  '+rows.length,'dim')]);rows.forEach(p=>{L.push(rowLane({...p,merged:1},W-1,{sel:first}));first=false;});L.push([]);};
+ grp('deploying',[A(2288,{pl:'run',why:'{y|running}{d|  5/7 · deploy-staging}',when:'22m'}),A(812,{pl:'run',why:'{y|running}{d|  2/4 · build}',when:'41m'})]);
+ grp('failing',[A(4815,{pl:'fail',why:'{r|main failing}{d|  deploy-production}',when:'1h'})]);
+ grp('deployed',[A(1199,{pl:'ok',why:'{g|passed}{d|  6/6}',when:'1h'}),A(4811,{pl:'ok',b:'develop',why:'{g|passed}{d|  11/11}',when:'3h'})]);
+ while(L.length<38) L.push([]);
+ L.push(status(W,{mode:'NORMAL',section:'Deploys',pos:'1/5'}));
+ L.push(lr(M('{r|✗} {f|1 failing}{d|   ·   2 deploying   ·   2 deployed}'),M('{d|Enter pipeline   D dismiss   o open}'),W));
+ return L.map(l=>fit(l,W,false));
+}
+
+// Merged: what merged this week, newest first, each with the glyph of what
+// its merge commit's pipeline did. Deploys is where a failure is acted on.
 function mergedScreen(){
- const W=120,L=[tabs(5,W,{right:'is:merged merged:7d'}),[]];
- const grp=(t,rows,first)=>{L.push([sp(2),S(t,'fg',{b:1}),S('  '+rows.length,'dim')]);rows.forEach((p,i)=>L.push(rowArm({...p,merged:1,armed:0},W-1,{sel:first&&i===0,lit:1})));L.push([]);};
- grp('needs attention',[A(4815,{pl:'fail',why:'{r|main failing}{d|  deploy-production}',when:'1h'})],true);
- grp('running',[A(2288,{pl:'run',why:'{y|running}{d|  5/7 · deploy-staging}',when:'22m'}),A(812,{pl:'run',why:'{y|running}{d|  2/4 · build}',when:'41m'})]);
- grp('done',[A(1199,{pl:'ok',why:'{g|passed}{d|  6/6}',when:'1h'}),A(4811,{pl:'ok',why:'{g|passed}{d|  11/11}',when:'3h'}),A(60,{why:'{d|no pipeline}',when:'5h'}),A(4802,{pl:'fixed',why:'{g|fixed}{d|  main passes now}',when:'6h'})]);
+ const W=120,L=[tabs(4,W,{right:'is:merged merged:7d'}),[]];
+ const rows=[A(2288,{pl:'run',why:'{y|running}{d|  5/7 · deploy-staging}',when:'22m'}),A(812,{pl:'run',why:'{y|running}{d|  2/4 · build}',when:'41m'}),
+  A(4815,{pl:'fail',why:'{r|failed}{d|  deploy-production}',when:'1h'}),A(1199,{pl:'ok',why:'{g|passed}{d|  6/6}',when:'1h'}),
+  A(4811,{pl:'ok',why:'{g|passed}{d|  11/11}',when:'3h'}),A(60,{why:'{d|no pipeline}',when:'5h'}),A(4802,{pl:'fixed',why:'{g|fixed}{d|  main passes now}',when:'6h'})];
+ L.push([sp(2),S('last 7 days','fg',{b:1}),S('  '+rows.length,'dim')]);
+ rows.forEach((p,i)=>L.push(rowArm({...p,merged:1,armed:0},W-1,{sel:i===0,lit:1})));
  while(L.length<38) L.push([]);
  L.push(status(W,{mode:'NORMAL',section:'Merged',pos:'1/7'}));
- L.push(M('{r|✗} {f|1 needs attention}{d|   ·   2 running   ·   4 done}'));
+ L.push(lr(M('{d|7 merged}'),M('{d|w pipeline   :clear drop finished}'),W));
  return L.map(l=>fit(l,W,false));
 }
 
@@ -431,15 +453,16 @@ function fin(lines,mode){
 function build(mode){
  const F=l=>fin(l,mode), ST={mode:'NORMAL',section:'Agent-opened',pos:'1/23'};
  const out={};
- out.sList=F(listScreen({W:120,H:40,tab:2,prs:P,sel:0,preview:preview4821(46),right:'author:@agents',st:ST}));
+ out.sList=F(listScreen({W:120,H:40,tab:5,prs:ALL,sel:1,preview:preview4821(46),right:'is:open',st:{mode:'NORMAL',section:'Open',pos:'2/96'}}));
  const hl='ledger', fi=ALL.findIndex(p=>p.t.toLowerCase().includes(hl));
- out.sFilter=F(listScreen({W:120,H:40,tab:4,prs:ALL,sel:fi,hl,right:'is:open   sort: updated',st:{mode:'FILTER',section:'All',pos:'1/5 matches'},cmd:lr(M('/ledger{C| }'),M('{d|n N jump   Enter hide non-matches   Esc clear}'),120)}));
- const l80={W:80,H:24,tab:2,short:true,prs:P,sel:0,st:{mode:'NORMAL',section:'Agent',pos:'1/23',narrow:true}};
+ out.sFilter=F(listScreen({W:120,H:40,tab:5,prs:ALL,sel:fi,hl,right:'is:open   sort: updated',st:{mode:'FILTER',section:'Open',pos:'1/5 matches'},cmd:lr(M('/ledger{C| }'),M('{d|n N jump   Enter hide non-matches   Esc clear}'),120)}));
+ const l80={W:80,H:24,tab:5,short:true,prs:ALL,sel:1,st:{mode:'NORMAL',section:'Open',pos:'2/96',narrow:true}};
  out.s80=F(listScreen(l80));
  out.s80ascii=fin(listScreen(l80),{ascii:true,c16:true});
  out.sDetail=F(detailScreen());
  out.sHelp=F(helpScreen());
  out.sArmed=F(armedScreen());
+ out.sDeploys=F(deploysScreen());
  out.sMerged=F(mergedScreen());
  out.sPipeline=F(pipelineScreen());
  out.sJob=F(jobScreen());

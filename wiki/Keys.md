@@ -15,7 +15,7 @@ The ones to know first:
 | `Space` `V` | mark a row, mark a range |
 | `M` `A` `a` `c` `x` | merge, arm, approve, comment, close |
 | `u` | update the branch from its base |
-| `D` | in the Merged section, dismiss a failure |
+| `D` | in Deploys, dismiss a failing branch |
 | `w` | the PR's pipeline, live: see [Watching pipelines](Watching-pipelines) |
 | `o` `d` | browser, diff |
 | `:` `?` `q` | command line, help, back |

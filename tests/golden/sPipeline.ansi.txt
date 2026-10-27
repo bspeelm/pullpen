@@ -36,5 +36,5 @@
 {fg}                                                                                                                        
 {fg}                                                                                                                        
 {fg}                                                                                                                        
-{bg bg=acc b} NORMAL {fg bg=surf}  #812  {dim bg=surf}job 3/4{fg bg=surf}                                  {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
+{bg bg=acc b} NORMAL {fg bg=surf}  #812  {dim bg=surf}job 3/4{fg bg=surf}                                  {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 failing{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
 {dim}Enter open job   zo zc show / fold a run   o open on gitlab.com   r refresh   q back to #812{fg}                            

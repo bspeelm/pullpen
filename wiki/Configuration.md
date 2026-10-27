@@ -9,7 +9,7 @@ shows every key. The parts:
 | table | holds |
 |---|---|
 | `[[forge]]` | `kind` (`github` or `gitlab`), `host`, and `scope` (GitHub) or `groups` (GitLab): what an unscoped section searches |
-| `[[section]]` | `name`, `short`, `query`, and optionally `sort`, `view = "armed"` or `"merged"`, and `counts` |
+| `[[section]]` | `name`, `short`, `query`, and optionally `sort`, `view = "armed"`, `"deploys"` or `"merged"`, and `counts` |
 | `[merge]` | `default_method` (`repo`, `squash`, `merge`, `rebase`) and `delete_branch` |
 | `[notify]` | `bell`, and `osc9` for desktop notifications |
 | `[sync]` | `interval`, `on_focus`, and `watch`, how often an open pipeline screen asks again (default `5s`) |

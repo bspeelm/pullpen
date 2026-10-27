@@ -1,40 +1,40 @@
-  Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96    Merged 1             author:@agents 
+  Mine 6    Needs my review 4    Auto-merge armed 7    Deploys 1    Merged 7    Open 96                         is:open 
                                                                                                                         
              # title                      repo               rev   age │ Migrate invoices to ledger v2                  
-▌ gh ○ ◆ #4821 Migrate invoices to ledg…  acme/api         ◇ 1/2    3h │ gh  acme/api #4821   ◇ claude   3h             
-  gl ✓    #812 Bump go toolchain to 1.2…  platform/runner  ◇ 1/1   41m │                                                
-  gh ✗ ◆ #22                                                                                                 approves   
-  gh ○    #3   keys                                                                     ? or Esc to close               
-  gl ✓    #1                                                                                                            
-  gh ≠ ◆ #48   move                          act on selection              sections & views                 g           
-  gh ✓     #   j k        down / up          M          merge…             h l        prev / next section               
-  gh ○ ◆ #22   gg G       top / bottom       A          arm / disarm auto  Tab S-Tab  next / prev section               
-  gl ○ ◆  #8   ^d ^u      half page          a          approve            1–6        go to section                     
-  gh ◌   #12   /          filter list        c          comment            w          watch pipeline                    
-  gh ✓   #48   n N        next / prev match  d          open diff          p          toggle preview                    
-  gl ✗    #1   Esc        clear, cancel      o          open in browser    :          command line                      
-  gh ○    #3   Space      mark row           x          close…             ?          this help             r v2        
-  gh ✓ ◆ #11   V          mark range         u          update branch      q          back / quit           uns as an   
-  gl ○    #8   Enter      open detail        D          dismiss failure                                     0 with a    
-  gh ○   #22                                 r          refresh                                             anly after  
-  gh ✓ ◆ #48                                                                                                            
-  gl ○     #   detail view                   command line                  confirm prompt                               
-  gh ✓     #   h l        focus pane         Tab S-Tab  complete           y Enter    confirm                           
-  gh ✗    #3   n b        next / prev file   ↑ ↓        history            n Esc      cancel                         2h 
-  gh ○   #22   F          all files          ^r #       insert selected    s m r      pick method                    2h 
-  gl ✓    #1   ]c [c      next / prev hunk   Enter      run                                                          3h 
-  gh ○   #47   zo zc      expand / fold      Esc        cancel                                                       3h 
-               q Esc      back to list                                                                                  
-                                                                                                                        
-               Every key has a : command. M and x confirm on the command line, never in a dialog.                       
-                                                                                                                        
-                                                                       │                                                
-                                                                       │                                                
-                                                                       │                                                
-                                                                       │                                                
-                                                                       │                                                
-                                                                       │                                                
-                                                                       │                                                
-                                                                       │                                                
- NORMAL   Agent-opened  1/23                             ◆ 7 armed   ✗ 3 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
+  gh ○   #4823 Rate limit per API key i…  acme/api           0/1   20m │ gh  acme/api #4821   ◇ claude   3h             
+▌ gh ○ ◆ #4821 Migrate invoices to ledg…  acme/api         ◇ 1/2    3h │                                                
+  gl ✓    #8                                                                                                 approves   
+  gh ✓   #22   keys                                                                     ? or Esc to close               
+  gh ✗ ◆ #22                                                                                                            
+  gh ○    #3   move                          act on selection              sections & views                 g           
+  gl ✗    #8   j k        down / up          M          merge…             h l        prev / next section               
+  gl ✓    #1   gg G       top / bottom       A          arm / disarm auto  Tab S-Tab  next / prev section               
+  gh ≠ ◆ #48   ^d ^u      half page          a          approve            1–6        go to section                     
+  gh ○   #12   /          filter list        c          comment            w          watch pipeline                    
+  gh ✓     #   n N        next / prev match  d          open diff          p          toggle preview                    
+  gh ○ ◆ #22   Esc        clear, cancel      o          open in browser    :          command line                      
+  gl ✓     #   Space      mark row           x          close…             ?          this help             r v2        
+  gl ○ ◆  #8   V          mark range         u          update branch      q          back / quit           uns as an   
+  gh ◌   #12   Enter      open detail        D          dismiss failure                                     0 with a    
+  gh ○    #3                                 r          refresh                                             anly after  
+  gh ✓   #48                                                                                                            
+  gl ✗    #1   detail view                   command line                  confirm prompt                               
+  gh ✓   #48   h l        focus pane         Tab S-Tab  complete           y Enter    confirm                           
+  gh ○    #3   n b        next / prev file   ↑ ↓        history            n Esc      cancel                         2h 
+  gh ✓ ◆ #11   F          all files          ^r #       insert selected    s m r      pick method                    2h 
+  gl ○    #1   ]c [c      next / prev hunk   Enter      run                                                          3h 
+  gl ○    #8   zo zc      expand / fold      Esc        cancel                                                       3h 
+  gh ○   #22   q Esc      back to list                                                                                  
+  gh ◌   #22                                                                                                            
+  gh ✓ ◆ #48   Every key has a : command. M and x confirm on the command line, never in a dialog.                       
+  gl ○     #                                                                                                            
+  gh ✓     #97 Command-line history per…  tools/rq           –      2d │                                                
+  gh ✓     #94 Map GitLab approval rule…  tools/rq         ◇ 1/1    6d │                                                
+  gh ✗    #371 Enable VPC flow logs to…   acme/infra       ◇ 0/1    6d │                                                
+  gh ✗   #4802 Upgrade to Go 1.25         acme/api           0/1    3d │                                                
+  gh ○   #2279 chore(deps): update depe…  acme/web         ◇ 0/1    1w │                                                
+  gl ✓    #139 Bump ingress-nginx to 4.…  platform/charts  ◇ 1/1    1w │                                                
+  gl ✓    #801 Shell executor: honor um…  platform/runner    1/1    1w │                                                
+  gh ○   #4796 Trace context propagatio…  acme/api         ◇ 0/1    2w │                                                
+ NORMAL   Open  2/96                                     ◆ 7 armed   ✗ 1 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
                                                                                                                         

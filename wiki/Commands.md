@@ -34,8 +34,8 @@ names; `↑` `↓` walk history, filtered by what you have typed.
 | `:refresh [all]` | fetch this section, or all |
 | `:section <name>` | switch section |
 | `:messages` | the last 200 results and errors |
-| `:clear` | drop merged rows from the armed view; in the Merged section, every finished row |
-| `:dismiss [#n]` | in the Merged section, resolve a failure by hand |
+| `:clear` | in the Merged section, drop every finished row that is not failing |
+| `:dismiss [#n]` | in Deploys, resolve a failing branch by hand |
 | `:watch [#n]` | the PR's pipeline and its jobs' logs, live |
 | `:q` `:qa` | back, or quit |
 

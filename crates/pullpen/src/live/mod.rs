@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 
 use pullpen_core::query::Query;
 use pullpen_core::time::Timestamp;
-use pullpen_core::{Action, Forge as Kind, Job, JobResult, Outcome, Pr, PrId, PrState, Section, Sort, View, readiness};
+use pullpen_core::{Action, Forge as Kind, Job, JobResult, Outcome, Pr, PrId, Section, Sort, readiness};
 use pullpen_forge::{Agents, Error, Forge, auth};
 use tokio::runtime::Runtime;
 use tokio::sync::{Notify, OnceCell};
@@ -48,13 +48,10 @@ pub struct Live {
 impl Live {
     /// The backend, the forges it reaches, and each configured forge it
     /// cannot, with why.
-    /// `since` is the last visit: an armed section also keeps what merged
-    /// after it.
     pub fn start(
         cfg: &Config,
         sections: &[Section],
         cache_dir: PathBuf,
-        since: Timestamp,
         creds: &Credentials,
     ) -> std::io::Result<(Live, Vec<Kind>, Vec<Unreachable>)> {
         let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build()?;
@@ -102,26 +99,39 @@ impl Live {
             forges.push(Entry { forge, me: OnceCell::new() });
         }
         let (tx, rx) = channel();
+        let groups = shared(sections);
+        // A section's refresh wakes its group's one task.
+        let notifies: Vec<Arc<Notify>> = groups.iter().map(|_| Arc::default()).collect();
+        let wake = (0..sections.len())
+            .map(|i| {
+                groups.iter().position(|g| g.contains(&i)).and_then(|k| notifies.get(k)).cloned().unwrap_or_default()
+            })
+            .collect();
         let live = Live {
             rt,
             forges: Arc::new(forges),
             tx,
             rx,
-            wake: sections.iter().map(|_| Arc::new(Notify::new())).collect(),
+            wake,
             last: Arc::default(),
             repos: Arc::new(cfg.repos.clone()),
             worktree: cfg.checkout.worktree,
         };
-        for (i, s) in sections.iter().enumerate() {
-            live.spawn_section(i, s.clone(), cfg.sync.every(), cache_dir.clone(), since);
+        for g in groups {
+            let members = g.iter().map(|i| (*i, sections[*i].clone())).collect();
+            live.spawn_group(members, cfg.sync.every(), cache_dir.clone());
         }
         Ok((live, kinds, problems))
     }
 
-    fn spawn_section(&self, i: usize, section: Section, every: Duration, cache_dir: PathBuf, since: Timestamp) {
-        let (forges, tx, wake, last) = (self.forges.clone(), self.tx.clone(), self.wake[i].clone(), self.last.clone());
+    /// One task per distinct query: sections that ask the same thing (Deploys
+    /// and Merged) share one search, and each gets its own copy of the answer.
+    fn spawn_group(&self, members: Vec<(usize, Section)>, every: Duration, cache_dir: PathBuf) {
+        let Some((first, _)) = members.first() else { return };
+        let (forges, tx, wake, last) =
+            (self.forges.clone(), self.tx.clone(), self.wake[*first].clone(), self.last.clone());
         self.rt.spawn(async move {
-            let q = Query::parse(&section.query);
+            let q = Query::parse(&members[0].1.query);
             // No forge this section can reach: say nothing rather than report
             // an empty list as a successful sync, and leave the cache alone.
             // The status line already says which forge is not signed in.
@@ -151,28 +161,28 @@ impl Live {
                     }
                     caps.extend(e.forge.capabilities());
                 }
-                let client_side = q.terms.iter().any(|t| t.client_side());
-                let armed_view = section.view == View::Armed;
                 prs.retain(|p| {
-                    let fresh = matches!(p.state, PrState::Merged { at, .. } if at >= since);
                     let caps = caps.get(&format!("{}/{}", p.id.host, p.id.repo)).cloned().unwrap_or_default();
-                    q.keeps(p, readiness(p, &caps)) || (armed_view && fresh)
+                    q.keeps(p, readiness(p, &caps))
                 });
-                if client_side {
+                if q.terms.iter().any(|t| t.client_side()) {
                     total = prs.len();
                 }
-                sort(&mut prs, section.sort);
                 let _ = tx.send(Msg::Caps(caps));
                 let wait = match failed {
                     None => {
                         backoff = 0;
-                        // A cache that will not write costs only a slower
-                        // first paint next time.
-                        let _ = cache::store(&cache_dir, &section, &prs, total);
                         if let Ok(mut l) = last.lock() {
                             *l = Some(Instant::now());
                         }
-                        let _ = tx.send(Msg::Synced { section: i, prs, total });
+                        for (i, section) in &members {
+                            let mut prs = prs.clone();
+                            sort(&mut prs, section.sort);
+                            // A cache that will not write costs only a
+                            // slower first paint next time.
+                            let _ = cache::store(&cache_dir, section, &prs, total);
+                            let _ = tx.send(Msg::Synced { section: *i, prs, total });
+                        }
                         every
                     }
                     Some((kind, host, err)) => {
@@ -188,6 +198,18 @@ impl Live {
             }
         });
     }
+}
+
+/// Section indices grouped by query, in order of first appearance.
+fn shared(sections: &[Section]) -> Vec<Vec<usize>> {
+    let mut groups: Vec<Vec<usize>> = Vec::new();
+    for (i, s) in sections.iter().enumerate() {
+        match groups.iter_mut().find(|g| sections[g[0]].query == s.query) {
+            Some(g) => g.push(i),
+            None => groups.push(vec![i]),
+        }
+    }
+    groups
 }
 
 /// The status line's words for a background failure.

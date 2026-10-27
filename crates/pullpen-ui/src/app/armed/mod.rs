@@ -6,7 +6,7 @@ use pullpen_core::time::Timestamp;
 use pullpen_core::{Pr, PrId, View};
 
 use super::{App, Effect, Input};
-use crate::span::{Line, markup};
+use crate::span::{Line, lr, markup};
 use crate::views::armed::{Group, clock, group, heading, row, why};
 use crate::views::chrome::tabs;
 
@@ -71,17 +71,31 @@ impl App {
     /// before any sync: first sight rings nothing.
     pub(super) fn arrange(&mut self) {
         for i in 0..self.sections.len() {
-            if self.view_is(i, View::Armed) || self.view_is(i, View::Merged) {
-                let mut prs = std::mem::take(&mut self.sections[i].prs);
-                self.track(i, &mut prs);
-                if self.view_is(i, View::Merged) {
-                    self.land(&mut prs);
-                    self.sections[i].total = super::merged::attention(&prs);
-                }
-                self.sections[i].prs = prs;
+            let mut prs = std::mem::take(&mut self.sections[i].prs);
+            self.track(i, &mut prs);
+            if let Some(total) = self.shape(i, &mut prs) {
+                self.sections[i].total = total;
             }
+            self.sections[i].prs = prs;
         }
         self.notify.clear();
+    }
+
+    /// What a grouped view makes of a section's rows, and what its tab
+    /// counts; `None` for a plain list, whose count is the forge's.
+    pub(super) fn shape(&mut self, i: usize, prs: &mut Vec<Pr>) -> Option<usize> {
+        match self.sections.get(i).map(|s| s.section.view)? {
+            View::Armed => Some(self.armed_count(prs)),
+            View::Deploys => {
+                self.lanes(prs);
+                Some(self.failing(prs))
+            }
+            View::Merged => {
+                self.history(prs);
+                Some(prs.len())
+            }
+            View::List => None,
+        }
     }
 
     /// Notifications waiting to be rung, as effects.
@@ -106,27 +120,35 @@ impl App {
     }
 
     pub fn since_label(&self) -> String {
-        self.last_visit.map_or("this session".into(), |t| format!("since {}", clock(t, self.tz_offset)))
+        self.last_visit.map_or("in the last day".into(), |t| format!("since {}", clock(t, self.tz_offset)))
     }
 
-    /// `◆ 4 merged since 09:14 · 2 need attention · 5 still waiting`.
-    pub fn armed_summary(&self) -> Line {
+    /// `◆ 5 merged since 09:14 → Merged · 2 need attention · 5 still waiting`:
+    /// the merges themselves are listed in Merged (ADR-023).
+    pub fn armed_summary(&self, w: usize) -> Line {
         let rows = self.section().visible();
         let count = |g| rows.iter().filter(|p| self.group_of(p) == Some(g)).count();
-        let (m, a, w) = (count(Group::Merged), count(Group::Attention), count(Group::Waiting));
+        let since = self.last_visit.unwrap_or(Timestamp(self.now.0 - 86_400));
+        let merged = self.sections.iter().find(|s| s.section.view == View::Merged);
+        let m = merged.map_or(0, |s| s.prs.iter().filter(|p| super::merged::merged_at(p) >= since).count());
+        let (a, wt) = (count(Group::Attention), count(Group::Waiting));
         let mut parts = Vec::new();
-        if m > 0 {
+        // Where the merges are listed rides after the first part, dim.
+        let mut pointer = String::new();
+        if let Some(sec) = merged.filter(|_| m > 0) {
             parts.push(format!("{m} merged {}", self.since_label()));
+            pointer = format!("{{d| → {}}}", sec.section.name);
         }
         if a > 0 {
             parts.push(format!("{a} need{} attention", if a == 1 { "s" } else { "" }));
         }
-        if w > 0 {
-            parts.push(format!("{w} still waiting"));
+        if wt > 0 {
+            parts.push(format!("{wt} still waiting"));
         }
-        let Some((first, rest)) = parts.split_first() else { return vec![] };
+        let keys = markup("{d|Enter detail   A disarm   w pipeline}");
+        let Some((first, rest)) = parts.split_first() else { return lr(&[], &keys, w) };
         let tail = if rest.is_empty() { String::new() } else { format!("{{d|   ·   {}}}", rest.join("   ·   ")) };
-        markup(&format!("{{a|◆}} {{f|{first}}}{tail}"))
+        lr(&markup(&format!("{{a|◆}} {{f|{first}}}{pointer}{tail}")), &keys, w)
     }
 
     /// The armed view's lines, or `None` when the active section is not it.
@@ -137,15 +159,13 @@ impl App {
         let ctx = self.ctx();
         let sec = self.section();
         let rows = sec.visible();
-        let all: Vec<Pr> = rows.iter().map(|p| (*p).clone()).collect();
-        let groups = [Group::Attention, Group::Waiting, Group::Merged]
+        // A conflict names the merge that likely caused it, from Merged.
+        let merged = self.sections.iter().filter(|s| s.section.view == View::Merged).flat_map(|s| &s.prs);
+        let all: Vec<Pr> = rows.iter().map(|p| (*p).clone()).chain(merged.cloned()).collect();
+        let groups = [Group::Attention, Group::Waiting]
             .into_iter()
             .map(|g| {
-                let title = match g {
-                    Group::Attention => "needs attention".to_string(),
-                    Group::Waiting => "waiting".into(),
-                    Group::Merged => format!("merged {}", self.since_label()),
-                };
+                let title = if g == Group::Attention { "needs attention" } else { "waiting" }.to_string();
                 let members = rows
                     .iter()
                     .enumerate()
@@ -159,8 +179,7 @@ impl App {
                 (title, members)
             })
             .collect();
-        let right = format!("{} + recent merges", sec.section.query);
-        Some(self.grouped(w, h, &right, groups, self.armed_summary()))
+        Some(self.grouped(w, h, &sec.section.query, groups, self.armed_summary(w)))
     }
 
     /// A grouped view's frame: tabs, each non-empty group under its
@@ -214,17 +233,6 @@ impl App {
     /// Rows still armed: what the tab counts and the position counts in.
     pub(super) fn armed_count(&self, prs: &[Pr]) -> usize {
         prs.iter().filter(|p| !p.merged()).count()
-    }
-
-    pub fn clear_merged(&mut self) {
-        for sec in self.sections.iter_mut().filter(|s| s.section.view == View::Armed) {
-            let gone: Vec<PrId> = sec.prs.iter().filter(|p| p.merged()).map(|p| p.id.clone()).collect();
-            sec.prs.retain(|p| !p.merged());
-            sec.sel = sec.sel.min(sec.prs.len().saturating_sub(1));
-            for id in gone {
-                self.watches.remove(&id);
-            }
-        }
     }
 }
 

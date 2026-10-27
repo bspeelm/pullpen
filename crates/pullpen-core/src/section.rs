@@ -15,8 +15,10 @@ pub enum View {
     List,
     /// The grouped lifecycle view (design §06).
     Armed,
-    /// Merged PRs grouped by their merge commit's pipeline (ADR-017).
+    /// What merged, newest first, with each merge's pipeline (ADR-017, ADR-023).
     Merged,
+    /// One lane per repo and branch merges landed on (ADR-023).
+    Deploys,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

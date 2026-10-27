@@ -1,0 +1,40 @@
+  Mine 6    Needs my review 4    Auto-merge armed 7    Deploys 1    Merged 7    Open 96             is:merged merged:7d 
+                                                                                                                        
+  deploying  2                                                                                                          
+▌ gh ○ web         main      #2288 chore(deps): update dependency vite to v7.…  running  5/7 · deploy-staging       22m 
+  gl ○ runner      main       #812 Bump go toolchain to 1.25.3                  running  2/4 · build                41m 
+                                                                                                                        
+  failing  1                                                                                                            
+  gh ✗ api         main      #4815 Remove deprecated v1 webhooks handler        main failing  deploy-production      1h 
+                                                                                                                        
+  deployed  2                                                                                                           
+  gh ✓ billing     main      #1199 Ledger: emit backfill progress metrics       passed  6/6                          1h 
+  gh ✓ api         develop   #4811 Split payments service config by environme…  passed  11/11                        3h 
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+ NORMAL   Deploys  1/5                                   ◆ 7 armed   ✗ 1 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
+✗ 1 failing   ·   2 deploying   ·   2 deployed                                       Enter pipeline   D dismiss   o open

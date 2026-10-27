@@ -160,6 +160,8 @@ impl App {
                 }
             }
             Key::Char('o') => return self.urls(&self.targets(None)).into_iter().map(Effect::Open).collect(),
+            // A lane is a pipeline; its PR is one more key away.
+            Key::Enter if self.view_is(self.active, pullpen_core::View::Deploys) => self.open_pipe(),
             Key::Enter => self.open_detail(false),
             Key::Char('d') => self.open_detail(true),
             Key::Char('w') => self.open_pipe(),
@@ -431,7 +433,7 @@ impl App {
             }
             Cmd::Clear if self.view_is(self.active, pullpen_core::View::Merged) => self.clear_landed(),
             Cmd::Clear => {
-                self.clear_merged();
+                self.refused(":clear drops finished rows in Merged");
                 vec![]
             }
             Cmd::Quit | Cmd::QuitAll => {

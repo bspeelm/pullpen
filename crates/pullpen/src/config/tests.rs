@@ -7,12 +7,12 @@ fn no_file_means_the_defaults() {
     let s = c.sections();
     assert_eq!(
         s.iter().map(|s| s.short.as_str()).collect::<Vec<_>>(),
-        ["Mine", "Review", "Agent", "Armed", "All", "Merged"]
+        ["Mine", "Review", "Armed", "Deploys", "Merged", "Open"]
     );
-    assert!(!s[4].counts, "the catch-all section does not feed the status counts");
-    assert_eq!(s[3].view, View::Armed);
-    assert_eq!(s[5].view, View::Merged);
-    assert!(!s[5].counts, "merged PRs' pipelines are not failing PRs");
+    assert!(!s[5].counts, "the catch-all section does not feed the status counts");
+    assert_eq!((s[2].view, s[3].view, s[4].view), (View::Armed, View::Deploys, View::Merged));
+    assert!(!s[3].counts && !s[4].counts, "merged PRs' pipelines are not failing PRs");
+    assert_eq!(s[3].query, s[4].query, "Deploys and Merged share one search");
     assert_eq!(c.forges().len(), 2);
 }
 

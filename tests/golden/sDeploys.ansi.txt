@@ -1,0 +1,40 @@
+{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Auto-merge armed{faint} 7{fg}    {acc b}Deploys{acc} 1{fg}    {dim}Merged{faint} 7{fg}    {dim}Open{faint} 96{fg}             {faint}is:merged merged:7d{fg} 
+{fg}                                                                                                                        
+{fg}  {fg b}deploying{dim}  2{fg}                                                                                                          
+{acc bg=sel}▌ {dim bg=sel}gh {warn bg=sel}○{fg bg=sel} {fg bg=sel b}web{fg bg=sel}         {fg bg=sel b}main{fg bg=sel}      {dim bg=sel}#2288 chore(deps): update dependency vite to v7.…{fg bg=sel}  {warn bg=sel}running{dim bg=sel}  5/7 · deploy-staging{fg bg=sel}     {dim bg=sel}  22m{fg} 
+{fg}  {dim}gl {warn}○{fg} runner      main      {dim} #812 Bump go toolchain to 1.25.3{fg}                  {warn}running{dim}  2/4 · build{fg}              {dim}  41m{fg} 
+{fg}                                                                                                                        
+{fg}  {fg b}failing{dim}  1{fg}                                                                                                            
+{fg}  {dim}gh {err}✗{fg} api         main      {dim}#4815 Remove deprecated v1 webhooks handler{fg}        {err}main failing{dim}  deploy-production{fg}   {dim}   1h{fg} 
+{fg}                                                                                                                        
+{fg}  {fg b}deployed{dim}  2{fg}                                                                                                           
+{fg}  {dim}gh {ok}✓{fg} billing     main      {dim}#1199 Ledger: emit backfill progress metrics{fg}       {ok}passed{dim}  6/6{fg}                       {dim}   1h{fg} 
+{fg}  {dim}gh {ok}✓{fg} api         develop   {dim}#4811 Split payments service config by environme…{fg}  {ok}passed{dim}  11/11{fg}                     {dim}   3h{fg} 
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{bg bg=acc b} NORMAL {fg bg=surf}  Deploys  {dim bg=surf}1/5{fg bg=surf}                                   {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 failing{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
+{err}✗{fg} 1 failing{dim}   ·   2 deploying   ·   2 deployed{fg}                                       {dim}Enter pipeline   D dismiss   o open

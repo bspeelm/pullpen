@@ -9,9 +9,14 @@ use crate::paint::Theme;
 use crate::palette::{Palette, Tier};
 
 fn app() -> App {
-    let sections = fx::sections().into_iter().map(|s| SectionState::new(s.section, s.prs, s.total)).collect();
+    // The agent-opened rows, as a section of their own (not a default).
+    let sections = fx::sections()
+        .into_iter()
+        .chain([fx::agent_section()])
+        .map(|s| SectionState::new(s.section, s.prs, s.total))
+        .collect();
     let mut a = App::new(sections, Theme { palette: Palette::new(Tier::True), glyphs: Glyphs::Unicode }, fx::NOW);
-    a.active = 2;
+    a.active = 6;
     a.height = 40;
     a
 }
@@ -23,7 +28,7 @@ fn clicking_a_tab_switches_and_a_row_selects_and_twice_opens() {
     // "  Mine 6    Needs my review 4 …": column 12 is inside the second tab.
     a.mouse(Mouse::Click { x: 12, y: 0 }, t);
     assert_eq!(a.active, 1);
-    a.active = 2;
+    a.active = 6;
     a.mouse(Mouse::Click { x: 30, y: 5 }, t);
     assert_eq!((a.section().sel, a.detail.is_none()), (2, true));
     a.mouse(Mouse::Click { x: 30, y: 5 }, t + Duration::from_millis(100));
