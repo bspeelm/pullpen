@@ -615,9 +615,12 @@ impl App {
             _ => total,
         };
         // A PR that changed has a stale detail and diff; a fetch that failed
-        // gets another try.
+        // gets another try. A check finishing does not move `updated_at`, so
+        // the checks are compared too.
         for p in &prs {
-            if self.find(&p.id).is_some_and(|old| old.updated_at != p.updated_at) {
+            if self.find(&p.id).is_some_and(|old| {
+                old.updated_at != p.updated_at || old.checks != p.checks || old.post_merge != p.post_merge
+            }) {
                 self.details.remove(&p.id);
                 self.diffs.remove(&p.id);
                 self.requested.retain(|(id, _)| *id != p.id);
