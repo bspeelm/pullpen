@@ -43,7 +43,7 @@ const P=[
  {f:'gh',r:'acme/api',n:4818,t:'Add idempotency keys to POST /payments',a:'codex',ci:'ok',rv:[2,2],conflict:1,armed:1,ad:220,de:41,age:'1d'},
  {f:'gh',r:'tools/rq',n:96,t:'Cache forge capabilities per host',a:'claude',ci:'ok',rv:[1,1],ad:73,de:15,age:'2h'},
  {f:'gh',r:'acme/web',n:2288,t:'chore(deps): update dependency vite to v7.1.4',a:'dependabot',ci:'ok',rv:[0,1],armed:1,ad:3,de:3,age:'6h'},
- {f:'gl',r:'platform/runner',n:809,t:'Retry artifact upload on 503 with jittered backoff',a:'codex',ci:'run',rv:[1,1],armed:1,ad:64,de:9,age:'30m'},
+ {f:'gl',r:'platform/runner',n:809,t:'Retry artifact upload on 503 with jittered backoff',a:'codex',ci:'run',rv:[1,1],armed:1,ad:64,de:9,age:'30m',b:'develop'},
  {f:'gh',r:'acme/billing',n:1203,t:'Proration preview endpoint',a:'claude',ci:'none',draft:1,rv:[0,2],ad:388,de:2,age:'2d'},
  {f:'gh',r:'acme/api',n:4815,t:'Remove deprecated v1 webhooks handler',a:'claude',ci:'ok',rv:[2,2],ad:12,de:540,age:'2d'},
  {f:'gl',r:'platform/charts',n:143,t:'Pin redis chart to 19.6.x',a:'renovate',ci:'fail',rv:[0,1],ad:2,de:2,age:'3d'},
@@ -81,8 +81,10 @@ const PL={run:S('○','warn'),ok:S('✓','ok'),fail:S('✗','err'),fixed:S('✗'
 function stateG(p){ if(p.merged) return PL[p.pl]||S('●','dim'); if(p.draft) return S('◌','dim'); if(p.conflict) return S('≠','err'); if(p.ci==='fail') return S('✗','err'); if(p.ci==='run'||p.rv[0]<p.rv[1]) return S('○','warn'); return S('✓','ok'); }
 function revS(p){const [h,n]=p.rv; if(!n) return S('–','faint'); return S(h+'/'+n,h>=n?'ok':'warn');}
 function cols(w){
- const c={forge:3,repo:17,author:12,rev:5,size:12,age:4}; const sum=()=>12+c.forge+c.repo+c.author+c.rev+c.size+c.age;
- const steps=[()=>c.size=0,()=>c.author=2,()=>c.repo=11,()=>c.age=0,()=>c.rev=0,()=>c.forge=0,()=>c.repo=0];
+ const c={forge:3,repo:17,target:10,author:12,rev:5,size:12,age:4}; const sum=()=>12+c.forge+c.repo+c.target+c.author+c.rev+c.size+c.age;
+ // The target branch folds after size, so it still shows beside the preview
+ // on a wide terminal.
+ const steps=[()=>c.size=0,()=>c.target=0,()=>c.author=2,()=>c.repo=11,()=>c.age=0,()=>c.rev=0,()=>c.forge=0,()=>c.repo=0];
  for(const st of steps){ if(sum()+24<=w) break; st(); }
  c.title=w-sum(); return c;
 }
@@ -97,6 +99,7 @@ function rowA(p,w,o={}){
  const tf=p.draft||p.merged?'dim':'fg';
  l.push(...fit(titleSegs(p,o.hl,tf).map(s=>sel&&s.f==='fg'?{...s,b:true}:s),c.title-2),sp(2));
  if(c.repo) l.push(...fit([S(c.repo===11?p.r.split('/').pop():p.r,'dim')],c.repo-1),sp(1));
+ if(c.target) l.push(...fit([S(p.b||'main','dim')],c.target-1),sp(1));
  if(c.author===12) l.push(...fit([isAg(p)?S('◇ ','fg'):sp(2),S(p.a,'dim')],11),sp(1)); else if(c.author===2) l.push(isAg(p)?S('◇ ','fg'):sp(2));
  if(c.rev) l.push(...fit([revS(p)],c.rev-1),sp(1));
  if(c.size) l.push(S(('+'+p.ad).padStart(5)+' '+('−'+p.de).padEnd(5)+' ','dim'));
@@ -110,6 +113,7 @@ function headA(w){
  const c=cols(w),l=[sp(2)]; if(c.forge) l.push(sp(c.forge));
  l.push(sp(4),S('    #','faint'),sp(1),...fit([S('title','faint')],c.title-2),sp(2));
  if(c.repo) l.push(...fit([S('repo','faint')],c.repo));
+ if(c.target) l.push(...fit([S('target','faint')],c.target));
  if(c.author===12) l.push(...fit([sp(2),S('author','faint')],12)); else if(c.author===2) l.push(sp(2));
  if(c.rev) l.push(...fit([S('rev','faint')],c.rev));
  if(c.size) l.push(...fit([S('  +/−','faint')],c.size));
