@@ -102,3 +102,47 @@ fn sections_that_ask_the_same_thing_share_one_search() {
     ];
     assert_eq!(shared(&s), [vec![0], vec![1, 2], vec![3]]);
 }
+
+#[test]
+fn merges_arms_and_closes_sync_again_while_the_forge_catches_up() {
+    use pullpen_core::MergeMethod;
+    assert_eq!(settle(&Action::Merge { method: MergeMethod::Squash }), SETTLE);
+    assert_eq!(settle(&Action::Arm { method: MergeMethod::Squash }), SETTLE);
+    assert!(settle(&Action::Approve).is_empty(), "an approval changes nothing a read can lag on");
+}
+
+/// A report of a merge gone wrong had nothing in the log to go on.
+#[test]
+fn a_finished_action_is_logged_with_its_outcome() {
+    use pullpen_core::{Forge as Kind, MergeMethod};
+    let buf = std::sync::Arc::new(Mutex::new(Vec::<u8>::new()));
+    let writer = {
+        let buf = buf.clone();
+        move || Capture(buf.clone())
+    };
+    let subscriber = tracing_subscriber::fmt().with_writer(writer).with_ansi(false).finish();
+    let job = Job {
+        id: 1,
+        target: PrId { forge: Kind::GitLab, host: "gitlab.com".into(), repo: "g/p".into(), number: 313 },
+        action: Action::Merge { method: MergeMethod::Rebase },
+    };
+    tracing::subscriber::with_default(subscriber, || {
+        logged(&job, &Outcome::Done);
+        logged(&job, &Outcome::Failed { reason: "already merged".into() });
+    });
+    let text = String::from_utf8(buf.lock().unwrap().clone()).unwrap();
+    assert!(text.contains("job done") && text.contains("action=\"merge\"") && text.contains("pr=313"), "{text}");
+    assert!(text.contains("job failed") && text.contains("already merged"), "{text}");
+}
+
+struct Capture(std::sync::Arc<Mutex<Vec<u8>>>);
+
+impl std::io::Write for Capture {
+    fn write(&mut self, b: &[u8]) -> std::io::Result<usize> {
+        self.0.lock().unwrap().extend_from_slice(b);
+        Ok(b.len())
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}

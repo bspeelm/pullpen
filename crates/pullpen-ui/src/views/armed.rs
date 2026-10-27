@@ -35,7 +35,7 @@ pub fn why(p: &Pr, g: Group, disarmed: bool, others: &[Pr]) -> String {
     let e = super::detail::esc;
     match g {
         Group::Merged => match &p.state {
-            PrState::Merged { method, .. } => format!("{{d|merged · {}}}", method.word()),
+            PrState::Merged { .. } => "{d|merged}".into(),
             _ => "{d|merged}".into(),
         },
         Group::Attention => {
@@ -125,8 +125,12 @@ pub fn landed_why(p: &Pr) -> String {
 
 /// The Merged view's reason column: a record, so a failure reads as
 /// failed whatever the branch has done since.
-pub fn history_why(p: &Pr) -> String {
+pub fn history_why(p: &Pr, now: Timestamp) -> String {
+    let merged = matches!(p.state, PrState::Merged { at, .. } if now.0 - at.0 < STARTING);
     match &p.post_merge {
+        // The forge registers the checks on the base branch a little after
+        // the merge; "no pipeline" would read as nothing will run.
+        None if merged => "{d|pipeline not started}".into(),
         Some(pl) if landed(p) == Landed::Attention => match pl.job.as_str() {
             "" => format!("{{r|failed}}{{d|  {}/{}}}", pl.passed, pl.total),
             job => format!("{{r|failed}}{{d|  {}}}", super::detail::esc(job)),
@@ -136,6 +140,8 @@ pub fn history_why(p: &Pr) -> String {
 }
 
 const RW: usize = 34;
+/// Seconds after a merge that a missing pipeline is taken as not started yet.
+const STARTING: i64 = 600;
 
 /// tui.js `rowLane`: a Deploys lane, its repo and branch first, then the
 /// merge at its head.

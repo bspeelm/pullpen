@@ -96,7 +96,7 @@ function write(name, screen, names, width) {
 }
 
 const full = TUI.build({});
-const W = { sList: 120, sFilter: 120, s80: 80, sDetail: 120, sHelp: 120, sArmed: 120, sDeploys: 120, sMerged: 120, sPipeline: 120, sJob: 120 };
+const W = { sList: 120, sFilter: 120, s80: 80, sDetail: 120, sDetailMergedFacts: 120, sHelp: 120, sArmed: 120, sDeploys: 120, sMerged: 120, sPipeline: 120, sJob: 120 };
 for (const [k, w] of Object.entries(W)) write(k, full[k], tcName, w);
 write('s80ascii', full.s80ascii, c16Name, 80);
 for (const group of ['mergeFlow', 'batch', 'cmd']) {

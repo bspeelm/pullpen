@@ -115,3 +115,16 @@ fn the_summary_counts_and_names_the_keys() {
     let last = screen(&a).pop().unwrap();
     assert!(last.starts_with("7 merged") && last.trim_end().ends_with("w pipeline   :clear drop finished"), "{last}");
 }
+
+#[test]
+fn a_fresh_merge_without_a_pipeline_has_not_started_one_yet() {
+    let mut a = app();
+    let mut fresh = landed(812, 0, PipelineState::Running);
+    fresh.post_merge = None;
+    let mut old = landed(1199, 2, PipelineState::Passed);
+    old.post_merge = None;
+    a.synced(MERGED, vec![fresh, old], 2);
+    let s = screen(&a);
+    assert!(s.iter().any(|l| l.contains("#812") && l.contains("pipeline not started")), "{s:?}");
+    assert!(s.iter().any(|l| l.contains("#1199") && l.contains("no pipeline")));
+}

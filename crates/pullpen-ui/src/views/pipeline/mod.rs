@@ -117,7 +117,7 @@ fn took(from: Option<Timestamp>, to: Option<Timestamp>, now: Timestamp) -> Strin
 fn head(pr: &Pr, section: &str, crumb: &str, refreshed: &str, w: usize, ctx: &Ctx) -> Vec<Line> {
     let who = if pr.author.is_agent { format!("◇ {}", pr.author.login) } else { pr.author.login.clone() };
     let when = match &pr.state {
-        PrState::Merged { at, method } => format!("merged {} ago · {}", age(*at, ctx.now), method.word()),
+        PrState::Merged { at, .. } => format!("merged {} ago", age(*at, ctx.now)),
         _ => format!("opened {} ago", age(pr.created_at, ctx.now)),
     };
     vec![

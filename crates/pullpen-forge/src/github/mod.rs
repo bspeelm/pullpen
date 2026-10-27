@@ -42,7 +42,8 @@ pub struct GitHub {
     /// search every PR on GitHub (PLAN.md §6.1).
     scope: String,
     delete_branch: bool,
-    rules: Mutex<HashMap<(String, String), Rules>>,
+    /// Each branch's rules, and when they were read.
+    rules: Mutex<HashMap<(String, String), (std::time::Instant, Rules)>>,
     caps: Mutex<HashMap<String, Capabilities>>,
 }
 
@@ -97,7 +98,8 @@ impl GitHub {
 
     async fn rules(&self, repo: &str, base: &str) -> Rules {
         let key = (repo.to_string(), base.to_string());
-        if let Some(r) = self.rules.lock().ok().and_then(|m| m.get(&key).cloned()) {
+        let cached = self.rules.lock().ok().and_then(|m| m.get(&key).cloned());
+        if let Some((_, r)) = cached.filter(|(at, _)| fresh(at.elapsed())) {
             return r;
         }
         let path = format!("/repos/{repo}/rules/branches/{base}");
@@ -106,9 +108,17 @@ impl GitHub {
         let list = send(&self.host, self.req(reqwest::Method::GET, &path)).await.unwrap_or(Value::Null);
         let rules = parse_rules(&list);
         if let Ok(mut m) = self.rules.lock() {
-            m.insert(key, rules.clone());
+            m.insert(key, (std::time::Instant::now(), rules.clone()));
         }
         rules
+    }
+
+    /// A refused merge may be a ruleset pullpen read before it changed: the
+    /// next sync reads the repo's rules again.
+    fn forget_rules(&self, repo: &str) {
+        if let Ok(mut m) = self.rules.lock() {
+            m.retain(|(r, _), _| r != repo);
+        }
     }
 
     fn server_query(&self, q: &Query) -> String {
@@ -217,6 +227,14 @@ fn parse_rules(list: &Value) -> Rules {
         }
     }
     r
+}
+
+/// Rules are read again after this long: a ruleset can change while
+/// pullpen runs, and a stale one picks a merge method the branch refuses.
+const RULES_FOR: std::time::Duration = std::time::Duration::from_secs(600);
+
+fn fresh(age: std::time::Duration) -> bool {
+    age < RULES_FOR
 }
 
 fn method(s: &str) -> Option<MergeMethod> {
@@ -694,7 +712,8 @@ impl ForgeTrait for GitHub {
 
     async fn merge(&self, id: &PrId, m: MergeMethod) -> Result<bool> {
         let path = format!("/repos/{}/pulls/{}/merge", id.repo, id.number);
-        send(&self.host, self.req(reqwest::Method::PUT, &path).json(&json!({ "merge_method": m.word() }))).await?;
+        let put = self.req(reqwest::Method::PUT, &path).json(&json!({ "merge_method": m.word() }));
+        send(&self.host, put).await.inspect_err(|_| self.forget_rules(&id.repo))?;
         if self.delete_branch {
             let pr =
                 send(&self.host, self.req(reqwest::Method::GET, &format!("/repos/{}/pulls/{}", id.repo, id.number)))
@@ -713,7 +732,8 @@ impl ForgeTrait for GitHub {
     async fn arm(&self, id: &PrId, m: MergeMethod) -> Result<()> {
         let node = self.node_id(id).await?;
         let q = "mutation($id:ID!,$m:PullRequestMergeMethod!){enablePullRequestAutoMerge(input:{pullRequestId:$id,mergeMethod:$m}){clientMutationId}}";
-        self.gql(q, json!({ "id": node, "m": m.word().to_uppercase() })).await.map(|_| ())
+        let armed = self.gql(q, json!({ "id": node, "m": m.word().to_uppercase() })).await;
+        armed.inspect_err(|_| self.forget_rules(&id.repo)).map(|_| ())
     }
 
     async fn disarm(&self, id: &PrId) -> Result<()> {

@@ -252,6 +252,17 @@ function detailScreen(){
  return L.map(l=>fit(l,W,false));
 }
 
+// A merged PR's facts: what was true before the merge, then what its merge
+// started on the base branch. Mergeability and auto-merge no longer apply.
+// #812, merged 41m ago, its pipeline on main still building.
+function mergedFacts(){
+ const g=(a,b)=>[sp(2),...fit(M(a),59),...M(b)];
+ return [
+  g('{g|✓}  {d|checks      }{f|9/9 passed}','{y|○}  {d|after merge }{y|running}{d|  2/4 · build}'),
+  g('{g|✓}  {d|reviews     }{f|1 of 1 required}',''),
+ ].map(l=>fit(l,120,false));
+}
+
 // ---------- help overlay
 function helpScreen(){
  const base=listScreen({W:120,H:40,tab:5,prs:ALL,sel:1,preview:preview4821(46),right:'is:open',st:{mode:'NORMAL',section:'Open',pos:'2/96'}});
@@ -349,7 +360,7 @@ function prHead(crumb){
   lr([sp(2),S('Merged','dim'),S('  ›  ','faint'),S('gl  platform/runner  ','dim'),S('#812','fg',{b:1}),S('  ›  ','faint'),S(crumb,'fg')],[S('refreshed 3s ago','dim'),sp(1)],120),
   [],
   [sp(2),S('Bump go toolchain to 1.25.3','fg',{b:1})],
-  [sp(2),S('◇ renovate','fg'),S('   renovate/go-1.25.3 → main   merged 41m ago · squash','dim')],
+  [sp(2),S('◇ renovate','fg'),S('   renovate/go-1.25.3 → main   merged 41m ago','dim')],
   [],
  ];
 }
@@ -460,6 +471,7 @@ function build(mode){
  out.s80=F(listScreen(l80));
  out.s80ascii=fin(listScreen(l80),{ascii:true,c16:true});
  out.sDetail=F(detailScreen());
+ out.sDetailMergedFacts=F(mergedFacts());
  out.sHelp=F(helpScreen());
  out.sArmed=F(armedScreen());
  out.sDeploys=F(deploysScreen());

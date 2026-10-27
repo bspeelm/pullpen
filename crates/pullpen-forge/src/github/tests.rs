@@ -411,3 +411,46 @@ async fn runs_read_each_commit_across_workflows_and_statuses() {
         .await;
     assert!(gh(&server).log(&id, "121").await.unwrap().ends_with("hello\n"));
 }
+
+/// A ruleset added after pullpen first read the branch made it pick a merge
+/// method the branch refuses. Rules are read again after a refused merge,
+/// and once they are ten minutes old.
+#[tokio::test]
+async fn a_refused_merge_reads_the_branchs_rules_again() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/graphql"))
+        .and(body_string_contains("sort:updated-desc"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": { "search": {
+            "issueCount": 1, "pageInfo": { "hasNextPage": false, "endCursor": null }, "nodes": [node()]
+        } } })))
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(path("/graphql"))
+        .and(body_partial_json(json!({ "variables": { "ids": ["PR_n7"] } })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(details()))
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/repos/o/r/rules/branches/main"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!([])))
+        .expect(2)
+        .mount(&server)
+        .await;
+    Mock::given(method("PUT"))
+        .and(path("/repos/o/r/pulls/7/merge"))
+        .respond_with(
+            ResponseTemplate::new(405)
+                .set_body_json(json!({ "message": "Merge commits are not allowed on this repository." })),
+        )
+        .mount(&server)
+        .await;
+    let g = gh(&server);
+    let q = Query::parse("is:open");
+    g.search(&q, "me", 50).await.unwrap();
+    g.search(&q, "me", 50).await.unwrap();
+    assert!(g.merge(&id(), MergeMethod::Merge).await.is_err());
+    g.search(&q, "me", 50).await.unwrap();
+    assert!(fresh(std::time::Duration::from_secs(599)) && !fresh(RULES_FOR));
+}

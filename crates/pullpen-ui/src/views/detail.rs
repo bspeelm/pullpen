@@ -112,6 +112,19 @@ fn facts(pr: &Pr, d: &PrDetail, ctx: &Ctx) -> [String; 4] {
         Mergeable::Conflict => format!("{{r|≠}}  {{d|conflicts   }}{{f|with {base}}}"),
         Mergeable::Unknown => "{y|○}  {d|conflicts   }{f|checking}".into(),
     };
+    // After a merge, mergeability and auto-merge mean nothing; what its
+    // merge started on the base branch does (tui.js `mergedFacts`).
+    if pr.merged() {
+        let glyph = match pr.post_merge.as_ref().map(|p| p.state) {
+            Some(PipelineState::Running) => "{y|○}",
+            Some(PipelineState::Passed) => "{g|✓}",
+            Some(PipelineState::Failed) if super::armed::landed(pr) == super::armed::Landed::Done => "{d|✗}",
+            Some(PipelineState::Failed) => "{r|✗}",
+            None => "{d|●}",
+        };
+        let after = format!("{glyph}  {{d|after merge }}{}", super::armed::history_why(pr, ctx.now));
+        return [checks, reviews, after, String::new()];
+    }
     let auto = match &pr.auto_merge {
         Some(a) => format!(
             "{{a|◆}}  {{d|auto-merge  }}{{f|armed}}{{d|   {} · by {} {} ago}}",
@@ -301,6 +314,23 @@ fn heading(text: &str, focused: bool) -> String {
     if focused { format!("{{aB|{}}}", esc(text)) } else { format!("{{B|{}}}", esc(text)) }
 }
 
+/// The two rows of facts under the verdict.
+pub fn fact_rows(pr: &Pr, d: &PrDetail, ctx: &Ctx) -> Vec<Line> {
+    let f = facts(pr, d, ctx);
+    [(&f[0], &f[2]), (&f[1], &f[3])]
+        .into_iter()
+        .map(|(a, b)| {
+            // Two cells of the column are a gap, so a long left fact truncates
+            // short of the right one instead of running into it.
+            let mut l = vec![sp(2)];
+            l.extend(fit(&markup(a), FACT_W - 2, true));
+            l.push(sp(2));
+            l.extend(markup(b));
+            l
+        })
+        .collect()
+}
+
 pub fn detail_screen(o: &DetailScreen, ctx: &Ctx) -> Vec<Line> {
     let (w, pr, d) = (o.w, o.pr, o.detail);
     let v = verdict(pr, &ctx.caps(pr));
@@ -345,21 +375,12 @@ pub fn detail_screen(o: &DetailScreen, ctx: &Ctx) -> Vec<Line> {
     out.push(vec![]);
     let sentence = match &pr.state {
         PrState::Open => verdict_long(pr, &v),
-        PrState::Merged { method, at } => format!("Merged with {} {} ago.", method.word(), age(*at, ctx.now)),
+        PrState::Merged { at, .. } => format!("Merged {} ago.", age(*at, ctx.now)),
         PrState::Closed => "Closed without merging.".into(),
     };
     out.push(vec![sp(2), label(&v, pr), sp(3), s(sentence, Tok::Fg)]);
     out.push(vec![]);
-    let f = facts(pr, d, ctx);
-    for (a, b) in [(&f[0], &f[2]), (&f[1], &f[3])] {
-        // Two cells of the column are a gap, so a long left fact truncates
-        // short of the right one instead of running into it.
-        let mut l = vec![sp(2)];
-        l.extend(fit(&markup(a), FACT_W - 2, true));
-        l.push(sp(2));
-        l.extend(markup(b));
-        out.push(l);
-    }
+    out.extend(fact_rows(pr, d, ctx));
     out.push(vec![]);
     let file = o.files.and_then(|fs| fs.get(o.d.file));
     let (diff_head, right): (Line, Vec<Line>) = match (o.files, file) {

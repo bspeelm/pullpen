@@ -60,7 +60,7 @@ impl App {
         let members = rows
             .iter()
             .enumerate()
-            .map(|(i, p)| (i, row(p, w - 1, i == sec.sel, &history_why(p), merged_at(p), true, &ctx)));
+            .map(|(i, p)| (i, row(p, w - 1, i == sec.sel, &history_why(p, ctx.now), merged_at(p), true, &ctx)));
         let groups = vec![("last 7 days".to_string(), members.collect())];
         let summary =
             lr(&markup(&format!("{{d|{} merged}}", rows.len())), &markup("{d|w pipeline   :clear drop finished}"), w);

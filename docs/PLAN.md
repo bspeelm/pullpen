@@ -175,7 +175,7 @@ Map forge errors to `ActionFailed{reason, hint}` where `hint` is the next useful
 
 ### 4.3 Sync loop
 
-One task per section. An open pipeline screen asks for its runs and log every `sync.watch` (default 5s) while anything runs (ADR-020). Interval `sync.interval` (default 60s), plus immediate refresh on `r`, after any action, and on focus-in (crossterm `FocusGained`). Each sync writes the section cache file. Cursor stability (design §13): keep cursor on the same `PrId` after refresh; if gone, same index.
+One task per section; after a merge, arm or close, every section syncs at once and again 5 and 20 seconds later, because a forge can answer before a read shows what it did (ADR-025). An open pipeline screen asks for its runs and log every `sync.watch` (default 5s) while anything runs (ADR-020). Interval `sync.interval` (default 60s), plus immediate refresh on `r`, after any action, and on focus-in (crossterm `FocusGained`). Each sync writes the section cache file. Cursor stability (design §13): keep cursor on the same `PrId` after refresh; if gone, same index.
 
 ---
 
