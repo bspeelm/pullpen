@@ -229,9 +229,9 @@ Rules: semantic colors only on glyphs and single keywords, never whole rows. Onl
 
 ### 5.4 List row — columns and collapse (port `cols(w)` verbatim)
 
-Fixed widths in cells of the **list pane** (not the terminal): gutter 2, forge 3, state 2, armed 2, number 6 (right-aligned `#4821`), title ≥24 flexible, repo 17, author 12 (`◇ name`), reviews 5 (`have/need`, `–` if none required), size 12 (`+412 −88`), age 4 (right-aligned `12m 3h 2d 1w`).
+Fixed widths in cells of the **list pane** (not the terminal): gutter 2, forge 3, state 2, armed 2, number 6 (right-aligned `#4821`), title ≥24 flexible, repo 17, target 10 (the branch it merges into, ADR-022), author 12 (`◇ name`), reviews 5 (`have/need`, `–` if none required), size 12 (`+412 −88`), age 4 (right-aligned `12m 3h 2d 1w`).
 
-Collapse order as list width shrinks: 1 size dropped → 2 author shrinks to `◇` only → 3 repo shortens to name after slash (width 11) → 4 age dropped → 5 reviews dropped → 6 forge dropped → 7 repo dropped → title truncates below 24. Preview pane is 46 wide + 3 for ` │ `; it **auto-hides below 110 terminal columns** (`p` forces it back).
+Collapse order as list width shrinks: 1 size dropped → 1a target dropped → 2 author shrinks to `◇` only → 3 repo shortens to name after slash (width 11) → 4 age dropped → 5 reviews dropped → 6 forge dropped → 7 repo dropped → title truncates below 24. Preview pane is 46 wide + 3 for ` │ `; it **auto-hides below 110 terminal columns** (`p` forces it back).
 
 Header row uses faint lowercase labels (`#  title  repo  author  rev  +/−  age`). Selected row: accent `▌` gutter, title bold, selection bg; marked row: accent `•`. Filter mode: non-matching rows go faint, matched substring in title underlined accent.
 

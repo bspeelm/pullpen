@@ -1,40 +1,40 @@
   Mine 6    Needs my review 4    Agent-opened 23    Auto-merge armed 7    All 96    Merged 1    is:open   sort: updated 
                                                                                                                         
-             # title                                                 repo               author    rev    +/−        age 
-  gh ○   #4823 Rate limit per API key instead of per IP              acme/api           mara      0/1   +140 −31    20m 
-▌ gh ○ ◆ #4821 Migrate invoices to ledger v2                         acme/api         ◇ claude    1/2   +412 −88     3h 
-  gl ✓    #812 Bump go toolchain to 1.25.3                           platform/runner  ◇ renovate  1/1     +6 −6     41m 
-  gh ✓   #2291 New billing settings layout                           acme/web           jkoh      1/1   +820 −615    1h 
-  gh ✗ ◆ #2290 Fix hydration mismatch on settings page when locale…  acme/web         ◇ codex     0/1    +38 −12     5h 
-  gh ○    #377 Rotate staging TLS certs via cert-manager             acme/infra       ◇ claude    0/1    +54 −20    12m 
-  gl ✗    #814 Ledger exporter for runner minutes                    platform/runner    ash       0/1   +203 −14     2h 
-  gl ✓    #145 Add PodDisruptionBudget to ingest workers             platform/charts  ◇ claude    1/1    +31 −0      1h 
-  gh ≠ ◆ #4818 Add idempotency keys to POST /payments                acme/api         ◇ codex     2/2   +220 −41     1d 
-  gh ○   #1205 Invoice PDF: handle multi-currency totals             acme/billing       priya     0/2    +96 −30     4h 
-  gh ✓     #96 Cache forge capabilities per host                     tools/rq         ◇ claude    1/1    +73 −15     2h 
-  gh ○ ◆ #2288 chore(deps): update dependency vite to v7.1.4         acme/web         ◇ dependab… 0/1     +3 −3      6h 
-  gl ✓     #60 Fix broken links in runner install guide              platform/docs      lena      1/1     +9 −9      5h 
-  gl ○ ◆  #809 Retry artifact upload on 503 with jittered backoff    platform/runner  ◇ codex     1/1    +64 −9     30m 
-  gh ◌   #1203 Proration preview endpoint                            acme/billing     ◇ claude    0/2   +388 −2      2d 
-  gh ○    #378 Grafana: alert on ledger write latency p99            acme/infra         ash       0/1    +58 −0      8h 
-  gh ✓   #4815 Remove deprecated v1 webhooks handler                 acme/api         ◇ claude    2/2    +12 −540    2d 
-  gl ✗    #143 Pin redis chart to 19.6.x                             platform/charts  ◇ renovate  0/1     +2 −2      3d 
-  gh ✓   #4811 Split payments service config by environment          acme/api           mara      2/2    +77 −65     1d 
-  gh ○    #375 Terraform: split vpc module by region                 acme/infra       ◇ codex     0/1   +610 −402    3d 
-  gh ✓ ◆ #1199 Ledger: emit backfill progress metrics                acme/billing     ◇ claude    1/1    +47 −3      4h 
-  gl ○    #146 Allow custom annotations on runner pods               platform/charts    tomasz    0/1    +22 −3      1d 
-  gl ○    #806 Drop support for docker-machine executor              platform/runner  ◇ devin     0/2    +12 −1340   4d 
-  gh ○   #2284 Expose ledger balances in admin account view          acme/web         ◇ codex     0/1   +156 −22     7h 
-  gh ◌   #2286 Keyboard shortcuts for the invoice table              acme/web           jkoh      0/1   +140 −12     2d 
-  gh ✓ ◆ #4809 Bump pgx to v5.7.2                                    acme/api         ◇ renovate  1/1     +4 −4      5d 
-  gl ○     #58 Document runner autoscaling flags                     platform/docs    ◇ claude    0/1    +88 −10     5d 
-  gh ✓     #97 Command-line history persists across sessions         tools/rq           ash       –      +66 −8      2d 
-  gh ✓     #94 Map GitLab approval rules to required reviews         tools/rq         ◇ claude    1/1   +132 −40     6d 
-  gh ✗    #371 Enable VPC flow logs to S3 with 30-day retention      acme/infra       ◇ devin     0/1    +41 −0      6d 
-  gh ✗   #4802 Upgrade to Go 1.25                                    acme/api           mara      0/1    +31 −29     3d 
-  gh ○   #2279 chore(deps): update dependency @types/node to v22.18  acme/web         ◇ dependab… 0/1     +2 −2      1w 
-  gl ✓    #139 Bump ingress-nginx to 4.13.1                          platform/charts  ◇ renovate  1/1     +2 −2      1w 
-  gl ✓    #801 Shell executor: honor umask from config               platform/runner    lena      1/1    +15 −2      1w 
-  gh ○   #4796 Trace context propagation for outbound HTTP           acme/api         ◇ codex     0/1    +95 −18     2w 
+             # title                                       repo             target      author    rev    +/−        age 
+  gh ○   #4823 Rate limit per API key instead of per IP    acme/api         main        mara      0/1   +140 −31    20m 
+▌ gh ○ ◆ #4821 Migrate invoices to ledger v2               acme/api         main      ◇ claude    1/2   +412 −88     3h 
+  gl ✓    #812 Bump go toolchain to 1.25.3                 platform/runner  main      ◇ renovate  1/1     +6 −6     41m 
+  gh ✓   #2291 New billing settings layout                 acme/web         main        jkoh      1/1   +820 −615    1h 
+  gh ✗ ◆ #2290 Fix hydration mismatch on settings page w…  acme/web         main      ◇ codex     0/1    +38 −12     5h 
+  gh ○    #377 Rotate staging TLS certs via cert-manager   acme/infra       main      ◇ claude    0/1    +54 −20    12m 
+  gl ✗    #814 Ledger exporter for runner minutes          platform/runner  main        ash       0/1   +203 −14     2h 
+  gl ✓    #145 Add PodDisruptionBudget to ingest workers   platform/charts  main      ◇ claude    1/1    +31 −0      1h 
+  gh ≠ ◆ #4818 Add idempotency keys to POST /payments      acme/api         main      ◇ codex     2/2   +220 −41     1d 
+  gh ○   #1205 Invoice PDF: handle multi-currency totals   acme/billing     main        priya     0/2    +96 −30     4h 
+  gh ✓     #96 Cache forge capabilities per host           tools/rq         main      ◇ claude    1/1    +73 −15     2h 
+  gh ○ ◆ #2288 chore(deps): update dependency vite to v7…  acme/web         main      ◇ dependab… 0/1     +3 −3      6h 
+  gl ✓     #60 Fix broken links in runner install guide    platform/docs    main        lena      1/1     +9 −9      5h 
+  gl ○ ◆  #809 Retry artifact upload on 503 with jittere…  platform/runner  develop   ◇ codex     1/1    +64 −9     30m 
+  gh ◌   #1203 Proration preview endpoint                  acme/billing     main      ◇ claude    0/2   +388 −2      2d 
+  gh ○    #378 Grafana: alert on ledger write latency p99  acme/infra       main        ash       0/1    +58 −0      8h 
+  gh ✓   #4815 Remove deprecated v1 webhooks handler       acme/api         main      ◇ claude    2/2    +12 −540    2d 
+  gl ✗    #143 Pin redis chart to 19.6.x                   platform/charts  main      ◇ renovate  0/1     +2 −2      3d 
+  gh ✓   #4811 Split payments service config by environm…  acme/api         main        mara      2/2    +77 −65     1d 
+  gh ○    #375 Terraform: split vpc module by region       acme/infra       main      ◇ codex     0/1   +610 −402    3d 
+  gh ✓ ◆ #1199 Ledger: emit backfill progress metrics      acme/billing     main      ◇ claude    1/1    +47 −3      4h 
+  gl ○    #146 Allow custom annotations on runner pods     platform/charts  main        tomasz    0/1    +22 −3      1d 
+  gl ○    #806 Drop support for docker-machine executor    platform/runner  main      ◇ devin     0/2    +12 −1340   4d 
+  gh ○   #2284 Expose ledger balances in admin account v…  acme/web         main      ◇ codex     0/1   +156 −22     7h 
+  gh ◌   #2286 Keyboard shortcuts for the invoice table    acme/web         main        jkoh      0/1   +140 −12     2d 
+  gh ✓ ◆ #4809 Bump pgx to v5.7.2                          acme/api         main      ◇ renovate  1/1     +4 −4      5d 
+  gl ○     #58 Document runner autoscaling flags           platform/docs    main      ◇ claude    0/1    +88 −10     5d 
+  gh ✓     #97 Command-line history persists across sess…  tools/rq         main        ash       –      +66 −8      2d 
+  gh ✓     #94 Map GitLab approval rules to required rev…  tools/rq         main      ◇ claude    1/1   +132 −40     6d 
+  gh ✗    #371 Enable VPC flow logs to S3 with 30-day re…  acme/infra       main      ◇ devin     0/1    +41 −0      6d 
+  gh ✗   #4802 Upgrade to Go 1.25                          acme/api         main        mara      0/1    +31 −29     3d 
+  gh ○   #2279 chore(deps): update dependency @types/nod…  acme/web         main      ◇ dependab… 0/1     +2 −2      1w 
+  gl ✓    #139 Bump ingress-nginx to 4.13.1                platform/charts  main      ◇ renovate  1/1     +2 −2      1w 
+  gl ✓    #801 Shell executor: honor umask from config     platform/runner  main        lena      1/1    +15 −2      1w 
+  gh ○   #4796 Trace context propagation for outbound HT…  acme/api         main      ◇ codex     0/1    +95 −18     2w 
  FILTER   All  1/5 matches                               ◆ 7 armed   ✗ 3 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
 /ledger                                                                    n N jump   Enter hide non-matches   Esc clear

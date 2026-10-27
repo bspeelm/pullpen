@@ -151,7 +151,7 @@ fn expand(x: &Raw) -> Pr {
         title: x.t.into(),
         author: Author { login: x.a.into(), is_agent: AGENTS.contains(&x.a) },
         head,
-        base: "main".into(),
+        base: if x.n == 809 { "develop" } else { "main" }.into(),
         additions: x.ad,
         deletions: x.de,
         files: if x.n == 4821 { 14 } else { 3 },

@@ -1,40 +1,40 @@
 {fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Agent-opened{faint} 23{fg}    {dim}Auto-merge armed{faint} 7{fg}    {acc b}All{acc} 96{fg}    {dim}Merged{faint} 1{fg}    {faint}is:open   sort: updated{fg} 
 {fg}                                                                                                                        
-{fg}         {faint}    #{fg} {faint}title{fg}                                                 {faint}repo{fg}               {faint}author{fg}    {faint}rev{fg}  {faint}  +/−{fg}       {faint} age{fg} 
-{faint}  gh ○   #4823 Rate limit per API key instead of per IP              acme/api           mara      0/1   +140 −31    20m{fg} 
-{acc bg=sel}▌ {dim bg=sel}gh {warn bg=sel}○{fg bg=sel} {acc bg=sel}◆{fg bg=sel} #4821 {fg bg=sel b}Migrate invoices to {acc bg=sel u}ledger{fg bg=sel b} v2{fg bg=sel}                         {dim bg=sel}acme/api{fg bg=sel}         ◇ {dim bg=sel}claude{fg bg=sel}    {warn bg=sel}1/2{fg bg=sel}  {dim bg=sel} +412 −88     3h{fg} 
-{faint}  gl ✓    #812 Bump go toolchain to 1.25.3                           platform/runner  ◇ renovate  1/1     +6 −6     41m{fg} 
-{faint}  gh ✓   #2291 New billing settings layout                           acme/web           jkoh      1/1   +820 −615    1h{fg} 
-{faint}  gh ✗ ◆ #2290 Fix hydration mismatch on settings page when locale…  acme/web         ◇ codex     0/1    +38 −12     5h{fg} 
-{faint}  gh ○    #377 Rotate staging TLS certs via cert-manager             acme/infra       ◇ claude    0/1    +54 −20    12m{fg} 
-{fg}  {dim}gl {err}✗{fg}   {dim} #814 {acc u}Ledger{fg} exporter for runner minutes                    {dim}platform/runner{fg}    {dim}ash{fg}       {warn}0/1{fg}  {dim} +203 −14     2h{fg} 
-{faint}  gl ✓    #145 Add PodDisruptionBudget to ingest workers             platform/charts  ◇ claude    1/1    +31 −0      1h{fg} 
-{faint}  gh ≠ ◆ #4818 Add idempotency keys to POST /payments                acme/api         ◇ codex     2/2   +220 −41     1d{fg} 
-{faint}  gh ○   #1205 Invoice PDF: handle multi-currency totals             acme/billing       priya     0/2    +96 −30     4h{fg} 
-{faint}  gh ✓     #96 Cache forge capabilities per host                     tools/rq         ◇ claude    1/1    +73 −15     2h{fg} 
-{faint}  gh ○ ◆ #2288 chore(deps): update dependency vite to v7.1.4         acme/web         ◇ dependab… 0/1     +3 −3      6h{fg} 
-{faint}  gl ✓     #60 Fix broken links in runner install guide              platform/docs      lena      1/1     +9 −9      5h{fg} 
-{faint}  gl ○ ◆  #809 Retry artifact upload on 503 with jittered backoff    platform/runner  ◇ codex     1/1    +64 −9     30m{fg} 
-{faint}  gh ◌   #1203 Proration preview endpoint                            acme/billing     ◇ claude    0/2   +388 −2      2d{fg} 
-{fg}  {dim}gh {warn}○{fg}   {dim} #378 {fg}Grafana: alert on {acc u}ledger{fg} write latency p99            {dim}acme/infra{fg}         {dim}ash{fg}       {warn}0/1{fg}  {dim}  +58 −0      8h{fg} 
-{faint}  gh ✓   #4815 Remove deprecated v1 webhooks handler                 acme/api         ◇ claude    2/2    +12 −540    2d{fg} 
-{faint}  gl ✗    #143 Pin redis chart to 19.6.x                             platform/charts  ◇ renovate  0/1     +2 −2      3d{fg} 
-{faint}  gh ✓   #4811 Split payments service config by environment          acme/api           mara      2/2    +77 −65     1d{fg} 
-{faint}  gh ○    #375 Terraform: split vpc module by region                 acme/infra       ◇ codex     0/1   +610 −402    3d{fg} 
-{fg}  {dim}gh {ok}✓{fg} {acc}◆{fg} {dim}#1199 {acc u}Ledger{fg}: emit backfill progress metrics                {dim}acme/billing{fg}     ◇ {dim}claude{fg}    {ok}1/1{fg}  {dim}  +47 −3      4h{fg} 
-{faint}  gl ○    #146 Allow custom annotations on runner pods               platform/charts    tomasz    0/1    +22 −3      1d{fg} 
-{faint}  gl ○    #806 Drop support for docker-machine executor              platform/runner  ◇ devin     0/2    +12 −1340   4d{fg} 
-{fg}  {dim}gh {warn}○{fg}   {dim}#2284 {fg}Expose {acc u}ledger{fg} balances in admin account view          {dim}acme/web{fg}         ◇ {dim}codex{fg}     {warn}0/1{fg}  {dim} +156 −22     7h{fg} 
-{faint}  gh ◌   #2286 Keyboard shortcuts for the invoice table              acme/web           jkoh      0/1   +140 −12     2d{fg} 
-{faint}  gh ✓ ◆ #4809 Bump pgx to v5.7.2                                    acme/api         ◇ renovate  1/1     +4 −4      5d{fg} 
-{faint}  gl ○     #58 Document runner autoscaling flags                     platform/docs    ◇ claude    0/1    +88 −10     5d{fg} 
-{faint}  gh ✓     #97 Command-line history persists across sessions         tools/rq           ash       –      +66 −8      2d{fg} 
-{faint}  gh ✓     #94 Map GitLab approval rules to required reviews         tools/rq         ◇ claude    1/1   +132 −40     6d{fg} 
-{faint}  gh ✗    #371 Enable VPC flow logs to S3 with 30-day retention      acme/infra       ◇ devin     0/1    +41 −0      6d{fg} 
-{faint}  gh ✗   #4802 Upgrade to Go 1.25                                    acme/api           mara      0/1    +31 −29     3d{fg} 
-{faint}  gh ○   #2279 chore(deps): update dependency @types/node to v22.18  acme/web         ◇ dependab… 0/1     +2 −2      1w{fg} 
-{faint}  gl ✓    #139 Bump ingress-nginx to 4.13.1                          platform/charts  ◇ renovate  1/1     +2 −2      1w{fg} 
-{faint}  gl ✓    #801 Shell executor: honor umask from config               platform/runner    lena      1/1    +15 −2      1w{fg} 
-{faint}  gh ○   #4796 Trace context propagation for outbound HTTP           acme/api         ◇ codex     0/1    +95 −18     2w{fg} 
+{fg}         {faint}    #{fg} {faint}title{fg}                                       {faint}repo{fg}             {faint}target{fg}      {faint}author{fg}    {faint}rev{fg}  {faint}  +/−{fg}       {faint} age{fg} 
+{faint}  gh ○   #4823 Rate limit per API key instead of per IP    acme/api         main        mara      0/1   +140 −31    20m{fg} 
+{acc bg=sel}▌ {dim bg=sel}gh {warn bg=sel}○{fg bg=sel} {acc bg=sel}◆{fg bg=sel} #4821 {fg bg=sel b}Migrate invoices to {acc bg=sel u}ledger{fg bg=sel b} v2{fg bg=sel}               {dim bg=sel}acme/api{fg bg=sel}         {dim bg=sel}main{fg bg=sel}      ◇ {dim bg=sel}claude{fg bg=sel}    {warn bg=sel}1/2{fg bg=sel}  {dim bg=sel} +412 −88     3h{fg} 
+{faint}  gl ✓    #812 Bump go toolchain to 1.25.3                 platform/runner  main      ◇ renovate  1/1     +6 −6     41m{fg} 
+{faint}  gh ✓   #2291 New billing settings layout                 acme/web         main        jkoh      1/1   +820 −615    1h{fg} 
+{faint}  gh ✗ ◆ #2290 Fix hydration mismatch on settings page w…  acme/web         main      ◇ codex     0/1    +38 −12     5h{fg} 
+{faint}  gh ○    #377 Rotate staging TLS certs via cert-manager   acme/infra       main      ◇ claude    0/1    +54 −20    12m{fg} 
+{fg}  {dim}gl {err}✗{fg}   {dim} #814 {acc u}Ledger{fg} exporter for runner minutes          {dim}platform/runner{fg}  {dim}main{fg}        {dim}ash{fg}       {warn}0/1{fg}  {dim} +203 −14     2h{fg} 
+{faint}  gl ✓    #145 Add PodDisruptionBudget to ingest workers   platform/charts  main      ◇ claude    1/1    +31 −0      1h{fg} 
+{faint}  gh ≠ ◆ #4818 Add idempotency keys to POST /payments      acme/api         main      ◇ codex     2/2   +220 −41     1d{fg} 
+{faint}  gh ○   #1205 Invoice PDF: handle multi-currency totals   acme/billing     main        priya     0/2    +96 −30     4h{fg} 
+{faint}  gh ✓     #96 Cache forge capabilities per host           tools/rq         main      ◇ claude    1/1    +73 −15     2h{fg} 
+{faint}  gh ○ ◆ #2288 chore(deps): update dependency vite to v7…  acme/web         main      ◇ dependab… 0/1     +3 −3      6h{fg} 
+{faint}  gl ✓     #60 Fix broken links in runner install guide    platform/docs    main        lena      1/1     +9 −9      5h{fg} 
+{faint}  gl ○ ◆  #809 Retry artifact upload on 503 with jittere…  platform/runner  develop   ◇ codex     1/1    +64 −9     30m{fg} 
+{faint}  gh ◌   #1203 Proration preview endpoint                  acme/billing     main      ◇ claude    0/2   +388 −2      2d{fg} 
+{fg}  {dim}gh {warn}○{fg}   {dim} #378 {fg}Grafana: alert on {acc u}ledger{fg} write latency p99  {dim}acme/infra{fg}       {dim}main{fg}        {dim}ash{fg}       {warn}0/1{fg}  {dim}  +58 −0      8h{fg} 
+{faint}  gh ✓   #4815 Remove deprecated v1 webhooks handler       acme/api         main      ◇ claude    2/2    +12 −540    2d{fg} 
+{faint}  gl ✗    #143 Pin redis chart to 19.6.x                   platform/charts  main      ◇ renovate  0/1     +2 −2      3d{fg} 
+{faint}  gh ✓   #4811 Split payments service config by environm…  acme/api         main        mara      2/2    +77 −65     1d{fg} 
+{faint}  gh ○    #375 Terraform: split vpc module by region       acme/infra       main      ◇ codex     0/1   +610 −402    3d{fg} 
+{fg}  {dim}gh {ok}✓{fg} {acc}◆{fg} {dim}#1199 {acc u}Ledger{fg}: emit backfill progress metrics      {dim}acme/billing{fg}     {dim}main{fg}      ◇ {dim}claude{fg}    {ok}1/1{fg}  {dim}  +47 −3      4h{fg} 
+{faint}  gl ○    #146 Allow custom annotations on runner pods     platform/charts  main        tomasz    0/1    +22 −3      1d{fg} 
+{faint}  gl ○    #806 Drop support for docker-machine executor    platform/runner  main      ◇ devin     0/2    +12 −1340   4d{fg} 
+{fg}  {dim}gh {warn}○{fg}   {dim}#2284 {fg}Expose {acc u}ledger{fg} balances in admin account v…  {dim}acme/web{fg}         {dim}main{fg}      ◇ {dim}codex{fg}     {warn}0/1{fg}  {dim} +156 −22     7h{fg} 
+{faint}  gh ◌   #2286 Keyboard shortcuts for the invoice table    acme/web         main        jkoh      0/1   +140 −12     2d{fg} 
+{faint}  gh ✓ ◆ #4809 Bump pgx to v5.7.2                          acme/api         main      ◇ renovate  1/1     +4 −4      5d{fg} 
+{faint}  gl ○     #58 Document runner autoscaling flags           platform/docs    main      ◇ claude    0/1    +88 −10     5d{fg} 
+{faint}  gh ✓     #97 Command-line history persists across sess…  tools/rq         main        ash       –      +66 −8      2d{fg} 
+{faint}  gh ✓     #94 Map GitLab approval rules to required rev…  tools/rq         main      ◇ claude    1/1   +132 −40     6d{fg} 
+{faint}  gh ✗    #371 Enable VPC flow logs to S3 with 30-day re…  acme/infra       main      ◇ devin     0/1    +41 −0      6d{fg} 
+{faint}  gh ✗   #4802 Upgrade to Go 1.25                          acme/api         main        mara      0/1    +31 −29     3d{fg} 
+{faint}  gh ○   #2279 chore(deps): update dependency @types/nod…  acme/web         main      ◇ dependab… 0/1     +2 −2      1w{fg} 
+{faint}  gl ✓    #139 Bump ingress-nginx to 4.13.1                platform/charts  main      ◇ renovate  1/1     +2 −2      1w{fg} 
+{faint}  gl ✓    #801 Shell executor: honor umask from config     platform/runner  main        lena      1/1    +15 −2      1w{fg} 
+{faint}  gh ○   #4796 Trace context propagation for outbound HT…  acme/api         main      ◇ codex     0/1    +95 −18     2w{fg} 
 {bg bg=acc b} FILTER {fg bg=surf}  All  {dim bg=surf}1/5 matches{fg bg=surf}                               {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
 {fg}/ledger{bg bg=fg} {fg}                                                                   {dim}n N jump   Enter hide non-matches   Esc clear

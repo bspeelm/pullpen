@@ -416,3 +416,20 @@ became one helper each, which cost almost what they saved.
 The cap rises to 11,000 lines, about 560 lines of room. As before, the next
 raise needs its own record, measured as this one is.
 
+## ADR-022 — The list shows the branch each PR merges into
+
+The maintainer's MRs target `develop` or `main` depending on what they are,
+and which one decides what a merge will do. The preview and the detail view
+named the target, but the list, where the triage happens, did not.
+
+A dim `target` column follows the repo, ten cells, on every row. As the list
+narrows it folds second, after size: first would have hidden it beside the
+preview on anything under 149 columns, where most of the triage happens.
+Folding second, it shows beside the preview from 137 columns, and at 120
+columns with the preview, or at 80, the layout is as before. Showing it only when it differs from the repo's
+default branch was considered and not taken: it would cost a field on every
+search, and a column that is sometimes blank reads as missing data.
+
+The design changed first (ADR-002): `cols(w)` and the list header, and
+`#809` targets `develop` in the fixtures so the goldens show the difference.
+

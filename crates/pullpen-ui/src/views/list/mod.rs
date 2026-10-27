@@ -16,6 +16,7 @@ use crate::span::{Line, Span, fit, s, sp, with_bg};
 pub struct Cols {
     pub forge: usize,
     pub repo: usize,
+    pub target: usize,
     pub author: usize,
     pub rev: usize,
     pub size: usize,
@@ -26,10 +27,13 @@ pub struct Cols {
 /// tui.js `cols(w)`: drop or shrink columns in a fixed order until the title
 /// has at least 24 cells (design §11).
 pub fn cols(w: usize) -> Cols {
-    let mut c = Cols { forge: 3, repo: 17, author: 12, rev: 5, size: 12, age: 4, title: 0 };
-    let sum = |c: &Cols| 12 + c.forge + c.repo + c.author + c.rev + c.size + c.age;
-    let steps: [fn(&mut Cols); 7] = [
+    let mut c = Cols { forge: 3, repo: 17, target: 10, author: 12, rev: 5, size: 12, age: 4, title: 0 };
+    let sum = |c: &Cols| 12 + c.forge + c.repo + c.target + c.author + c.rev + c.size + c.age;
+    // The target branch folds after size, so it still shows beside the
+    // preview on a wide terminal.
+    let steps: [fn(&mut Cols); 8] = [
         |c| c.size = 0,
+        |c| c.target = 0,
         |c| c.author = 2,
         |c| c.repo = 11,
         |c| c.age = 0,
@@ -149,6 +153,10 @@ pub fn row(p: &Pr, w: usize, o: &RowOpts, ctx: &Ctx) -> Line {
         l.extend(fit(&[s(r, Tok::Dim)], c.repo - 1, true));
         l.push(sp(1));
     }
+    if c.target > 0 {
+        l.extend(fit(&[s(&p.base, Tok::Dim)], c.target - 1, true));
+        l.push(sp(1));
+    }
     if c.author == 12 {
         l.extend(fit(&[agent_mark(p), s(&p.author.login, Tok::Dim)], 11, true));
         l.push(sp(1));
@@ -191,6 +199,9 @@ pub fn header(w: usize) -> Line {
     l.push(sp(2));
     if c.repo > 0 {
         l.extend(fit(&[s("repo", Tok::Faint)], c.repo, true));
+    }
+    if c.target > 0 {
+        l.extend(fit(&[s("target", Tok::Faint)], c.target, true));
     }
     if c.author == 12 {
         l.extend(fit(&[sp(2), s("author", Tok::Faint)], 12, true));
