@@ -145,3 +145,14 @@ fn the_file_list_filters_by_typing_and_opens_with_enter() {
     a.key(Key::Esc, Instant::now());
     assert!(d(&a).picker.is_none() && a.detail.is_some(), "Esc closes the list, not the view");
 }
+
+#[test]
+fn a_check_that_finishes_without_the_pr_updating_refetches_the_detail() {
+    let mut a = opened();
+    let mut prs = a.section().prs.clone();
+    prs[0].checks.running += 1;
+    let total = prs.len();
+    a.synced(2, prs.clone(), total);
+    let fx = a.wants();
+    assert!(fx.iter().any(|e| matches!(e, Effect::FetchDetail(id) if *id == prs[0].id)), "{fx:?}");
+}
