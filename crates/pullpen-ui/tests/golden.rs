@@ -34,7 +34,7 @@ fn status(mode: Mode, section: &str, pos: &str) -> Status<'static> {
         pos: pos.into(),
         extra: vec![],
         armed: 7,
-        failing: 3,
+        failing: 1,
         broken: 1,
         narrow: false,
         err: None,
@@ -86,21 +86,21 @@ fn ctx(caps: &HashMap<String, pullpen_core::Capabilities>, glyphs: Glyphs) -> Ct
 fn s_list() {
     let caps = HashMap::new();
     let c = ctx(&caps, Glyphs::Unicode);
-    let prs = fx::agent_prs();
-    let pv = preview(&prs[0], &fx::detail(4821), PREVIEW_W, &c);
+    let prs = fx::all_prs();
+    let pv = preview(&prs[1], &fx::detail(4821), PREVIEW_W, &c);
     let t = tabs();
     let s = ListScreen {
         w: 120,
         h: 40,
         tabs: &t,
-        active: 2,
+        active: OPEN,
         short: false,
-        right: "author:@agents",
+        right: "is:open",
         prs: &prs,
-        opts: &opts(&prs, 0, None),
+        opts: &opts(&prs, 1, None),
         offset: 0,
         preview: Some(pv),
-        status: status(Mode::Normal, "Agent-opened", "1/23"),
+        status: status(Mode::Normal, "Open", "2/96"),
         cmd: vec![],
     };
     check("sList", &list_screen(&s, &c), 120, Tier::True, Glyphs::Unicode);
@@ -117,14 +117,14 @@ fn s_filter() {
         w: 120,
         h: 40,
         tabs: &t,
-        active: 4,
+        active: OPEN,
         short: false,
         right: "is:open   sort: updated",
         prs: &prs,
         opts: &opts(&prs, sel, Some("ledger")),
         offset: 0,
         preview: None,
-        status: status(Mode::Filter, "All", "1/5 matches"),
+        status: status(Mode::Filter, "Open", "1/5 matches"),
         cmd: lr(&markup("/ledger{C| }"), &markup("{d|n N jump   Enter hide non-matches   Esc clear}"), 120),
     };
     check("sFilter", &list_screen(&s, &c), 120, Tier::True, Glyphs::Unicode);
@@ -133,19 +133,19 @@ fn s_filter() {
 fn s80(glyphs: Glyphs) -> Vec<Line> {
     let caps = HashMap::new();
     let c = ctx(&caps, glyphs);
-    let prs = fx::agent_prs();
+    let prs = fx::all_prs();
     let t = tabs();
-    let mut st = status(Mode::Normal, "Agent", "1/23");
+    let mut st = status(Mode::Normal, "Open", "2/96");
     st.narrow = true;
     let s = ListScreen {
         w: 80,
         h: 24,
         tabs: &t,
-        active: 2,
+        active: OPEN,
         short: true,
         right: "",
         prs: &prs,
-        opts: &opts(&prs, 0, None),
+        opts: &opts(&prs, 1, None),
         offset: 0,
         preview: None,
         status: st,
@@ -175,7 +175,10 @@ fn strip_of(prs: &[Pr], sel: usize, st: Status, cmd: Line) -> Vec<Line> {
 #[test]
 fn cmd_idle() {
     let prs: Vec<Pr> = fx::agent_prs().into_iter().take(5).collect();
-    let lines = strip_of(&prs, 1, status(Mode::Normal, "Agent-opened", ""), vec![]);
+    // An Agent-opened section added back counts its failures (design `strip`).
+    let mut st = status(Mode::Normal, "Agent-opened", "");
+    st.failing = 3;
+    let lines = strip_of(&prs, 1, st, vec![]);
     check("cmd-0", &lines, 120, Tier::True, Glyphs::Unicode);
 }
 
@@ -186,10 +189,30 @@ use pullpen_ui::app::{App, Effect, SectionState};
 use pullpen_ui::keymap::Key;
 use std::time::Instant;
 
+/// The default sections, as a person sees them.
+const ARMED: usize = 2;
+const DEPLOYS: usize = 3;
+const MERGED: usize = 4;
+const OPEN: usize = 5;
+
+/// The design's row strips are drawn from the agent-opened PRs, a section
+/// one `[[section]]` adds (ADR-023); the strips show no tab row.
 fn app() -> App {
+    let mut a = defaults();
+    a.sections.push(agent_state());
+    a.active = a.sections.len() - 1;
+    a
+}
+
+fn agent_state() -> SectionState {
+    let s = fx::agent_section();
+    SectionState::new(s.section, s.prs, s.total)
+}
+
+fn defaults() -> App {
     let sections = fx::sections().into_iter().map(|s| SectionState::new(s.section, s.prs, s.total)).collect();
     let mut a = App::new(sections, Theme { palette: Palette::new(Tier::True), glyphs: Glyphs::Unicode }, fx::NOW);
-    a.active = 2;
+    a.active = OPEN;
     a.sync = "synced 40s".into();
     a.me = "ash".into();
     for s in &a.sections {
@@ -390,15 +413,17 @@ fn batch_arm() {
 
 #[test]
 fn s_help() {
-    let mut a = app();
+    let mut a = defaults();
+    select(&mut a, 1);
     keys(&mut a, &[Key::Char('?')]);
     check("sHelp", &a.lines(120, 40), 120, Tier::True, Glyphs::Unicode);
 }
 
 #[test]
 fn s_detail() {
-    let mut a = app();
-    let id = a.section().prs[0].id.clone();
+    let mut a = defaults();
+    select(&mut a, 1);
+    let id = a.section().prs[1].id.clone();
     a.diffs.insert(id, fx::diff(4821));
     keys(&mut a, &[Key::Enter, Key::Char(']'), Key::Char('f')]);
     check("sDetail", &a.lines(120, 40), 120, Tier::True, Glyphs::Unicode);
@@ -408,18 +433,11 @@ fn s_detail() {
 /// screen shows, with the times its right-hand column counts from.
 fn armed_app() -> App {
     use pullpen_core::time::{Timestamp, parse_age};
-    use pullpen_core::{AutoMerge, MergeMethod, MergeTrainPos, PrState};
+    use pullpen_core::{AutoMerge, MergeMethod, MergeTrainPos};
     let ago = |s: &str| Timestamp(fx::NOW.0 - parse_age(s).unwrap());
     let pr = |n: u64| fx::by_number(n).unwrap();
     let armed = |mut p: Pr, at: &str| {
         p.auto_merge = Some(AutoMerge { method: MergeMethod::Squash, armed_by: "ash".into(), armed_at: ago(at) });
-        p
-    };
-    let landed = fx::merged_prs();
-    let merged = |mut p: Pr, at: &str, method| {
-        p.auto_merge = None;
-        p.state = PrState::Merged { at: ago(at), method };
-        p.post_merge = landed.iter().find(|l| l.id == p.id).and_then(|l| l.post_merge.clone());
         p
     };
     let mut p809 = armed(pr(809), "30m");
@@ -436,17 +454,13 @@ fn armed_app() -> App {
         armed(pr(377), "12m"),
         p145,
         p4809,
-        merged(pr(2288), "22m", MergeMethod::Squash),
-        merged(pr(812), "41m", MergeMethod::Squash),
-        merged(pr(1199), "1h", MergeMethod::Squash),
-        merged(pr(4815), "1h", MergeMethod::Rebase),
     ];
-    let mut a = app();
-    a.active = 3;
-    a.sections[3].prs = rows;
-    a.sections[3].total = 7;
+    let mut a = defaults();
+    a.active = ARMED;
+    a.sections[ARMED].prs = rows;
+    a.sections[ARMED].total = 7;
     for (n, since) in [(2290, "18m"), (4818, "25m")] {
-        let id = a.sections[3].prs.iter().find(|p| p.id.number == n).unwrap().id.clone();
+        let id = a.sections[ARMED].prs.iter().find(|p| p.id.number == n).unwrap().id.clone();
         a.watches.insert(
             id,
             pullpen_ui::app::Watch {
@@ -467,19 +481,26 @@ fn s_armed() {
 }
 
 #[test]
+fn s_deploys() {
+    let mut a = defaults();
+    a.active = DEPLOYS;
+    check("sDeploys", &a.lines(120, 40), 120, Tier::True, Glyphs::Unicode);
+}
+
+#[test]
 fn s_merged() {
-    let mut a = app();
-    a.active = 5;
+    let mut a = defaults();
+    a.active = MERGED;
     check("sMerged", &a.lines(120, 40), 120, Tier::True, Glyphs::Unicode);
 }
 
 /// The design's pipeline screen: #812 in the Merged section, `w`, and the
 /// runs as they were three seconds ago.
 fn piped() -> App {
-    let mut a = app();
-    a.active = 5;
-    let at = a.sections[5].prs.iter().position(|p| p.id.number == 812).unwrap();
-    a.sections[5].sel = at;
+    let mut a = defaults();
+    a.active = MERGED;
+    let at = a.sections[MERGED].prs.iter().position(|p| p.id.number == 812).unwrap();
+    a.sections[MERGED].sel = at;
     keys(&mut a, &[Key::Char('w')]);
     let id = a.pipe.as_ref().unwrap().id.clone();
     a.runs_loaded(id, fx::runs(812));

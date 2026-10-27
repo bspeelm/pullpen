@@ -155,7 +155,7 @@ pub fn run(io: &mut Io, d: &mut Deps, mut cfg: Config, mut creds: Credentials) -
         };
         if f == Forge::GitHub {
             let was = old.and_then(|o| o.scope).unwrap_or_default().replace("org:", "").replace("repo:", "");
-            io.say("  Which PRs should lists like All and Agent-opened include?")?;
+            io.say("  Which PRs should lists like Open include?")?;
             io.say("  Blank: only PRs that involve you (you opened, review, are assigned or mentioned).")?;
             io.say("  Or name orgs, users or owner/repo to include every PR there.")?;
             if !places.is_empty() {
@@ -170,7 +170,7 @@ pub fn run(io: &mut Io, d: &mut Deps, mut cfg: Config, mut creds: Credentials) -
         } else {
             let was = old.map(|o| o.groups.join(" ")).unwrap_or_default();
             let a = {
-                io.say("  Which merge requests should lists like All and Agent-opened include?")?;
+                io.say("  Which merge requests should lists like Open include?")?;
                 io.say("  Blank: only ones that involve you (you opened, review or are assigned).")?;
                 io.say("  Or name groups to include every merge request in them.")?;
                 match places.is_empty() {

@@ -7,12 +7,22 @@ Six ship:
 |---|---|
 | Mine | `is:open author:@me` |
 | Needs my review | `is:open review-requested:@me` |
-| Agent-opened | `is:open is:agent` |
-| Auto-merge armed | `is:armed` |
-| All | `is:open` |
-| Merged | `is:merged merged:7d`, shown as [the merged view](The-merged-view) |
+| Auto-merge armed | `is:armed`, shown as [the armed view](The-armed-view) |
+| Deploys | `is:merged merged:7d`, shown as [the deploys view](The-deploys-view) |
+| Merged | the same query, shown as [the merged view](The-merged-view) |
+| Open | `is:open`: everything in what you watch, colleagues' PRs included |
 
-Replace them in `config.toml` (`pullpen settings`, then `e`):
+Deploys and Merged ask the same thing, so one search serves both. If your
+agents open PRs from their own accounts, a section for them is four lines:
+
+```toml
+[[section]]
+name  = "Agent-opened"
+short = "Agent"
+query = "is:open is:agent"
+```
+
+Replace or add sections in `config.toml` (`pullpen settings`, then `e`):
 
 ```toml
 [[section]]

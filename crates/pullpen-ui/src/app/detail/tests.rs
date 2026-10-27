@@ -10,9 +10,14 @@ use crate::palette::{Palette, Tier};
 use crate::views::detail::Pane;
 
 fn opened() -> App {
-    let sections = fx::sections().into_iter().map(|s| SectionState::new(s.section, s.prs, s.total)).collect();
+    // The agent-opened rows, as a section of their own (not a default).
+    let sections = fx::sections()
+        .into_iter()
+        .chain([fx::agent_section()])
+        .map(|s| SectionState::new(s.section, s.prs, s.total))
+        .collect();
     let mut a = App::new(sections, Theme { palette: Palette::new(Tier::True), glyphs: Glyphs::Unicode }, fx::NOW);
-    a.active = 2;
+    a.active = 6;
     a.height = 40;
     let id = a.section().prs[0].id.clone();
     a.details.insert(id.clone(), fx::detail(4821));
@@ -109,7 +114,7 @@ fn opening_asks_for_the_detail_and_diff_once() {
     a.fetch_failed(&id, true);
     assert!(a.wants().is_empty(), "not again on the next frame");
     let prs = a.section().prs.clone();
-    a.synced(2, prs, 23);
+    a.synced(6, prs, 23);
     assert_eq!(a.wants(), vec![Effect::FetchDiff(id)], "but again after the next sync");
 }
 
@@ -152,7 +157,7 @@ fn a_check_that_finishes_without_the_pr_updating_refetches_the_detail() {
     let mut prs = a.section().prs.clone();
     prs[0].checks.running += 1;
     let total = prs.len();
-    a.synced(2, prs.clone(), total);
+    a.synced(6, prs.clone(), total);
     let fx = a.wants();
     assert!(fx.iter().any(|e| matches!(e, Effect::FetchDetail(id) if *id == prs[0].id)), "{fx:?}");
 }

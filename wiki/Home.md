@@ -30,7 +30,8 @@ assume them.
 - **[Sections and queries](Sections-and-queries)**: the tabs, and the query syntax.
 - **[Merging and auto-merge](Merging-and-auto-merge)**: confirming, methods, batches.
 - **[The armed view](The-armed-view)**: coming back to what you armed.
-- **[The merged view](The-merged-view)**: whether each merge's pipeline, and its deploy, went through.
+- **[The deploys view](The-deploys-view)**: what is deploying on each branch now, and what is failing.
+- **[The merged view](The-merged-view)**: the week's merges, each with what its pipeline did.
 - **[Watching pipelines](Watching-pipelines)**: a PR's jobs and their logs, live.
 - **[Keys](Keys)** and **[Commands](Commands)**: everything there is.
 

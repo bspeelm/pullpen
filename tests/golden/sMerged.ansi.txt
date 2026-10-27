@@ -1,13 +1,9 @@
-{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Agent-opened{faint} 23{fg}    {dim}Auto-merge armed{faint} 7{fg}    {dim}All{faint} 96{fg}    {acc b}Merged{acc} 1{fg}        {faint}is:merged merged:7d{fg} 
+{fg}  {dim}Mine{faint} 6{fg}    {dim}Needs my review{faint} 4{fg}    {dim}Auto-merge armed{faint} 7{fg}    {dim}Deploys{faint} 1{fg}    {acc b}Merged{acc} 7{fg}    {dim}Open{faint} 96{fg}             {faint}is:merged merged:7d{fg} 
 {fg}                                                                                                                        
-{fg}  {fg b}needs attention{dim}  1{fg}                                                                                                    
-{acc bg=sel}▌ {dim bg=sel}gh {err bg=sel}✗{fg bg=sel}   #4815 {fg bg=sel b}Remove deprecated v1 webhooks handler{fg bg=sel}                {dim bg=sel}api{fg bg=sel}         {err bg=sel}main failing{dim bg=sel}  deploy-production{fg bg=sel}   {dim bg=sel}   1h{fg} 
-{fg}                                                                                                                        
-{fg}  {fg b}running{dim}  2{fg}                                                                                                            
-{fg}  {dim}gh {warn}○{fg}   {dim}#2288 {fg}chore(deps): update dependency vite to v7.1.4        {dim}web{fg}         {warn}running{dim}  5/7 · deploy-staging{fg}     {dim}  22m{fg} 
+{fg}  {fg b}last 7 days{dim}  7{fg}                                                                                                        
+{acc bg=sel}▌ {dim bg=sel}gh {warn bg=sel}○{fg bg=sel}   #2288 {fg bg=sel b}chore(deps): update dependency vite to v7.1.4{fg bg=sel}        {dim bg=sel}web{fg bg=sel}         {warn bg=sel}running{dim bg=sel}  5/7 · deploy-staging{fg bg=sel}     {dim bg=sel}  22m{fg} 
 {fg}  {dim}gl {warn}○{fg}   {dim} #812 {fg}Bump go toolchain to 1.25.3                          {dim}runner{fg}      {warn}running{dim}  2/4 · build{fg}              {dim}  41m{fg} 
-{fg}                                                                                                                        
-{fg}  {fg b}done{dim}  4{fg}                                                                                                               
+{fg}  {dim}gh {err}✗{fg}   {dim}#4815 {fg}Remove deprecated v1 webhooks handler                {dim}api{fg}         {err}failed{dim}  deploy-production{fg}         {dim}   1h{fg} 
 {fg}  {dim}gh {ok}✓{fg}   {dim}#1199 {fg}Ledger: emit backfill progress metrics               {dim}billing{fg}     {ok}passed{dim}  6/6{fg}                       {dim}   1h{fg} 
 {fg}  {dim}gh {ok}✓{fg}   {dim}#4811 {fg}Split payments service config by environment         {dim}api{fg}         {ok}passed{dim}  11/11{fg}                     {dim}   3h{fg} 
 {fg}  {dim}gl ●{fg}   {dim}  #60 {fg}Fix broken links in runner install guide             {dim}docs{fg}        {dim}no pipeline{fg}                       {dim}   5h{fg} 
@@ -36,5 +32,9 @@
 {fg}                                                                                                                        
 {fg}                                                                                                                        
 {fg}                                                                                                                        
-{bg bg=acc b} NORMAL {fg bg=surf}  Merged  {dim bg=surf}1/7{fg bg=surf}                                    {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
-{err}✗{fg} 1 needs attention{dim}   ·   2 running   ·   4 done{fg}                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{fg}                                                                                                                        
+{bg bg=acc b} NORMAL {fg bg=surf}  Merged  {dim bg=surf}1/7{fg bg=surf}                                    {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 failing{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
+{dim}7 merged{fg}                                                                               {dim}w pipeline   :clear drop finished

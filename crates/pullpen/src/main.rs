@@ -81,14 +81,11 @@ fn main() -> Result<()> {
         });
     }
     let sections = cfg.sections();
-    let visit = std::fs::read_to_string(dirs.state.join("last-visit")).ok().and_then(|t| t.trim().parse().ok());
-    // A first run treats the last day as "since last visit".
-    let since = pullpen_core::time::Timestamp(visit.unwrap_or(pullpen_core::time::Timestamp::now().0 - 86_400));
     let (creds, creds_err) = match credentials::load(&creds_path) {
         Ok(c) => (c, None),
         Err(e) => (credentials::Credentials::default(), Some(e)),
     };
-    let (mut backend, forges, mut down) = live::Live::start(&cfg, &sections, dirs.cache.clone(), since, &creds)?;
+    let (mut backend, forges, mut down) = live::Live::start(&cfg, &sections, dirs.cache.clone(), &creds)?;
     let states = sections
         .into_iter()
         .map(|s| {

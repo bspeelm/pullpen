@@ -4,6 +4,7 @@
 
 pub mod act;
 mod armed;
+mod deploys;
 mod merged;
 pub use armed::Watch;
 pub mod cmdline;
@@ -293,8 +294,11 @@ impl App {
         readiness(p, &self.caps_of(p))
     }
 
+    /// A PR by id: the copy on screen first, since a PR can sit in a list
+    /// as open and in Deploys and Merged as merged.
     pub fn find(&self, id: &PrId) -> Option<&Pr> {
-        self.sections.iter().flat_map(|s| &s.prs).find(|p| p.id == *id)
+        let here = self.sections.get(self.active).into_iter();
+        here.chain(&self.sections).flat_map(|s| &s.prs).find(|p| p.id == *id)
     }
 
     /// Armed and failing PRs across every section that counts, each PR once
@@ -364,7 +368,9 @@ impl App {
             _ if sec.prs.is_empty() => String::new(),
             (_, Some(f)) if f.applied => format!("{}/{}", sec.sel + 1, sec.visible().len()),
             // Its tab counts only what needs attention; the position is over every row.
-            _ if sec.section.view == View::Merged => format!("{}/{}", sec.sel + 1, sec.prs.len()),
+            _ if matches!(sec.section.view, View::Merged | View::Deploys) => {
+                format!("{}/{}", sec.sel + 1, sec.prs.len())
+            }
             _ => format!("{}/{}", sec.sel + 1, sec.total),
         };
         let extra =
@@ -542,6 +548,7 @@ impl App {
             .pipe_lines(w, h)
             .or_else(|| self.detail_lines(w, h))
             .or_else(|| self.armed_lines(w, h))
+            .or_else(|| self.deploys_lines(w, h))
             .or_else(|| self.merged_lines(w, h))
         {
             Some(l) => l,
@@ -633,14 +640,7 @@ impl App {
     /// PRs that left are dropped.
     pub fn synced(&mut self, i: usize, mut prs: Vec<Pr>, total: usize) {
         self.track(i, &mut prs);
-        if self.view_is(i, View::Merged) {
-            self.land(&mut prs);
-        }
-        let total = match () {
-            _ if self.view_is(i, View::Armed) => self.armed_count(&prs),
-            _ if self.view_is(i, View::Merged) => merged::attention(&prs),
-            _ => total,
-        };
+        let total = self.shape(i, &mut prs).unwrap_or(total);
         // A PR that changed has a stale detail and diff; a fetch that failed
         // gets another try. A check finishing does not move `updated_at`, so
         // the checks are compared too.

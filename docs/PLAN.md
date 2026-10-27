@@ -245,8 +245,9 @@ Header row uses faint lowercase labels (`#  title  repo  author  rev  +/−  age
 
 1. **List** — tabs, header, rows, optional preview (right, 46 cells: title, meta line, verdict line, 4 facts `checks / reviews / conflicts / auto-merge`, branch, size, wrapped description, activity).
 2. **Detail** — breadcrumb row (`Section › gh repo #n` left; `1 of 23   updated 12m ago` right), title, meta line, **verdict row** (` READY `/` WAITING `/` BLOCKED ` filled label + sentence), 2×2 fact grid, then two panes split 56/rest: overview (description, checks list with `+ 7 more passed  zo to expand`, conversation) │ diff (file header with `file 2/14 +120 −12`, hunks with old/new line numbers in faint, `+` ok `-` err). `h`/`l` focus; focused pane heading accent. `d` zooms diff full width.
-3. **Armed section** — rows grouped `needs attention` / `waiting` / `merged since HH:MM`; each row's right side is the *why* (`failing  e2e/chromium · 2 retries`, `review  @mara · 1 of 2`, `ci  6/9 running · ~4m left`, `merge train  position 2 of 3`, `merged · squash`). Merged rows dim, stay for the session, `:clear` drops them; their glyph is their merge commit's pipeline. Command line shows the summary: `◆ 4 merged since 09:14 · 2 need attention · 5 still waiting`.
-   **Merged section** (ADR-017, ADR-019) — the same layout, grouped `needs attention` / `running` / `done` by the merge commit's pipeline, the failing or running job on the right, summary `✗ 1 needs attention · 2 running · 4 done`. A failure needs attention while its base branch's newest pipeline still fails (`main failing  deploy-production`); once that passes it is done (`fixed  main passes now`, dim ✗). Rows leave 24h after merging, ones needing attention only on `D` or `:clear`; `o` opens the pipeline. The tab counts what needs attention; the status line adds `✗ 1 broken`.
+3. **Armed section** — rows grouped `needs attention` / `waiting`; each row's right side is the *why* (`failing  e2e/chromium · 2 retries`, `review  @mara · 1 of 2`, `ci  6/9 running · ~4m left`, `merge train  position 2 of 3`). Command line shows the summary, pointing to where merges are listed, with the tab's keys on the right: `◆ 5 merged since 09:14 → Merged · 2 need attention · 5 still waiting      Enter detail   A disarm   w pipeline` (ADR-023).
+   **Deploys section** (ADR-023, ADR-019) — one lane per repo and branch merges landed on in the window, showing the newest merge there that ran a pipeline, grouped `deploying` / `failing` / `deployed`. A lane fails while its branch's newest pipeline still fails (`main failing  deploy-production`); once that passes it is deployed (`fixed  main passes now`, dim ✗), and `D` dismisses one (`dismissed  deploy-production`) until a newer merge lands. Enter opens the lane's pipeline screen; `o` its page. The tab, the status line's `✗ 1 broken` and the terminal title count failing lanes. Summary `✗ 1 failing · 2 deploying · 2 deployed`, keys `Enter pipeline   D dismiss   o open`.
+   **Merged section** (ADR-017, ADR-023) — every merge in the window, newest first, under one heading, each with its pipeline's glyph and outcome (`failed  deploy-production`, `running 2/4 · build`, `passed 6/6`, `fixed`, `no pipeline`); `:clear` drops the finished ones that are not failing; `w` and `o` open the pipeline. Summary `7 merged`, keys `w pipeline   :clear drop finished`.
    **Pipeline and job screens** (ADR-020) — subscreens of a PR, opened with `w`. The PR's breadcrumb, title and branch stay on top. The pipeline screen lists the runs (after merge, then before), each job with its stage, progress and time; the job screen shows steps │ log, following the tail. Refreshed every `sync.watch` while anything runs.
 4. **Help overlay (?)** — base screen faded to faint; 96-wide surface block at x=12, y=5, no border; three-column key tables; typing filters; `?`/Esc closes.
 5. **Wildmenu** — completion list overlays upward over the list rows above the command line, surface bg, selected item sel bg.
@@ -267,15 +268,16 @@ query = "is:open review-requested:@me"
 sort  = "updated"          # updated | created | age | repo
 
 [[section]]
-name  = "Agent-opened"
-short = "Agent"
-query = "is:open is:agent"
-
-[[section]]
 name  = "Auto-merge armed"
 short = "Armed"
 query = "is:armed"
 view  = "armed"            # the grouped lifecycle view
+
+[[section]]
+name  = "Deploys"
+short = "Deploys"
+query = "is:merged merged:7d"
+view  = "deploys"          # one lane per branch merges landed on (ADR-023)
 ```
 
 Query grammar (forge-neutral, translated per forge; unknown terms are free text matched on title):
@@ -283,7 +285,7 @@ Query grammar (forge-neutral, translated per forge; unknown terms are free text 
 
 Translation splits each query in two. Terms a forge's search understands go to the server; the rest (`is:armed`, `is:agent`, `is:ready`, `is:failing`, `is:conflict`, `ci:*`) are evaluated on the fetched `Pr`s. A query made only of client-side terms fetches a superset (`involves:@me` on GitHub, `scope=all` within configured groups on GitLab). GitHub search returns at most 1,000 results; a section that hits the cap says so on the status line. A query that names no person, repo, org or group would mean every PR on the forge, so it is scoped: on GitHub by the forge's `scope` (default `involves:@me`), on GitLab to its configured `groups`, or, with none, to the union of PRs you authored, review or are assigned.
 
-`/` filter inside a section uses the same grammar plus free text. Defaults ship: Mine, Needs my review, Agent-opened, Auto-merge armed, All, Merged (`is:merged merged:7d`, view `merged`, ADR-017). `merged:<age>` limits to PRs merged within that long, like `7d` or `24h`.
+`/` filter inside a section uses the same grammar plus free text. Defaults ship (ADR-023): Mine, Needs my review, Auto-merge armed, Deploys (`is:merged merged:7d`, view `deploys`), Merged (the same query, view `merged`), Open (`is:open`). Sections with the same query share one sync. An Agent-opened section (`is:open is:agent`) is one `[[section]]` away. `merged:<age>` limits to PRs merged within that long, like `7d` or `24h`.
 
 ### 6.2 Keymap (design §09) — implement as a table, generate `docs/keymap.md` and the `?` overlay from it
 
@@ -466,26 +468,33 @@ short = "Review"
 query = "is:open review-requested:@me"
 
 [[section]]
-name  = "Agent-opened"
-short = "Agent"
-query = "is:open is:agent"
-
-[[section]]
 name  = "Auto-merge armed"
 short = "Armed"
 query = "is:armed"
 view  = "armed"
 
 [[section]]
-name  = "All"
-short = "All"
-query = "is:open"
+name  = "Deploys"
+short = "Deploys"
+query = "is:merged merged:7d"
+view  = "deploys"         # one lane per repo and branch merges landed on (ADR-023)
 
 [[section]]
 name  = "Merged"
 short = "Merged"
-query = "is:merged merged:7d"
+query = "is:merged merged:7d"   # the same query as Deploys, so one search serves both
 view  = "merged"
+
+[[section]]
+name  = "Open"
+short = "Open"
+query = "is:open"
+
+# Not a default, for agents that open PRs under their own accounts:
+# [[section]]
+# name  = "Agent-opened"
+# short = "Agent"
+# query = "is:open is:agent"
 ```
 
 ---

@@ -36,5 +36,5 @@
                                                                                                                         
                                                                                                                         
                                                                                                                         
- NORMAL   #812  job 3/4                                  ◆ 7 armed   ✗ 3 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
+ NORMAL   #812  job 3/4                                  ◆ 7 armed   ✗ 1 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
 Enter open job   zo zc show / fold a run   o open on gitlab.com   r refresh   q back to #812                            

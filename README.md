@@ -9,15 +9,15 @@ pullpen
 ```
 
 ```
-  Mine 6   Review 4   Agent 23   Armed 7   All 96
+  Mine 6   Review 4   Armed 7   Deploys 1   Merged 7   Open 96
 
              # title                     repo               author    rev   age
+  gh ○   #4823 Rate limit per API key…   acme/api           mara      0/1   20m
 ▌ gh ○ ◆ #4821 Migrate invoices to led…  acme/api         ◇ claude    1/2    3h
   gl ✓    #812 Bump go toolchain to 1.…  platform/runner  ◇ renovate  1/1   41m
+  gh ✓   #2291 New billing settings la…  acme/web           jkoh      1/1    1h
   gh ✗ ◆ #2290 Fix hydration mismatch…   acme/web         ◇ codex     0/1    5h
   gh ○    #377 Rotate staging TLS cert…  acme/infra       ◇ claude    0/1   12m
-  gh ≠ ◆ #4818 Add idempotency keys to…  acme/api         ◇ codex     2/2    1d
-  gh ◌   #1203 Proration preview endpo…  acme/billing     ◇ claude    0/2    2d
 ```
 
 A bullpen is where relievers warm up until they are called. This is where
@@ -36,8 +36,8 @@ and act on all of them at once; those that cannot take the action are
 skipped and named.
 
 Arm a batch, walk away, and come back to the Auto-merge armed section grouped
-by outcome: what needs you, what is still waiting and why, what merged while
-you were gone. The bell rings when one merges or needs attention.
+by outcome: what needs you, and what is still waiting and why, with how many
+merged while you were gone. The bell rings when one merges or needs attention.
 [Your first session](https://github.com/bspeelm/pullpen/wiki/Your-first-session).
 
 ## Install
@@ -94,13 +94,16 @@ Six ship by default, and you can replace them.
 unless you set another; `s`, `m` or `r` at the prompt picks one for that merge.
 If a PR is only waiting, `M` offers to arm auto-merge instead. If the forge
 would refuse, pullpen refuses first and says why. `A` arms or disarms.
-After a merge, the Merged section shows what the base branch's pipeline did,
-so you can see a deploy go through or fail. A failure needs attention until
-its branch passes again, and the status line says so from any tab. `w` on any
-PR opens its pipeline, before or after the merge, refreshed every few seconds
-while it runs. Enter on a job shows its steps and its log.
+After a merge, the Deploys section shows each branch your merges landed on:
+what is deploying now, what is failing, and what deployed, so you can see a
+deploy go through or fail. A failing branch needs attention until it passes
+again, and the status line says so from any tab. Merged keeps the week's
+merges as a record. `w` on any PR, or Enter on a lane, opens its pipeline,
+refreshed every few seconds while it runs. Enter on a job shows its steps
+and its log.
 [Merging and auto-merge](https://github.com/bspeelm/pullpen/wiki/Merging-and-auto-merge) ·
 [the armed view](https://github.com/bspeelm/pullpen/wiki/The-armed-view) ·
+[the deploys view](https://github.com/bspeelm/pullpen/wiki/The-deploys-view) ·
 [the merged view](https://github.com/bspeelm/pullpen/wiki/The-merged-view) ·
 [watching pipelines](https://github.com/bspeelm/pullpen/wiki/Watching-pipelines)
 

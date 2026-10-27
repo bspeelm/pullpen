@@ -1,4 +1,4 @@
-  Agent-opened  ›  gh  acme/api  #4821                                                       1 of 23    updated 12m ago 
+  Open  ›  gh  acme/api  #4821                                                               2 of 96    updated 12m ago 
                                                                                                                         
   Migrate invoices to ledger v2                                                                                         
   ◇ claude   claude/ledger-v2 → main   +412 −88   14 files   opened 3h ago                                              
@@ -36,5 +36,5 @@
       add index on checkpoint(invoice_id)                  │  90 100      credit(LEDGER_REVENUE, inv.net),              
   ○ mara  review requested by claude                    3h │     101  +   ...inv.taxLines.map((t) =>                    
                                                            │     102  +     credit(LEDGER_TAX, t.amount)),              
- NORMAL   #4821  overview                                ◆ 7 armed   ✗ 3 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
+ NORMAL   #4821  overview                                ◆ 7 armed   ✗ 1 failing   ✗ 1 broken   synced 40s   gh ✓  gl ✓ 
 n next file   b previous file   F all files   d widen the diff   q back to the list                                     

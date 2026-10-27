@@ -26,12 +26,12 @@ pub const KEYS: &[(&str, &str, &str)] = &[
     ("ui.palette", "a palette file of your own", "a path, or blank"),
     (
         "github.scope",
-        "which GitHub PRs lists like All and Agent-opened include",
+        "which GitHub PRs lists like Open include",
         "orgs, users or owner/repo, space-separated; blank: PRs that involve you",
     ),
     (
         "gitlab.groups",
-        "which GitLab merge requests lists like All include",
+        "which GitLab merge requests lists like Open include",
         "groups, space-separated; blank: ones that involve you",
     ),
     ("checkout.worktree", ":checkout makes a worktree", "yes, no"),

@@ -163,9 +163,7 @@ impl App {
 
     pub(super) fn pipe_lines(&self, w: usize, h: usize) -> Option<Vec<Line>> {
         let p = self.pipe.as_ref()?;
-        // The active section's copy: a PR merged since it was listed
-        // elsewhere is merged here.
-        let pr = self.section().prs.iter().find(|x| x.id == p.id).or_else(|| self.find(&p.id))?;
+        let pr = self.find(&p.id)?;
         let ctx = self.ctx();
         let section = &self.section().section.name;
         let refreshed = match self.poll.runs_at {

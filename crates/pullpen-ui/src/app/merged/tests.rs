@@ -11,7 +11,7 @@ use crate::keymap::Key;
 use crate::paint::Theme;
 use crate::palette::{Palette, Tier};
 
-const MERGED: usize = 5;
+const MERGED: usize = 4;
 
 fn app() -> App {
     let sections = fx::sections().into_iter().map(|s| SectionState::new(s.section, s.prs, s.total)).collect();
@@ -54,86 +54,64 @@ fn command(a: &mut App, cmd: &str) -> Vec<Effect> {
     keys.flat_map(|k| a.key(k, Instant::now())).collect()
 }
 
-fn notes(a: &mut App) -> Vec<String> {
-    a.wants().into_iter().filter_map(|e| if let Effect::Notify(t) = e { Some(t) } else { None }).collect()
+fn screen(a: &App) -> Vec<String> {
+    a.lines(120, 40).iter().map(|l| l.iter().map(|s| s.text.as_str()).collect()).collect()
 }
 
 #[test]
-fn a_day_old_pass_leaves_but_a_failure_stays_until_cleared() {
+fn every_merge_in_the_window_stays_newest_first() {
     let mut a = app();
-    let rows = vec![landed(4815, 30, PipelineState::Failed), landed(1199, 30, PipelineState::Passed)];
-    a.synced(MERGED, rows, 2);
-    assert_eq!(numbers(&a), [4815], "the old pass left; the old failure did not");
-    assert_eq!(a.sections[MERGED].total, 1, "the tab counts what is shown");
+    let rows = vec![
+        landed(4815, 30, PipelineState::Failed),
+        landed(1199, 50, PipelineState::Passed),
+        landed(812, 1, PipelineState::Running),
+    ];
+    a.synced(MERGED, rows, 3);
+    assert_eq!(numbers(&a), [812, 4815, 1199], "a day-old pass is still history");
+    assert_eq!(a.sections[MERGED].total, 3, "the tab counts what merged");
+}
 
+#[test]
+fn clear_drops_finished_rows_and_keeps_what_runs_or_fails() {
+    let mut a = app();
+    let rows = || {
+        vec![
+            landed(812, 1, PipelineState::Running),
+            landed(1199, 1, PipelineState::Passed),
+            landed(4815, 2, PipelineState::Failed),
+            fixed(landed(4802, 3, PipelineState::Failed)),
+        ]
+    };
+    a.synced(MERGED, rows(), 4);
     let fx = command(&mut a, "clear");
     assert!(fx.iter().any(|e| matches!(e, Effect::SaveCleared)));
-    assert!(numbers(&a).is_empty());
-    a.synced(MERGED, vec![landed(4815, 31, PipelineState::Failed)], 1);
-    assert!(numbers(&a).is_empty(), "a cleared failure does not come back with the next sync");
+    assert_eq!(numbers(&a), [812, 4815]);
+    a.synced(MERGED, rows(), 4);
+    assert_eq!(numbers(&a), [812, 4815], "cleared rows do not come back with the next sync");
 }
 
 #[test]
-fn clear_keeps_what_is_still_running() {
+fn a_failure_reads_as_failed_whatever_the_branch_does_since() {
     let mut a = app();
-    a.synced(MERGED, vec![landed(812, 1, PipelineState::Running), landed(1199, 1, PipelineState::Passed)], 2);
-    command(&mut a, "clear");
-    assert_eq!(numbers(&a), [812]);
+    let mut broke = landed(4815, 1, PipelineState::Failed);
+    broke.post_merge.as_mut().unwrap().branch = Some(PipelineState::Failed);
+    a.synced(MERGED, vec![broke], 1);
+    assert!(screen(&a).iter().any(|l| l.contains("failed  deploy")), "Merged is a record; Deploys says the branch");
 }
 
 #[test]
-fn a_pipeline_seen_running_rings_when_it_breaks_the_branch_and_again_when_fixed() {
-    let mut a = app();
-    a.synced(MERGED, vec![landed(812, 1, PipelineState::Running)], 1);
-    assert!(notes(&mut a).is_empty());
-    a.synced(MERGED, vec![landed(812, 1, PipelineState::Failed)], 1);
-    assert_eq!(notes(&mut a), ["main is failing after #812: deploy"]);
-    assert_eq!(a.sections[MERGED].total, 1, "the tab counts what needs attention");
-    a.synced(MERGED, vec![fixed(landed(812, 1, PipelineState::Failed))], 1);
-    assert_eq!(notes(&mut a), ["main passes again after #812"]);
-    assert_eq!(a.sections[MERGED].total, 0);
-}
-
-#[test]
-fn a_failure_fixed_since_is_done_and_leaves_with_the_rest() {
-    let mut a = app();
-    a.synced(MERGED, vec![fixed(landed(4815, 30, PipelineState::Failed)), landed(4802, 30, PipelineState::Failed)], 2);
-    assert_eq!(numbers(&a), [4802], "the fixed one left after a day; the one still failing did not");
-    assert_eq!(a.broken(), 1);
-}
-
-#[test]
-fn d_dismisses_the_selected_failure_for_good() {
-    let mut a = app();
-    a.synced(MERGED, vec![landed(4802, 30, PipelineState::Failed), landed(812, 1, PipelineState::Running)], 2);
-    let fx = a.key(Key::Char('D'), Instant::now());
-    assert!(fx.iter().any(|e| matches!(e, Effect::SaveCleared)));
-    assert_eq!(numbers(&a), [812]);
-    assert_eq!(a.broken(), 0);
-    a.active = 2;
-    a.key(Key::Char('D'), Instant::now());
-    assert!(a.message.is_some(), "D elsewhere says where it works instead of doing nothing silently");
-}
-
-#[test]
-fn o_opens_the_pipeline_rather_than_the_pr() {
+fn o_opens_the_pipeline_and_d_points_to_deploys() {
     let mut a = app();
     a.synced(MERGED, vec![landed(812, 1, PipelineState::Running)], 1);
     let fx = a.key(Key::Char('o'), Instant::now());
     assert!(matches!(fx.as_slice(), [Effect::Open(u)] if u == "https://ci.example/812"), "{fx:?}");
+    a.key(Key::Char('D'), Instant::now());
+    assert!(a.message.as_ref().is_some_and(|m| m.line.iter().any(|s| s.text.contains("Deploys"))));
 }
 
 #[test]
-fn the_summary_leads_with_what_needs_attention() {
+fn the_summary_counts_and_names_the_keys() {
     let a = app();
-    let line: String = a.lines(120, 40)[39].iter().map(|s| s.text.as_str()).collect();
-    assert_eq!(line.trim_end(), "✗ 1 needs attention   ·   2 running   ·   4 done");
-}
-
-#[test]
-fn the_tab_title_carries_what_needs_attention() {
-    let mut a = app();
-    assert_eq!(a.title(), "pullpen ✗1", "the fixtures hold one broken branch");
-    a.synced(MERGED, vec![fixed(landed(4815, 1, PipelineState::Failed))], 1);
-    assert_eq!(a.title(), "pullpen");
+    let last = screen(&a).pop().unwrap();
+    assert!(last.starts_with("7 merged") && last.trim_end().ends_with("w pipeline   :clear drop finished"), "{last}");
 }

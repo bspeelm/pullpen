@@ -38,4 +38,5 @@ how many PRs are armed and failing, when it last synced, and each forge with
 
 Arm what is only waiting on CI or a review with `A`, then leave. When you
 come back, the Auto-merge armed section groups everything by outcome. See
-[the armed view](The-armed-view).
+[the armed view](The-armed-view). Once things merge, Deploys shows what each
+branch is deploying. See [the deploys view](The-deploys-view).

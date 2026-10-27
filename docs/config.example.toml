@@ -60,23 +60,30 @@ short = "Review"
 query = "is:open review-requested:@me"
 
 [[section]]
-name  = "Agent-opened"
-short = "Agent"
-query = "is:open is:agent"
-
-[[section]]
 name  = "Auto-merge armed"
 short = "Armed"
 query = "is:armed"
 view  = "armed"
 
 [[section]]
-name  = "All"
-short = "All"
-query = "is:open"
+name  = "Deploys"
+short = "Deploys"
+query = "is:merged merged:7d"
+view  = "deploys"         # one lane per repo and branch merges landed on (ADR-023)
 
 [[section]]
 name  = "Merged"
 short = "Merged"
-query = "is:merged merged:7d"
+query = "is:merged merged:7d"   # the same query as Deploys, so one search serves both
 view  = "merged"
+
+[[section]]
+name  = "Open"
+short = "Open"
+query = "is:open"
+
+# Not a default, for agents that open PRs under their own accounts:
+# [[section]]
+# name  = "Agent-opened"
+# short = "Agent"
+# query = "is:open is:agent"

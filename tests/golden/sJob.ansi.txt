@@ -36,5 +36,5 @@
 {fg}                                          {faint} │ {fg}                                                                           
 {fg}                                          {faint} │ {fg}                                                                           
 {fg}                                          {faint} │ {fg}                                                                           
-{bg bg=acc b} NORMAL {fg bg=surf}  #812  {dim bg=surf}log 14/14{fg bg=surf}                                {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}3 failing{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
+{bg bg=acc b} NORMAL {fg bg=surf}  #812  {dim bg=surf}log 14/14{fg bg=surf}                                {acc bg=surf}◆ {dim bg=surf}7 armed{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 failing{fg bg=surf}   {err bg=surf}✗ {dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
 {dim}Enter jump to step   G follow   / search   e next error   o open on gitlab.com   q back to the pipeline{fg}                 

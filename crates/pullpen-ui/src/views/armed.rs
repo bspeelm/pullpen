@@ -123,7 +123,43 @@ pub fn landed_why(p: &Pr) -> String {
     }
 }
 
+/// The Merged view's reason column: a record, so a failure reads as
+/// failed whatever the branch has done since.
+pub fn history_why(p: &Pr) -> String {
+    match &p.post_merge {
+        Some(pl) if landed(p) == Landed::Attention => match pl.job.as_str() {
+            "" => format!("{{r|failed}}{{d|  {}/{}}}", pl.passed, pl.total),
+            job => format!("{{r|failed}}{{d|  {}}}", super::detail::esc(job)),
+        },
+        _ => landed_why(p),
+    }
+}
+
 const RW: usize = 34;
+
+/// tui.js `rowLane`: a Deploys lane, its repo and branch first, then the
+/// merge at its head.
+pub fn lane_row(p: &Pr, w: usize, sel: bool, why: &str, when: Timestamp, ctx: &Ctx) -> Line {
+    let tw = w.saturating_sub(2 + 3 + 2 + 12 + 10 + 6 + RW + 5);
+    let strong = |t: &str| if sel { s(t, Tok::Fg).bold() } else { s(t, Tok::Fg) };
+    let mut l = vec![
+        gutter(sel, false),
+        s(format!("{} ", ctx.glyphs.forge(p.id.forge)), Tok::Dim),
+        glyph(p, ctx.readiness(p)),
+        sp(1),
+    ];
+    l.extend(fit(&[strong(p.id.repo_name())], 11, true));
+    l.push(sp(1));
+    l.extend(fit(&[strong(&p.base)], 9, true));
+    l.push(sp(1));
+    l.push(s(pad_start(&format!("#{}", p.id.number), 5) + " ", Tok::Dim));
+    l.extend(fit(&[s(&p.title, Tok::Dim)], tw.saturating_sub(2), true));
+    l.push(sp(2));
+    l.extend(fit(&markup(why), RW, true));
+    l.push(s(pad_start(&age(when, ctx.now), 5), Tok::Dim));
+    let l = fit(&l, w, false);
+    if sel { with_bg(l, Tok::Sel) } else { l }
+}
 
 /// tui.js `rowArm`. `lit` keeps a merged PR's title bright, for the Merged
 /// view, where every row is merged and dimming them all would say nothing.

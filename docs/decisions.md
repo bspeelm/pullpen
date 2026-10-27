@@ -433,3 +433,55 @@ search, and a column that is sometimes blank reads as missing data.
 The design changed first (ADR-002): `cols(w)` and the list header, and
 `#809` targets `develop` in the fixtures so the goldens show the difference.
 
+## ADR-023 — Deploys is a lane per branch; Merged is history; the defaults tighten
+
+The maintainer wanted a place to go straight to when they want to see what
+is deploying, and Merged was not it. Merged was doing two jobs: a record of
+what merged, and a deploy monitor (ADR-017's groups, ADR-019's attention).
+A deploy is about a branch and what is running on it now; Merged was
+organised around PRs. Reviewing the tabs turned up more overlap.
+
+**Deploys.** A new view, one lane per repo and branch that merges landed on
+in the window. It shows the newest merge there that ran a pipeline, grouped
+`deploying`, `failing` and `deployed`, with the branch's job on the right.
+Enter opens the lane's pipeline screen (ADR-020). ADR-019's rule and its
+signals move here unchanged: a lane fails while its branch's newest
+pipeline still fails, and `D` dismisses one until a newer merge lands. The
+tab, `✗ N broken` and the terminal title count failing lanes, and the bells
+ring on a lane's changes. No forge query is added. Deploys and Merged share
+`is:merged merged:7d`, and sections with the same query share one sync. A
+direct push to a branch, with no PR, is not seen.
+
+**Merged is history.** Every merge in the window, newest first, each with
+its pipeline's glyph and outcome. A failure reads `failed`, whatever the
+branch has done since: the record does not judge the branch, Deploys does.
+ADR-017's 24-hour rule and groups leave it. `:clear` drops finished rows
+that are not failing.
+
+**Armed shows only what is armed.** Its "merged since" group listed the
+same merges a second time, and only on GitHub, since GitLab's search never
+returns merged MRs for `is:armed`. The news stays, as the summary line's
+first part, pointing to Merged. A conflict still names the merge that
+likely caused it, found in Merged.
+
+**The defaults** become Mine · Review · Armed · Deploys · Merged · Open.
+
+- **Agent-opened leaves.** It was always empty for anyone whose agents open
+  PRs under their own login. `is:agent`, `[agents]` and the ◇ mark still
+  work, and the commented example in `config.example.toml` brings the tab
+  back.
+- **All becomes Open, last.** It is the only tab that shows colleagues' PRs,
+  and the new name says what it holds.
+
+**Keys where they apply.** The grouped views' summary lines name that tab's
+keys on the right, so `w` and `D` are not only in the help overlay.
+
+**What it costs.** Users without `[[section]]`s get the new tabs on their
+next start. Anyone with their own sections keeps them, but a `view =
+"merged"` section loses ADR-017's groups. They add a Deploys section, the
+four lines in `config.example.toml`, to get them back as lanes. About 120
+lines of code.
+
+The design changed first (ADR-002): the tab row, `deploysScreen`,
+`mergedScreen` and `armedScreen`, and the list screens moved onto Open.
+

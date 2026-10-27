@@ -1,24 +1,24 @@
-{fg}  {dim}Mine{faint} 6{fg}   {dim}Review{faint} 4{fg}   {acc b}Agent{acc} 23{fg}   {dim}Armed{faint} 7{fg}   {dim}All{faint} 96{fg}   {dim}Merged{faint} 1{fg}                    
+{fg}  {dim}Mine{faint} 6{fg}   {dim}Review{faint} 4{fg}   {dim}Armed{faint} 7{fg}   {dim}Deploys{faint} 1{fg}   {dim}Merged{faint} 7{fg}   {acc b}Open{acc} 96{fg}                  
 {fg}                                                                                
 {fg}         {faint}    #{fg} {faint}title{fg}                     {faint}repo{fg}               {faint}author{fg}    {faint}rev{fg}  {faint} age{fg} 
+{fg}  {dim}gh {warn}○{fg}   {dim}#4823 {fg}Rate limit per API key…   {dim}acme/api{fg}           {dim}mara{fg}      {warn}0/1{fg}  {dim} 20m{fg} 
 {acc bg=sel}▌ {dim bg=sel}gh {warn bg=sel}○{fg bg=sel} {acc bg=sel}◆{fg bg=sel} #4821 {fg bg=sel b}Migrate invoices to led…{fg bg=sel}  {dim bg=sel}acme/api{fg bg=sel}         ◇ {dim bg=sel}claude{fg bg=sel}    {warn bg=sel}1/2{fg bg=sel}  {dim bg=sel}  3h{fg} 
 {fg}  {dim}gl {ok}✓{fg}   {dim} #812 {fg}Bump go toolchain to 1.…  {dim}platform/runner{fg}  ◇ {dim}renovate{fg}  {ok}1/1{fg}  {dim} 41m{fg} 
+{fg}  {dim}gh {ok}✓{fg}   {dim}#2291 {fg}New billing settings la…  {dim}acme/web{fg}           {dim}jkoh{fg}      {ok}1/1{fg}  {dim}  1h{fg} 
 {fg}  {dim}gh {err}✗{fg} {acc}◆{fg} {dim}#2290 {fg}Fix hydration mismatch…   {dim}acme/web{fg}         ◇ {dim}codex{fg}     {warn}0/1{fg}  {dim}  5h{fg} 
 {fg}  {dim}gh {warn}○{fg}   {dim} #377 {fg}Rotate staging TLS cert…  {dim}acme/infra{fg}       ◇ {dim}claude{fg}    {warn}0/1{fg}  {dim} 12m{fg} 
+{fg}  {dim}gl {err}✗{fg}   {dim} #814 {fg}Ledger exporter for run…  {dim}platform/runner{fg}    {dim}ash{fg}       {warn}0/1{fg}  {dim}  2h{fg} 
 {fg}  {dim}gl {ok}✓{fg}   {dim} #145 {fg}Add PodDisruptionBudget…  {dim}platform/charts{fg}  ◇ {dim}claude{fg}    {ok}1/1{fg}  {dim}  1h{fg} 
 {fg}  {dim}gh {err}≠{fg} {acc}◆{fg} {dim}#4818 {fg}Add idempotency keys to…  {dim}acme/api{fg}         ◇ {dim}codex{fg}     {ok}2/2{fg}  {dim}  1d{fg} 
+{fg}  {dim}gh {warn}○{fg}   {dim}#1205 {fg}Invoice PDF: handle mul…  {dim}acme/billing{fg}       {dim}priya{fg}     {warn}0/2{fg}  {dim}  4h{fg} 
 {fg}  {dim}gh {ok}✓{fg}   {dim}  #96 {fg}Cache forge capabilitie…  {dim}tools/rq{fg}         ◇ {dim}claude{fg}    {ok}1/1{fg}  {dim}  2h{fg} 
 {fg}  {dim}gh {warn}○{fg} {acc}◆{fg} {dim}#2288 {fg}chore(deps): update dep…  {dim}acme/web{fg}         ◇ {dim}dependab…{fg} {warn}0/1{fg}  {dim}  6h{fg} 
+{fg}  {dim}gl {ok}✓{fg}   {dim}  #60 {fg}Fix broken links in run…  {dim}platform/docs{fg}      {dim}lena{fg}      {ok}1/1{fg}  {dim}  5h{fg} 
 {fg}  {dim}gl {warn}○{fg} {acc}◆{fg} {dim} #809 {fg}Retry artifact upload o…  {dim}platform/runner{fg}  ◇ {dim}codex{fg}     {ok}1/1{fg}  {dim} 30m{fg} 
 {fg}  {dim}gh ◌{fg}   {dim}#1203 Proration preview endpo…{fg}  {dim}acme/billing{fg}     ◇ {dim}claude{fg}    {warn}0/2{fg}  {dim}  2d{fg} 
+{fg}  {dim}gh {warn}○{fg}   {dim} #378 {fg}Grafana: alert on ledge…  {dim}acme/infra{fg}         {dim}ash{fg}       {warn}0/1{fg}  {dim}  8h{fg} 
 {fg}  {dim}gh {ok}✓{fg}   {dim}#4815 {fg}Remove deprecated v1 we…  {dim}acme/api{fg}         ◇ {dim}claude{fg}    {ok}2/2{fg}  {dim}  2d{fg} 
 {fg}  {dim}gl {err}✗{fg}   {dim} #143 {fg}Pin redis chart to 19.6…  {dim}platform/charts{fg}  ◇ {dim}renovate{fg}  {warn}0/1{fg}  {dim}  3d{fg} 
-{fg}  {dim}gh {warn}○{fg}   {dim} #375 {fg}Terraform: split vpc mo…  {dim}acme/infra{fg}       ◇ {dim}codex{fg}     {warn}0/1{fg}  {dim}  3d{fg} 
-{fg}  {dim}gh {ok}✓{fg} {acc}◆{fg} {dim}#1199 {fg}Ledger: emit backfill p…  {dim}acme/billing{fg}     ◇ {dim}claude{fg}    {ok}1/1{fg}  {dim}  4h{fg} 
-{fg}  {dim}gl {warn}○{fg}   {dim} #806 {fg}Drop support for docker…  {dim}platform/runner{fg}  ◇ {dim}devin{fg}     {warn}0/2{fg}  {dim}  4d{fg} 
-{fg}  {dim}gh {warn}○{fg}   {dim}#2284 {fg}Expose ledger balances…   {dim}acme/web{fg}         ◇ {dim}codex{fg}     {warn}0/1{fg}  {dim}  7h{fg} 
-{fg}  {dim}gh {ok}✓{fg} {acc}◆{fg} {dim}#4809 {fg}Bump pgx to v5.7.2        {dim}acme/api{fg}         ◇ {dim}renovate{fg}  {ok}1/1{fg}  {dim}  5d{fg} 
-{fg}  {dim}gl {warn}○{fg}   {dim}  #58 {fg}Document runner autosca…  {dim}platform/docs{fg}    ◇ {dim}claude{fg}    {warn}0/1{fg}  {dim}  5d{fg} 
-{fg}  {dim}gh {ok}✓{fg}   {dim}  #94 {fg}Map GitLab approval rul…  {dim}tools/rq{fg}         ◇ {dim}claude{fg}    {ok}1/1{fg}  {dim}  6d{fg} 
-{bg bg=acc b} NORMAL {fg bg=surf}  Agent  {dim bg=surf}1/23{fg bg=surf}                 {acc bg=surf}◆{dim bg=surf}7{fg bg=surf} {err bg=surf}✗{dim bg=surf}3{fg bg=surf} {err bg=surf}✗{dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
+{fg}  {dim}gh {ok}✓{fg}   {dim}#4811 {fg}Split payments service…   {dim}acme/api{fg}           {dim}mara{fg}      {ok}2/2{fg}  {dim}  1d{fg} 
+{bg bg=acc b} NORMAL {fg bg=surf}  Open  {dim bg=surf}2/96{fg bg=surf}                  {acc bg=surf}◆{dim bg=surf}7{fg bg=surf} {err bg=surf}✗{dim bg=surf}1{fg bg=surf} {err bg=surf}✗{dim bg=surf}1 broken{fg bg=surf}   {dim bg=surf}synced 40s{fg bg=surf}   {dim bg=surf}gh{ok bg=surf} ✓{fg bg=surf}  {dim bg=surf}gl{ok bg=surf} ✓{fg bg=surf} 
 {fg}                                                                                
