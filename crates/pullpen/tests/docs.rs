@@ -165,8 +165,8 @@ fn every_wiki_url_in_the_readme_names_a_page() {
     let pages = wiki_pages();
     let mut rest = readme.as_str();
     let mut seen = 0;
-    while let Some(i) = rest.find("github.com/bspeelm/pullpen/wiki/") {
-        rest = &rest[i + "github.com/bspeelm/pullpen/wiki/".len()..];
+    while let Some(i) = rest.find("github.com/lampseen/pullpen/wiki/") {
+        rest = &rest[i + "github.com/lampseen/pullpen/wiki/".len()..];
         let page: String = rest.chars().take_while(|c| c.is_alphanumeric() || *c == '-').collect();
         assert!(pages.contains(&page), "README links to wiki page {page}, which wiki/ does not have");
         seen += 1;

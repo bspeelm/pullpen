@@ -1,7 +1,7 @@
 # pullpen
 
 One terminal queue for pull requests across GitHub and GitLab. The
-[README](https://github.com/bspeelm/pullpen) is the overview; these pages are
+[README](https://github.com/lampseen/pullpen) is the overview; these pages are
 the detail. pullpen uses a few words precisely, and the rest of these pages
 assume them.
 
@@ -44,6 +44,6 @@ assume them.
 
 ---
 
-These pages live in [`wiki/`](https://github.com/bspeelm/pullpen/tree/main/wiki)
+These pages live in [`wiki/`](https://github.com/lampseen/pullpen/tree/main/wiki)
 in the repository and are copied here when a change merges. An edit made here
 is overwritten by the next copy; change the file instead.

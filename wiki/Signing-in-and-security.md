@@ -39,5 +39,5 @@ repos you watch.
 ## Reporting a security problem
 
 Privately, through
-[the advisory form](https://github.com/bspeelm/pullpen/security/advisories/new),
+[the advisory form](https://github.com/lampseen/pullpen/security/advisories/new),
 not the issue tracker.

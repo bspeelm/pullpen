@@ -26,4 +26,4 @@ check, a conflict or a draft, and the key that helps.
 **Something else.** The log is `~/.local/state/pullpen/pullpen.log`
 (`%LOCALAPPDATA%\pullpen\state\pullpen.log` on Windows); it never contains a
 token. Attach `pullpen config check` and `pullpen --version` to an
-[issue](https://github.com/bspeelm/pullpen/issues).
+[issue](https://github.com/lampseen/pullpen/issues).
