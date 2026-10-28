@@ -61,4 +61,4 @@ long log keeps its last 10,000 lines.
 What the screen draws is checked against the design by the `sPipeline` and
 `sJob` golden tests. The refresh and the keys are covered by the
 `app::pipeline` tests, and the log handling by `views::log`. Decided in
-[ADR-020](https://github.com/bspeelm/pullpen/blob/main/docs/decisions.md).
+[ADR-020](https://github.com/lampseen/pullpen/blob/main/docs/decisions.md).

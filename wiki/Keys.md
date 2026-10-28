@@ -1,7 +1,7 @@
 # Keys
 
 The full table is
-[`docs/keymap.md`](https://github.com/bspeelm/pullpen/blob/main/docs/keymap.md),
+[`docs/keymap.md`](https://github.com/lampseen/pullpen/blob/main/docs/keymap.md),
 generated from the code, and `?` inside pullpen shows the same table.
 
 The ones to know first:

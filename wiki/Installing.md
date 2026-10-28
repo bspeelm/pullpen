@@ -14,7 +14,7 @@ Each release carries an archive for every system, under fixed names, so
 On Linux or macOS:
 
 ```sh
-curl -LO https://github.com/bspeelm/pullpen/releases/latest/download/pullpen_linux_amd64.tar.gz
+curl -LO https://github.com/lampseen/pullpen/releases/latest/download/pullpen_linux_amd64.tar.gz
 tar -xzf pullpen_linux_amd64.tar.gz ./pullpen
 mv pullpen ~/.local/bin/
 ```
@@ -42,7 +42,7 @@ Every archive, and the `checksums.txt` that covers them, is signed by the
 workflow that built it. To check one:
 
 ```sh
-gh attestation verify pullpen_linux_amd64.tar.gz --repo bspeelm/pullpen
+gh attestation verify pullpen_linux_amd64.tar.gz --repo lampseen/pullpen
 ```
 
 A Homebrew tap is to follow.
@@ -63,5 +63,5 @@ is on `PATH` on most systems and needs no root. On Windows, run
 ## Removing it
 
 Delete the binary, and the directories listed under
-[What it touches](https://github.com/bspeelm/pullpen#what-it-touches) if you
+[What it touches](https://github.com/lampseen/pullpen#what-it-touches) if you
 want your settings gone too.

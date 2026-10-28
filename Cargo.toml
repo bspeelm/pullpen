@@ -6,7 +6,7 @@ members = ["crates/*"]
 version = "0.2.4"
 edition = "2024"
 license = "MIT"
-repository = "https://github.com/bspeelm/pullpen"
+repository = "https://github.com/lampseen/pullpen"
 
 # Versions live here so every crate pins the same one; the list itself is the
 # ceiling in docs/PLAN.md §1 (ADR-005).

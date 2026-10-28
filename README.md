@@ -38,23 +38,23 @@ skipped and named.
 Arm a batch, walk away, and come back to the Auto-merge armed section grouped
 by outcome: what needs you, and what is still waiting and why, with how many
 merged while you were gone. The bell rings when one merges or needs attention.
-[Your first session](https://github.com/bspeelm/pullpen/wiki/Your-first-session).
+[Your first session](https://github.com/lampseen/pullpen/wiki/Your-first-session).
 
 ## Install
 
 Download the archive for your system from the
-[latest release](https://github.com/bspeelm/pullpen/releases/latest): Linux
+[latest release](https://github.com/lampseen/pullpen/releases/latest): Linux
 and macOS as `.tar.gz`, Windows as `.zip`, each for amd64 and arm64, and each
 signed by the workflow that built it. Put `pullpen` (`pullpen.exe` on
 Windows) somewhere on your `PATH` and run it. The binaries are not
 code-signed by Apple or Microsoft, so macOS and Windows may warn the first
-time; [Installing](https://github.com/bspeelm/pullpen/wiki/Installing) says
+time; [Installing](https://github.com/lampseen/pullpen/wiki/Installing) says
 what to do. With no settings yet, it starts
 `pullpen setup` first.
 
 From a clone, with Rust installed, `make install-binary` builds it into
 `~/.local/bin/pullpen`. A Homebrew tap is to follow.
-[Installing](https://github.com/bspeelm/pullpen/wiki/Installing).
+[Installing](https://github.com/lampseen/pullpen/wiki/Installing).
 
 ## Setting it up
 
@@ -66,7 +66,7 @@ answers.
 `pullpen settings` lists every setting with its value; pick one, change it, it
 is saved at once. `pullpen settings set <key> <value>` does the same from a
 script.
-[Setup and settings](https://github.com/bspeelm/pullpen/wiki/Setup-and-settings).
+[Setup and settings](https://github.com/lampseen/pullpen/wiki/Setup-and-settings).
 
 ## Commands
 
@@ -78,15 +78,15 @@ script.
 | `pullpen config check` | what works, and what to type to fix what does not |
 
 Inside, `:` opens a command line with completion, and `?` shows every key.
-[All commands](https://github.com/bspeelm/pullpen/wiki/Commands) ·
-[every key](https://github.com/bspeelm/pullpen/wiki/Keys)
+[All commands](https://github.com/lampseen/pullpen/wiki/Commands) ·
+[every key](https://github.com/lampseen/pullpen/wiki/Keys)
 
 ## Sections are queries
 
 Each tab is a query in one syntax that works on both forges:
 `is:open review-requested:@me`, `is:open is:agent`, `repo:acme/api ci:fail`.
 Six ship by default, and you can replace them.
-[Sections and queries](https://github.com/bspeelm/pullpen/wiki/Sections-and-queries).
+[Sections and queries](https://github.com/lampseen/pullpen/wiki/Sections-and-queries).
 
 ## Merging and auto-merge
 
@@ -101,11 +101,11 @@ again, and the status line says so from any tab. Merged keeps the week's
 merges as a record. `w` on any PR, or Enter on a lane, opens its pipeline,
 refreshed every few seconds while it runs. Enter on a job shows its steps
 and its log.
-[Merging and auto-merge](https://github.com/bspeelm/pullpen/wiki/Merging-and-auto-merge) ·
-[the armed view](https://github.com/bspeelm/pullpen/wiki/The-armed-view) ·
-[the deploys view](https://github.com/bspeelm/pullpen/wiki/The-deploys-view) ·
-[the merged view](https://github.com/bspeelm/pullpen/wiki/The-merged-view) ·
-[watching pipelines](https://github.com/bspeelm/pullpen/wiki/Watching-pipelines)
+[Merging and auto-merge](https://github.com/lampseen/pullpen/wiki/Merging-and-auto-merge) ·
+[the armed view](https://github.com/lampseen/pullpen/wiki/The-armed-view) ·
+[the deploys view](https://github.com/lampseen/pullpen/wiki/The-deploys-view) ·
+[the merged view](https://github.com/lampseen/pullpen/wiki/The-merged-view) ·
+[watching pipelines](https://github.com/lampseen/pullpen/wiki/Watching-pipelines)
 
 ## What it touches
 
@@ -122,7 +122,7 @@ On Windows, the first two are in `%APPDATA%\pullpen\` and the others in
 Nothing else. If you are signed in to `gh` or `glab`, pullpen borrows that
 login and stores no token at all. A token never reaches the log, the cache or
 the screen.
-[Signing in and security](https://github.com/bspeelm/pullpen/wiki/Signing-in-and-security).
+[Signing in and security](https://github.com/lampseen/pullpen/wiki/Signing-in-and-security).
 
 ## Where it runs
 
@@ -131,7 +131,7 @@ Linux has been used interactively. GitHub has been exercised against real
 repositories, merging and arming included. GitLab has listed real merge
 requests and their pipelines, but its merge, arm and approve have run only
 against recorded answers.
-[Where it runs](https://github.com/bspeelm/pullpen/wiki/Where-it-runs).
+[Where it runs](https://github.com/lampseen/pullpen/wiki/Where-it-runs).
 
 ## Scope
 
@@ -150,7 +150,7 @@ where everything else is.
 
 ## Authorship
 
-pullpen was built in the shape of [bothy](https://github.com/bspeelm/bothy):
+pullpen was built in the shape of [bothy](https://github.com/lampseen/bothy):
 decisions recorded and numbered, the code held to budgets that fail the
 build, and every claim in the documentation checked by a test.
 

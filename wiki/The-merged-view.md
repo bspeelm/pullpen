@@ -29,4 +29,4 @@ watch. Change it in `config.toml` like any section, with `view = "merged"`.
 
 Checked against the design by the `sMerged` golden test, and by the
 `app::merged` tests. See ADR-017 and ADR-023 in
-[decisions](https://github.com/bspeelm/pullpen/blob/main/docs/decisions.md).
+[decisions](https://github.com/lampseen/pullpen/blob/main/docs/decisions.md).

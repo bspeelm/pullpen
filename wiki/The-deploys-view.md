@@ -57,4 +57,4 @@ it does not show. Deploys and [Merged](The-merged-view) share one query,
 
 What the view draws is checked against the design by the `sDeploys` golden
 test, and its behaviour by the `app::deploys` tests. Decided in
-[ADR-023](https://github.com/bspeelm/pullpen/blob/main/docs/decisions.md).
+[ADR-023](https://github.com/lampseen/pullpen/blob/main/docs/decisions.md).

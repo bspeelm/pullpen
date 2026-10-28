@@ -6,5 +6,5 @@ pullpen merge, close or approve something you did not confirm, is a security
 issue.
 
 Report it privately through GitHub's
-[security advisory form](https://github.com/bspeelm/pullpen/security/advisories/new),
+[security advisory form](https://github.com/lampseen/pullpen/security/advisories/new),
 not the public tracker. You will get an answer within a week.

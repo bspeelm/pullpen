@@ -3,7 +3,7 @@
 `pullpen setup` and `pullpen settings` write `~/.config/pullpen/config.toml`
 (or under `$XDG_CONFIG_HOME`; on Windows `%APPDATA%\pullpen\config.toml`);
 editing it by hand works as well. `pullpen settings path` prints where.
-[`docs/config.example.toml`](https://github.com/bspeelm/pullpen/blob/main/docs/config.example.toml)
+[`docs/config.example.toml`](https://github.com/lampseen/pullpen/blob/main/docs/config.example.toml)
 shows every key. The parts:
 
 | table | holds |
